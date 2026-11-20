@@ -98,7 +98,7 @@ export function isJson(contentType: string | null) {
 export class PayloadTooLarge extends Error {}
 
 export async function readBody(
-  request: Request,
+  request: Pick<Request, "headers" | "body">,
   limit: number,
 ): Promise<Buffer> {
   const length = Number(request.headers.get("content-length"));
