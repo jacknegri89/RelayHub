@@ -5,6 +5,8 @@ import { notFound, redirect } from "next/navigation";
 import { can } from "@relayhub/shared/access";
 import { requireOrganization } from "../../../../server/authorization";
 import { HttpError } from "../../../../server/http";
+import { FailedAttemptsPage } from "../../../../components/failed-attempts";
+import { RecoveryDeliveries } from "../../../../components/recovery-deliveries";
 import {
   Overview,
   Events,
@@ -58,9 +60,51 @@ export default async function OrganizationPage({
   if (section.length === 2 && section[0] === "events") {
     return <EventDetail organizationId={organizationId} id={section[1]} />;
   }
-  if (section.length === 2 && section[0] === "destinations") {
+  if (
+    section.length === 3 &&
+    section[0] === "destinations" &&
+    section[2] === "attempts"
+  ) {
     return (
-      <DestinationDetail organizationId={organizationId} id={section[1]} />
+      <FailedAttemptsPage
+        organizationId={organizationId}
+        id={section[1]}
+        query={await searchParams}
+      />
+    );
+  }
+  if (
+    section.length === 3 &&
+    section[0] === "destinations" &&
+    section[2] === "recovery"
+  ) {
+    const { incident, after } = await searchParams;
+    if (Array.isArray(incident) || Array.isArray(after)) {
+      notFound();
+    }
+    return (
+      <RecoveryDeliveries
+        organizationId={organizationId}
+        destinationId={section[1]}
+        incidentId={incident}
+        after={after}
+        editable={editable}
+      />
+    );
+  }
+  if (section.length === 2 && section[0] === "destinations") {
+    const { day } = await searchParams;
+    let initialDay: string | undefined;
+    if (typeof day === "string") {
+      initialDay = day;
+    }
+    return (
+      <DestinationDetail
+        organizationId={organizationId}
+        id={section[1]}
+        initialDay={initialDay}
+        userId={access.session.user.id}
+      />
     );
   }
   if (section.length === 2 && section[0] === "deliveries") {

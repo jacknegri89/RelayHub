@@ -10,6 +10,7 @@ import { encrypt, newSecret } from "@relayhub/shared/encryption";
 import { type Permission, type Role, can } from "@relayhub/shared/access";
 import type { Command } from "./commands";
 import { HttpError } from "./http";
+import { retryDelivery, retryRecoveryBatch } from "./recovery-deliveries";
 
 type Scope = { organizationId: string; actorId: string };
 type Transaction = Prisma.TransactionClient;
@@ -42,6 +43,13 @@ export async function manage(
         throw new HttpError(403, "permission_denied");
       }
       const result = await applyCommand(tx, scope, command);
+      if (
+        "queued" in result &&
+        Array.isArray(result.queued) &&
+        result.queued.length === 0
+      ) {
+        return result;
+      }
       await tx.auditLog.create({
         data: { ...scope, action: command.action, resourceId: result.id },
       });
@@ -107,6 +115,14 @@ async function applyCommand(
       return saveRoute(tx, organizationId, command);
     case "delivery_retry":
       return retryDelivery(tx, organizationId, command.id);
+    case "delivery_retry_group":
+      return retryRecoveryBatch(
+        tx,
+        { organizationId, destinationId: command.destinationId },
+        scope.actorId,
+        command.incidentId,
+        command.deliveryIds,
+      );
     case "member_save":
     case "member_remove":
       return manageMember(tx, organizationId, command);
@@ -198,65 +214,6 @@ async function saveRoute(
     });
   }
   return { id: destinationId };
-}
-
-async function retryDelivery(
-  tx: Transaction,
-  organizationId: string,
-  id: string,
-) {
-  // Claim the event row before its delivery so retention and retry agree on the outcome.
-  const event = await tx.$queryRaw<{ id: string }[]>`
-    SELECT event."id" FROM "WebhookEvent" AS event
-    JOIN "Delivery" AS delivery ON delivery."eventId" = event."id"
-    WHERE delivery."id" = ${id} AND delivery."organizationId" = ${organizationId}
-    FOR UPDATE OF event
-  `;
-  if (!event.length) {
-    throw new HttpError(404, "resource_not_found");
-  }
-  const now = new Date();
-  const delivery = await tx.delivery
-    .update({
-      where: { id, organizationId, status: "failed" },
-      data: {
-        status: "pending",
-        generation: { increment: 1 },
-        runAttempts: 0,
-        nextAt: now,
-        queuedAt: null,
-        finishedAt: null,
-      },
-      select: { id: true, generation: true },
-    })
-    .catch((error: unknown) => {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
-      ) {
-        return null;
-      }
-      throw error;
-    });
-  if (!delivery) {
-    const existing = await tx.delivery.findUnique({
-      where: { id, organizationId },
-      select: { id: true },
-    });
-    if (existing) {
-      throw new HttpError(409, "delivery_is_not_failed");
-    }
-    throw new HttpError(404, "resource_not_found");
-  }
-  await tx.outboxEntry.create({
-    data: {
-      deliveryId: id,
-      generation: delivery.generation,
-      availableAt: now,
-      publishAfter: now,
-    },
-  });
-  return { id };
 }
 
 async function manageMember(

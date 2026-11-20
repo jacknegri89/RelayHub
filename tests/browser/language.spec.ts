@@ -4,9 +4,17 @@ test("language follows navigation and preserves a partially completed registrati
   page,
 }) => {
   await page.goto("/register");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "At least 12 characters",
+  );
   await page.getByLabel("Name", { exact: true }).fill("Relay Operator");
   await page.getByRole("button", { name: "Passa all’italiano" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "it");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "Almeno 12 caratteri",
+  );
   await expect(page.getByLabel("Nome", { exact: true })).toHaveValue(
     "Relay Operator",
   );

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: RelayHub Ingress API
+  title: RelayHub Webhook and Read API
   version: 0.1.0
   description: >
     Send signed UTF-8 JSON bytes. Use HMAC-SHA256 with the source secret as UTF-8 text
@@ -9,6 +9,129 @@ info:
     Include a unique ID in the signed JSON if otherwise identical events can occur in the same second.
     Responses contain X-Request-Id for request correlation.
 paths:
+  /api/v1/events:
+    get:
+      operationId: listEvents
+      summary: List retained event metadata in the key's organization
+      security: [{ ReadKey: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Limit" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { in: query, name: sourceId, schema: { type: string, format: uuid } }
+        - {
+            in: query,
+            name: eventType,
+            schema: { type: string, maxLength: 100 },
+          }
+      responses:
+        "200":
+          description: Newest first, ordered by receipt time and ID
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Event" },
+                    }
+                  nextCursor: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/InvalidQuery" }
+        "429": { $ref: "#/components/responses/Throttled" }
+  /api/v1/events/{id}:
+    get:
+      operationId: getEvent
+      summary: Read one retained event by its RelayHub ID
+      security: [{ ReadKey: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Event metadata
+          content:
+            application/json:
+              schema:
+                {
+                  type: object,
+                  required: [item],
+                  properties: { item: { $ref: "#/components/schemas/Event" } },
+                }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/InvalidQuery" }
+        "429": { $ref: "#/components/responses/Throttled" }
+  /api/v1/deliveries:
+    get:
+      operationId: listDeliveries
+      summary: List retained delivery metadata in the key's organization
+      security: [{ ReadKey: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Limit" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { in: query, name: eventId, schema: { type: string, format: uuid } }
+        - {
+            in: query,
+            name: destinationId,
+            schema: { type: string, format: uuid },
+          }
+        - {
+            in: query,
+            name: status,
+            schema: { $ref: "#/components/schemas/DeliveryStatus" },
+          }
+      responses:
+        "200":
+          description: Newest first, ordered by creation time and ID
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    {
+                      type: array,
+                      items: { $ref: "#/components/schemas/Delivery" },
+                    }
+                  nextCursor: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/InvalidQuery" }
+        "429": { $ref: "#/components/responses/Throttled" }
+  /api/v1/deliveries/{id}:
+    get:
+      operationId: getDelivery
+      summary: Read one retained delivery with its latest 20 attempts
+      security: [{ ReadKey: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Delivery metadata and recent attempts in descending attempt order
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [item]
+                properties:
+                  item:
+                    allOf:
+                      - { $ref: "#/components/schemas/Delivery" }
+                      - type: object
+                        required: [attempts]
+                        properties:
+                          attempts:
+                            {
+                              type: array,
+                              maxItems: 20,
+                              items: { $ref: "#/components/schemas/Attempt" },
+                            }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/InvalidQuery" }
+        "429": { $ref: "#/components/responses/Throttled" }
   /api/webhooks/{sourceId}:
     post:
       operationId: receiveWebhook
@@ -127,6 +250,100 @@ paths:
           {
             description: Intentional rejection of a signed workspace verification test,
           }
+components:
+  securitySchemes:
+    ReadKey:
+      type: http
+      scheme: bearer
+      description: Owners can keep up to 20 active read-only keys in Settings. Copy each key from the creation response. Keys remain valid until revoked. To rotate, create a replacement, update the integration, then revoke the previous key.
+  parameters:
+    Id:
+      {
+        in: path,
+        name: id,
+        required: true,
+        schema: { type: string, format: uuid },
+      }
+    Limit:
+      {
+        in: query,
+        name: limit,
+        schema: { type: integer, minimum: 1, maximum: 100, default: 25 },
+      }
+    Cursor:
+      {
+        in: query,
+        name: cursor,
+        description: Send the previous nextCursor with the same filters. A null value ends pagination.,
+        schema: { type: string, maxLength: 80 },
+      }
+  schemas:
+    Event:
+      type: object
+      required: [id, sourceId, externalId, eventType, receivedAt, payloadSize]
+      properties:
+        id: { type: string, format: uuid }
+        sourceId: { type: string, format: uuid }
+        externalId: { type: string }
+        eventType: { type: string }
+        receivedAt: { type: string, format: date-time }
+        payloadSize:
+          { type: integer, description: Size of the original body in bytes }
+    DeliveryStatus:
+      type: string
+      enum:
+        [
+          pending,
+          queued,
+          delivering,
+          retry_scheduled,
+          delivered,
+          failed,
+          cancelled,
+        ]
+    Delivery:
+      type: object
+      required:
+        [
+          id,
+          eventId,
+          destinationId,
+          status,
+          createdAt,
+          finishedAt,
+          attemptCount,
+          lastStatus,
+          durationMs,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        eventId: { type: string, format: uuid }
+        destinationId: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/DeliveryStatus" }
+        createdAt: { type: string, format: date-time }
+        finishedAt: { type: [string, "null"], format: date-time }
+        attemptCount: { type: integer }
+        lastStatus: { type: [integer, "null"] }
+        durationMs: { type: [integer, "null"] }
+    Attempt:
+      type: object
+      required: [number, startedAt, finishedAt, httpStatus, durationMs, outcome]
+      properties:
+        number: { type: integer }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: [string, "null"], format: date-time }
+        httpStatus: { type: [integer, "null"] }
+        durationMs: { type: [integer, "null"] }
+        outcome: { type: string }
+  responses:
+    Unauthorized: { description: A valid active Bearer key is required }
+    NotFound: { description: Record unavailable in this organization }
+    InvalidQuery: { description: Invalid cursor or query parameters }
+    Throttled:
+      description: Limit of 120 reads per key or 600 requests per client address in a minute
+      headers:
+        Retry-After:
+          { schema: { type: integer }, description: Seconds before retrying }
 x-outbound-signing:
   headers:
     [
@@ -134,8 +351,15 @@ x-outbound-signing:
       X-RelayHub-Event-Id,
       X-RelayHub-Timestamp,
       X-RelayHub-Signature,
+      X-RelayHub-Delivery-Signature,
     ]
   canonicalInput: timestamp + "." + raw HTTP body
   algorithm: HMAC-SHA256 with destination secret
   format: v1=<lowercase hex digest>
+  deliverySignature:
+    header: X-RelayHub-Delivery-Signature
+    canonicalInput: timestamp + "." + deliveryId + "." + externalEventId + "." + raw HTTP body
+    algorithm: HMAC-SHA256 with destination secret
+    format: v2=<lowercase hex digest>
+    description: Required by the idempotent receiver example to authenticate the delivery and event IDs together with the body. The built-in verification endpoint continues accepting v1.
   deduplication: Persist the stable Delivery ID in the same transaction as the receiver side effect.

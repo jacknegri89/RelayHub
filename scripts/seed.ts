@@ -58,6 +58,7 @@ try {
       "transient",
       "busy",
       "timeout",
+      "lost-response",
       "slow",
       "permanent",
     ]) {

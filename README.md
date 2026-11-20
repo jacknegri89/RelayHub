@@ -12,7 +12,9 @@ The homepage simulator follows a shop order to the warehouse, billing and email 
 
 Before signing in, explore how Stripe, GitHub and Shopify use webhooks. Each example follows a notification to the receiving app and links to the provider’s documentation. To forward a provider event through RelayHub, verify it in your app and sign a new request with the RelayHub source secret. Inside the workspace, each view has a short guide to the actions available to your role.
 
-In **Destinations**, open a receiver’s seven-day history to compare successful attempts, failed attempts and mean HTTP response time. Choose a day to read its values. **Alerts** records one outage when three consecutive attempts fail and one recovery when the destination next returns a 2xx response.
+In **Destinations**, select a day on the seven-day chart to see which attempts failed and how the receiver responded. Open an attempt’s delivery to follow later retries. **Alerts** records an outage after three consecutive failures and a recovery on the next 2xx response. Open a recovery to review the deliveries still failed from that outage. Owners and admins can select a group to retry.
+
+Workspace members can subscribe to outage and recovery emails for individual destinations using their own account address. See [Destination email setup](docs/destination-email.md) to connect the mail service.
 
 ## Try the hosted app
 
@@ -33,16 +35,16 @@ Email is the sign-in identifier. Enable two-factor authentication under **Worksp
 | Deliver | A BullMQ worker signs the outgoing request and records the result. Transient failures use bounded retries.          |
 | Inspect | Operators review attempts, delivery outcomes, and retries within their organization's workspace.                    |
 
-Delivery is **at least once**. The stable `X-RelayHub-Delivery-Id` header lets receivers deduplicate repeated attempts before applying a side effect.
+Delivery is **at least once**. Each destination receives a stable `X-RelayHub-Delivery-Id`. Its v2 signature authenticates that ID and the event. The [receiver example](docs/receiver-idempotency.md) commits the receipt and the order together, including when the first HTTP acknowledgement is lost.
+
+An organization owner can create and revoke read-only API keys in **Settings**. External tools can list events and deliveries, inspect their metadata and follow pagination using the [OpenAPI reference](docs/api.yaml). For an Italian walkthrough of the e-commerce example, see [Dal negozio al gestionale](docs/esempio-ordine.md).
 
 ## Run locally
 
-Use Node.js 24.16 or a compatible Node.js 26 release, pnpm 11.25.0, and Docker Compose v2. From the repository root:
+Use Node.js 24.16 or a compatible Node.js 26 release for the local configuration script, and Docker Compose v2 to run the stack. The image installs its own application dependencies. From the repository root, run:
 
 ```sh
-npm install --global pnpm@11.25.0
-pnpm install --frozen-lockfile
-pnpm setup
+node scripts/setup.mjs
 docker compose -p relayhub-demo up --build -d --wait
 ```
 
@@ -55,7 +57,7 @@ Use `docker compose -p relayhub-demo stop` to stop the services and keep local d
 | Guide                                       | What it covers                                                             |
 | ------------------------------------------- | -------------------------------------------------------------------------- |
 | [Architecture](docs/architecture.md)        | Request flow, the durable outbox, and recovery after failures              |
-| [API reference](docs/api.yaml)              | Ingress endpoints, headers, response codes, and outbound signing           |
+| [API reference](docs/api.yaml)              | Signed ingress, read APIs for events and deliveries, and outbound signing  |
 | [Database](docs/database.md)                | Tenant boundaries, schema relationships, indexes, and retention            |
 | [Operations](docs/operations.md)            | Environment variables, Vercel and Linux deployment, and key rotation       |
 | [Testing](docs/testing.md)                  | Local and CI checks, test events, and production acceptance                |

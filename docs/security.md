@@ -11,7 +11,9 @@ Internet senders, authenticated tenant users, destination receivers, Redis and n
 | Untrusted destination URLs             | Allowlisted HTTPS hostnames, address classification, pinned resolution, TLS validation, no redirects and an absolute request deadline                                     |
 | Unsafe browser output                  | React text escaping, security headers, no third-party scripts and no persisted credentials in browser storage                                                             |
 
-The HMAC v1 format signs timestamp and payload bytes. The event ID and outbound Delivery ID are headers. Senders should include a unique business ID inside the JSON so identical payloads sent in the same second can be distinguished. The signature receipt limits reuse with a different header ID once a valid request has been observed. Always protect transit with TLS and authorize trusted senders. A future signature version can bind additional headers.
+Ingress HMAC v1 signs the timestamp and original payload bytes. Senders should include a unique business ID inside the JSON so identical payloads sent in the same second can be distinguished. The signature receipt limits reuse with a different header ID once a valid request has been observed.
+
+The worker also sends an outbound v2 signature in `X-RelayHub-Delivery-Signature`. It binds the timestamp, stable delivery ID, external event ID and raw body. Receivers that deduplicate a business operation should verify this signature and the timestamp before using those identifiers. The original v1 header remains available for existing integrations. Use TLS and a distinct secret per destination.
 
 Proxy mode trusts X-Real-IP only when the app is behind a network-restricted proxy that overwrites it. Direct mode aggregates limits under a shared identity. Rate limiting uses fixed windows and PostgreSQL availability. The form timestamp is an abuse signal and can be reused after the minimum time. Set request, connection and traffic limits at the perimeter.
 

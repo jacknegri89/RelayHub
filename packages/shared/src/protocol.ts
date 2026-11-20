@@ -39,6 +39,43 @@ export function signatureMatches(
   );
 }
 
+// Outbound v2 also authenticates the identifiers a receiver uses for deduplication.
+export function deliverySignature(
+  secret: string,
+  timestamp: string,
+  deliveryId: string,
+  eventId: string,
+  body: Uint8Array,
+) {
+  const digest = createHmac("sha256", secret)
+    .update([timestamp, deliveryId, eventId, ""].join("."))
+    .update(body)
+    .digest("hex");
+  return "v2=" + digest;
+}
+
+export function deliverySignatureMatches(
+  secret: string,
+  timestamp: string,
+  deliveryId: string,
+  eventId: string,
+  body: Uint8Array,
+  provided: string,
+) {
+  // The fixed wire form is v2= followed by a lowercase SHA-256 digest.
+  if (!/^v2=[a-f0-9]{64}$/.test(provided)) {
+    return false;
+  }
+  const expected = deliverySignature(
+    secret,
+    timestamp,
+    deliveryId,
+    eventId,
+    body,
+  );
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
+}
+
 export function validTimestamp(
   timestamp: string,
   windowSeconds: number,

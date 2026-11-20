@@ -3,6 +3,7 @@ import Link from "next/link";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { ActionForm } from "./forms";
+import { ApiKeySettings } from "./api-key-settings";
 import { Status, ShortId, stateLabel } from "./display";
 import { PageHeading } from "./page-heading";
 
@@ -44,7 +45,12 @@ export async function Sources({
           >
             <label>
               {t("Source name", "Nome della sorgente")}{" "}
-              <input name="name" required maxLength={80} />
+              <input
+                name="name"
+                required
+                maxLength={80}
+                placeholder={t("e.g. Online checkout", "Es. Cassa online")}
+              />
             </label>
           </ActionForm>
         </section>
@@ -82,6 +88,7 @@ export async function Sources({
                     required
                     maxLength={80}
                     defaultValue={item.name}
+                    placeholder={t("e.g. Online checkout", "Es. Cassa online")}
                   />
                 </label>
                 <label className="check">
@@ -286,8 +293,8 @@ export async function Destinations({
                         name="eventType"
                         maxLength={100}
                         placeholder={t(
-                          "All event types",
-                          "Tutti i tipi di evento",
+                          "e.g. order.created · blank for all",
+                          "Es. order.created · vuoto per tutti",
                         )}
                       />
                     </label>
@@ -316,6 +323,7 @@ export async function Destinations({
                         name="eventType"
                         required
                         maxLength={100}
+                        placeholder="order.created"
                         defaultValue={
                           item.subscriptions[0].eventType || "relayhub.test"
                         }
@@ -342,7 +350,13 @@ async function DestinationFields({
     <>
       <label>
         {t("Destination name", "Nome della destinazione")}{" "}
-        <input name="name" required maxLength={80} defaultValue={item?.name} />
+        <input
+          name="name"
+          required
+          maxLength={80}
+          defaultValue={item?.name}
+          placeholder={t("e.g. Warehouse", "Es. Magazzino")}
+        />
       </label>
       <label>
         {t("Destination URL", "URL della destinazione")}{" "}
@@ -352,6 +366,7 @@ async function DestinationFields({
           required
           maxLength={2048}
           defaultValue={item?.url}
+          placeholder="https://api.example.com/webhook"
         />
       </label>
       <label>
@@ -360,6 +375,10 @@ async function DestinationFields({
           name="secret"
           type="password"
           minLength={32}
+          placeholder={t(
+            "Shared key, 32–128 characters",
+            "Chiave condivisa, 32–128 caratteri",
+          )}
           maxLength={128}
           autoComplete="new-password"
         />
@@ -427,11 +446,18 @@ export async function Settings({
           >
             <label>
               {t("Organization name", "Nome dell’organizzazione")}{" "}
-              <input name="name" required maxLength={80} defaultValue={name} />
+              <input
+                name="name"
+                required
+                maxLength={80}
+                defaultValue={name}
+                placeholder={t("e.g. Online store", "Es. Negozio online")}
+              />
             </label>
           </ActionForm>
         )}
       </section>
+      {owner && <ApiKeySettings organizationId={organizationId} />}
       <section className="panel">
         <h2>{t("Members", "Membri")}</h2>
         <ul className="routes">
@@ -464,6 +490,10 @@ export async function Settings({
               {t("Account ID", "ID account")}{" "}
               <input
                 name="accountId"
+                placeholder={t(
+                  "Paste the member’s account ID",
+                  "Incolla l’ID account del membro",
+                )}
                 required
                 minLength={36}
                 maxLength={36}

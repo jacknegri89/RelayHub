@@ -8,7 +8,7 @@ import {
 import { DestinationBlocked } from "@relayhub/shared/destinations";
 import { decrypt } from "@relayhub/shared/encryption";
 import { log } from "@relayhub/shared/log";
-import { signature } from "@relayhub/shared/protocol";
+import { deliverySignature, signature } from "@relayhub/shared/protocol";
 import { classifyStatus, retryDelay } from "@relayhub/shared/retry";
 import { send } from "./send";
 
@@ -123,6 +123,13 @@ async function attempt({
         "x-relayhub-event-id": event.externalId,
         "x-relayhub-timestamp": timestamp,
         "x-relayhub-signature": signature(secret, timestamp, body),
+        "x-relayhub-delivery-signature": deliverySignature(
+          secret,
+          timestamp,
+          delivery.id,
+          event.externalId,
+          body,
+        ),
       },
       timeout,
     );

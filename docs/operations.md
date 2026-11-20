@@ -58,3 +58,7 @@ Database retention runs in bounded batches for event trees. It retains active de
 ## Destination monitoring upgrade
 
 Apply the destination health and incident ordering migrations before starting the updated web and worker processes. The first migration rebuilds health from the completed attempts still in PostgreSQL. Days whose source records expired before the upgrade cannot be reconstructed. The backfill holds a write lock on the destination table until commit. For a large retained history, measure the migration on a restored copy and schedule the upgrade accordingly. Older workers can complete attempts through the same database trigger after the migration commits.
+
+For email subscriptions and grouped retries, apply the destination email and incident replay group migrations before updating the web and worker. The replay migration locks the attempts table while it links retained attempts to existing incidents. When older data cannot establish which failures belong to an incident, only provable matches are offered for retry. Configure the [email sender](destination-email.md) on both services to enable subscriptions.
+
+Apply the organization API key migration before serving the read API and owner settings. Keep tokens in the calling service’s secret store. To rotate a key, create its replacement in Settings, switch the caller and then revoke the old key. In the demo, update the worker before starting a receiver that requires its v2 signature. The receiver’s Compose volume preserves its receipts across container restarts.

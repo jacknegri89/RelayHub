@@ -17,7 +17,7 @@ flowchart LR
 
 The web process authorizes configuration changes and verifies the literal bytes of an incoming webhook. An event, its distinct destinations and a scheduling row per delivery commit together. A successful ingress response confirms durable acceptance. It can precede dispatch and delivery.
 
-The **Overview** page uses a rolling 24-hour window for events received, delivery outcomes, and mean successful attempt duration. The success rate is delivered divided by delivered plus failed. The in-progress count includes active deliveries of any age.
+The **Overview** compares the success rate of deliveries completed in the latest 24 hours with the preceding 24 hours. It divides delivered by delivered plus failed. Its P50, P95 and P99 describe the durations of individual attempts with a measured HTTP response. Transport timeouts count in the weekly attempt history and have no measured HTTP response. The in-progress count includes active deliveries of any age.
 
 ## Destination health
 
@@ -25,7 +25,9 @@ PostgreSQL observes the first completion of each outbound attempt in the worker�
 
 Every recorded HTTP response counts toward the daily success or failure total. An outbound transport failure with a measured duration also counts as a failure. Local policy blocks, disabled routes, expired leases and other attempts that never entered the transport leave the streak unchanged. Only timed HTTP responses contribute to mean response time. The workspace separates missing measurements from measured zeroes.
 
-While a workspace tab is visible, it checks its organization’s alert summary every 30 seconds and checks again when the tab becomes visible. A change refreshes the workspace and its notification link. The summary endpoint checks session and membership and returns only the open count and latest transition. Notification delivery takes place inside the workspace.
+While a workspace tab is visible, it checks its organization’s alert summary every 30 seconds and checks again when the tab becomes visible. A change refreshes the workspace and its notification link. The summary endpoint checks session and membership and returns only the open count and latest transition. Members can also subscribe their own address to a destination’s transitions. See [Destination email setup](destination-email.md).
+
+The failed-attempts view uses the UTC date selected on the chart. Several rows can belong to one delivery. The recovery view groups by delivery and checks its current failed state before scheduling a retry. A delivery already acknowledged by the destination stays out of the batch.
 
 ## Dispatch and recovery
 

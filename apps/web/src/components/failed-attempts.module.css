@@ -1,0 +1,43 @@
+.attempts {
+  list-style: none;
+  padding: 0;
+  margin-block: 1.4rem;
+}
+.attempts li {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 0.6rem 1.2rem;
+  align-items: start;
+  padding-block: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.attempts li > div {
+  display: grid;
+  gap: 0.22rem;
+  overflow-wrap: anywhere;
+}
+.attempts time,
+.attempts span,
+.attempts code {
+  font-size: 0.8rem;
+  color: var(--dust);
+}
+.result strong {
+  color: var(--failed);
+}
+@media (max-width: 640px) {
+  .attempts li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .result {
+    grid-row: 1;
+    grid-column: 2;
+    text-align: end;
+  }
+  .event {
+    grid-area: 1 / 1;
+  }
+  .delivery {
+    grid-column: 1 / -1;
+  }
+}

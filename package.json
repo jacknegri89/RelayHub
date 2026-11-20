@@ -28,7 +28,7 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run tests/protocol.test.ts apps/web/tests",
-    "test:integration": "node --env-file-if-exists=.env node_modules/vitest/vitest.mjs run tests/relay.integration.test.ts tests/destination-health.integration.test.ts",
+    "test:integration": "node --env-file-if-exists=.env node_modules/vitest/vitest.mjs run .integration.test.ts",
     "test:e2e": "node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test"
   },
   "devDependencies": {

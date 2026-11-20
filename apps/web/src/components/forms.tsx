@@ -13,6 +13,22 @@ type Result = {
   twoFactorRedirect?: boolean;
 };
 const messages: Record<string, [string, string]> = {
+  api_key_limit: [
+    "Revoke an unused API key before creating another.",
+    "Revoca una chiave API inutilizzata prima di crearne un’altra.",
+  ],
+  invalid_mailbox_code: [
+    "The email code is incorrect or expired. Check it and try again.",
+    "Il codice email è errato o scaduto. Controllalo e riprova.",
+  ],
+  mailbox_rate_limited: [
+    "The confirmation email limit has been reached. Try again in an hour.",
+    "Hai raggiunto il limite di email di conferma. Riprova tra un’ora.",
+  ],
+  mail_unavailable: [
+    "The email sender is unavailable.",
+    "Il mittente email non è disponibile.",
+  ],
   permission_denied: [
     "Your role does not allow this action.",
     "Il tuo ruolo non consente questa azione.",
@@ -109,12 +125,16 @@ export function ActionForm({
   nextPath,
   onId,
   className,
+  disabled = false,
+  secretLabel,
 }: {
   endpoint: string;
   label: string;
   children?: ReactNode;
   fields?: FormValues;
   confirm?: string;
+  disabled?: boolean;
+  secretLabel?: string;
   nextPath?: string;
   onId?: string;
   className?: string;
@@ -128,7 +148,7 @@ export function ActionForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || (confirm && !window.confirm(confirm))) {
+    if (pending || disabled || (confirm && !window.confirm(confirm))) {
       return;
     }
     const form = event.currentTarget;
@@ -155,6 +175,9 @@ export function ActionForm({
       if (!response.ok) {
         setFailed(true);
         setMessage(result.error ?? result.code ?? "request_failed");
+        if (result.error === "invalid_mailbox_code") {
+          router.refresh();
+        }
         return;
       }
       if (result.secret) {
@@ -190,7 +213,7 @@ export function ActionForm({
   return (
     <form className={className ?? "action-form"} onSubmit={submit}>
       {children}
-      <button type="submit" disabled={pending}>
+      <button type="submit" disabled={pending || disabled}>
         {button}
       </button>
       {message && (
@@ -205,14 +228,14 @@ export function ActionForm({
       )}
       {secret && (
         <Motion kind="notice">
-          <SecretReveal secret={secret} />
+          <SecretReveal secret={secret} label={secretLabel} />
         </Motion>
       )}
     </form>
   );
 }
 
-function SecretReveal({ secret }: { secret: string }) {
+function SecretReveal({ secret, label }: { secret: string; label?: string }) {
   const { t } = useLocale();
   const [status, setStatus] = useState<"copied" | "select">();
   async function copy() {
@@ -226,7 +249,7 @@ function SecretReveal({ secret }: { secret: string }) {
   return (
     <div className="secret">
       <label>
-        {t("Signing secret", "Chiave di firma")}{" "}
+        {label ?? t("Signing secret", "Chiave di firma")}{" "}
         <input
           readOnly
           value={secret}

@@ -27,6 +27,8 @@ const schema = z.object({
     .transform((value) => value || undefined),
   TRUST_PROXY: z.enum(["0", "1"]).default("0"),
   VERIFICATION_RECEIVER_SECRET: z.string().min(32).optional(),
+  RESEND_API_KEY: z.string().optional(),
+  RELAYHUB_EMAIL_FROM: z.union([z.email(), z.literal("")]).optional(),
   PAYLOAD_LIMIT_BYTES: integer(262144, 1024, 1048576),
   WEBHOOK_WINDOW_SECONDS: integer(300, 30, 900),
   DELIVERY_TIMEOUT_MS: integer(5000, 500, 30000),
@@ -43,6 +45,11 @@ export function parseConfig(environment: Record<string, string | undefined>) {
     throw new Error("Invalid configuration: " + fields.join(", "));
   }
   const config = parsed.data;
+  if (Boolean(config.RESEND_API_KEY) !== Boolean(config.RELAYHUB_EMAIL_FROM)) {
+    throw new Error(
+      "Configure RESEND_API_KEY and RELAYHUB_EMAIL_FROM together",
+    );
+  }
   const origin = new URL(config.RELAYHUB_BASE_URL);
   const isDemo = config.RELAYHUB_MODE === "demo";
   if (

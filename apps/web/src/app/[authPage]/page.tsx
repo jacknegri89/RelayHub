@@ -58,10 +58,12 @@ export default async function AuthPage({ params }: AuthParams) {
   let title = t("Sign in", "Accedi");
   let endpoint = "/api/auth/sign-in/email";
   let passwordAutocomplete = "current-password";
+  let passwordHint = t("Your account password", "La password del tuo account");
   if (registering) {
     title = t("Create an account", "Crea un account");
     endpoint = "/api/auth/sign-up/email";
     passwordAutocomplete = "new-password";
+    passwordHint = t("At least 12 characters", "Almeno 12 caratteri");
   }
   let step: "login" | "register" | "verify" = "login";
   if (registering) {
@@ -110,6 +112,7 @@ export default async function AuthPage({ params }: AuthParams) {
                   <input
                     name="name"
                     autoComplete="name"
+                    placeholder={t("e.g. Alex Rossi", "Es. Andrea Rossi")}
                     maxLength={80}
                     required
                   />
@@ -121,6 +124,7 @@ export default async function AuthPage({ params }: AuthParams) {
                   name="email"
                   type="email"
                   autoComplete="email"
+                  placeholder={t("you@example.com", "nome@example.com")}
                   maxLength={254}
                   required
                 />
@@ -133,6 +137,7 @@ export default async function AuthPage({ params }: AuthParams) {
                   minLength={12}
                   maxLength={128}
                   autoComplete={passwordAutocomplete}
+                  placeholder={passwordHint}
                   required
                 />
               </label>
@@ -225,6 +230,7 @@ async function VerifySignIn() {
             inputMode="numeric"
             autoComplete="one-time-code"
             pattern="[0-9]{6}"
+            placeholder="123456"
             maxLength={6}
             required
           />
@@ -244,6 +250,10 @@ async function VerifySignIn() {
             <input
               name="code"
               autoComplete="off"
+              placeholder={t(
+                "One of your saved codes",
+                "Uno dei codici salvati",
+              )}
               spellCheck={false}
               maxLength={64}
               required

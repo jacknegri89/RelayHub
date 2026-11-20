@@ -80,8 +80,8 @@ export default async function PrivacyPage() {
             )}
           </strong>{" "}
           {t(
-            "Membership, routing configuration, encrypted webhook payloads and signing keys, and delivery metadata support routing, retries, and delivery history. Authorized workspace members can see operational metadata.",
-            "Per instradare gli eventi, riprovare le consegne e mantenerne la cronologia, usiamo i dati dei membri, le regole di instradamento, il contenuto dei webhook e le chiavi di firma cifrati, oltre ai metadati di consegna. I membri autorizzati possono consultare i metadati operativi.",
+            "Membership, routing configuration, encrypted webhook payloads and signing keys, and delivery metadata support routing, retries, and delivery history. Authorized members and tools using a read-only API key issued by the organization can access event and delivery metadata.",
+            "Per instradare gli eventi, riprovare le consegne e mantenerne la cronologia, usiamo i dati dei membri, le regole di instradamento, il contenuto dei webhook e le chiavi di firma cifrati, oltre ai metadati di consegna. I membri autorizzati e gli strumenti a cui l’organizzazione assegna una chiave API di sola lettura possono consultare i metadati di eventi e consegne.",
           )}
         </li>
         <li>
@@ -105,6 +105,12 @@ export default async function PrivacyPage() {
         {t(
           "Vercel hosts the web and worker services. Neon provides PostgreSQL and Upstash provides the Redis queue. These services support RelayHub’s operation. Delivery sends webhook contents to the destinations configured by workspace operators. Select destinations you are authorized to use.",
           "Vercel ospita l’applicazione e il servizio di consegna. Neon fornisce il database PostgreSQL e Upstash la coda Redis. RelayHub invia il contenuto dei webhook alle destinazioni configurate dai gestori dell’area di lavoro. Scegli destinazioni che hai il permesso di utilizzare.",
+        )}
+      </p>
+      <p>
+        {t(
+          "If you subscribe to email alerts for a destination, Resend processes your account email address and the message to deliver it. Incident messages include the destination name, its status and a link to the workspace. You can turn them off in that destination’s settings.",
+          "Quando attivi gli avvisi email per una destinazione, Resend tratta il tuo indirizzo email e il messaggio per recapitarlo. Gli avvisi riportano il nome della destinazione, il suo stato e un link all’area di lavoro. Puoi disattivarli dalla pagina della destinazione.",
         )}
       </p>
       <h2 id="retention">{t("Retention", "Tempi di conservazione")}</h2>

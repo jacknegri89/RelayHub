@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { translator, type Locale } from "../locale";
 import styles from "./destination-history.module.css";
 
@@ -70,13 +71,17 @@ function Plot({
 export function DestinationHistory({
   days,
   locale,
+  attemptsPath,
+  initialDay,
 }: {
   days: DestinationDay[];
   locale: Locale;
+  attemptsPath?: string;
+  initialDay?: string;
 }) {
   const t = translator(locale);
   const groupName = useId();
-  const [chosenDate, setChosenDate] = useState("");
+  const [chosenDate, setChosenDate] = useState(initialDay ?? "");
   const activeDays = days.filter(
     (day) => day.successes > 0 || day.failures > 0 || day.averageMs !== null,
   );
@@ -101,7 +106,11 @@ export function DestinationHistory({
     range + t(" · UTC · Today is partial", " · UTC · Oggi parziale");
   if (activeDays.length === 0 || !selectedDay) {
     return (
-      <section className={styles.history} aria-label={title}>
+      <section
+        id="destination-history"
+        className={styles.history}
+        aria-label={title}
+      >
         <h2>{title}</h2>
         <p className={styles.period}>{period}</p>
         <p className={styles.empty}>
@@ -153,7 +162,11 @@ export function DestinationHistory({
   }
 
   return (
-    <section className={styles.history} aria-label={title}>
+    <section
+      id="destination-history"
+      className={styles.history}
+      aria-label={title}
+    >
       <h2>{title}</h2>
       <p className={styles.period}>{period}</p>
       <section
@@ -291,6 +304,15 @@ export function DestinationHistory({
           </div>
         </dl>
       </div>
+      {attemptsPath && selectedDay.failures > 0 && (
+        <Link
+          className={styles.inspect}
+          href={attemptsPath + "?day=" + selectedDay.date}
+        >
+          {t("View failed attempts", "Vedi tentativi falliti")}{" "}
+          <span aria-hidden="true">→</span>
+        </Link>
+      )}
     </section>
   );
 }

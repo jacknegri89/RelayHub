@@ -11,16 +11,16 @@ type Guide = {
 
 const guides: Partial<Record<string, Guide>> = {
   overview: {
-    title: ["Read the last 24 hours", "Leggi le ultime 24 ore"],
+    title: ["Check delivery health", "Controlla le consegne"],
     instructions: [
-      "Compare received events with completed deliveries. Open a recent event to see which destinations it reached.",
-      "Confronta gli eventi ricevuti con le consegne concluse. Apri un evento recente per vedere quali destinazioni ha raggiunto.",
+      "Compare the success rate with the previous day. Filter the weekly chart to see failed attempts, then open a recent event to follow its deliveries.",
+      "Confronta il tasso di successo con le 24 ore precedenti. Filtra il grafico settimanale per vedere i tentativi falliti e apri un evento recente per seguirne le consegne.",
     ],
     action: {
       permission: "configure",
       instructions: [
-        "New organization? Start in Sources, then link a destination. When events arrive, open one here to check where it went.",
-        "Se l’organizzazione è nuova, inizia da Sorgenti e collega una destinazione. Quando arrivano i primi eventi, aprine uno qui per vedere dove è stato inoltrato.",
+        "Start with a source and a destination. Once events arrive, compare the last two days and filter the weekly chart to find failed attempts.",
+        "Inizia con una sorgente e una destinazione. Quando arrivano gli eventi, confronta le ultime due finestre di 24 ore e filtra il grafico settimanale per trovare i tentativi falliti.",
       ],
     },
   },
@@ -62,9 +62,30 @@ const guides: Partial<Record<string, Guide>> = {
   destination: {
     title: ["Read destination history", "Leggi lo storico della destinazione"],
     instructions: [
-      "Select a day to compare successful and failed attempts. A retry counts as another attempt. The latency chart measures only requests that received an HTTP response.",
-      "Seleziona un giorno per confrontare tentativi riusciti e falliti. Ogni nuovo invio conta come tentativo. Il grafico dei tempi considera le richieste che hanno ricevuto una risposta HTTP.",
+      "Select a day to compare attempts and inspect failures. You can also subscribe to outage and recovery emails for this destination.",
+      "Seleziona un giorno per confrontare i tentativi e aprire il dettaglio degli errori. Puoi anche attivare gli avvisi email di guasto e ripristino per questa destinazione.",
     ],
+  },
+  attempts: {
+    title: ["Read the failed attempts", "Esamina i tentativi falliti"],
+    instructions: [
+      "Check the response for each attempt on the selected UTC day. Open a delivery to see whether a later attempt succeeded.",
+      "Controlla l’esito di ogni tentativo nel giorno UTC selezionato. Apri una consegna per vedere se uno dei tentativi successivi è riuscito.",
+    ],
+  },
+  recovery: {
+    title: ["Review this recovery", "Verifica le consegne dopo il ripristino"],
+    instructions: [
+      "Open a delivery to inspect its attempts. This list covers deliveries from the selected outage that are still failed.",
+      "Apri una consegna per esaminare i tentativi. Qui trovi quelle coinvolte nel guasto selezionato che risultano ancora fallite.",
+    ],
+    action: {
+      permission: "configure",
+      instructions: [
+        "Check which deliveries are still failed, then select those to retry. Open a delivery to follow its next attempt.",
+        "Controlla le consegne ancora fallite e seleziona quelle da reinviare. Apri una consegna per seguire il nuovo tentativo.",
+      ],
+    },
   },
   alerts: {
     title: ["Investigate an outage", "Verifica un guasto"],
@@ -110,8 +131,8 @@ const guides: Partial<Record<string, Guide>> = {
     action: {
       permission: "manage_members",
       instructions: [
-        "Ask the person for the account ID on their Organizations page. Add them as a viewer to inspect activity or as an admin to manage routes and retries.",
-        "Chiedi alla persona l’ID account che trova in Organizzazioni. Assegna il ruolo di lettore per consultare l’attività o di amministratore per gestire regole e riconsegne.",
+        "Use an account ID to add a team member. For an external reporting tool, create a read-only API key and revoke it here when access ends.",
+        "Usa l’ID account per aggiungere un membro. Per collegare uno strumento di reportistica, crea una chiave API di sola lettura e revocala qui quando termina l’accesso.",
       ],
     },
   },
@@ -119,11 +140,19 @@ const guides: Partial<Record<string, Guide>> = {
 
 // The organization layout persists when moving between a list and its records.
 function getGuide(path: string): Guide | undefined {
-  const [section = "overview", recordId] = path.split("/").filter(Boolean);
+  const [section = "overview", recordId, view] = path
+    .split("/")
+    .filter(Boolean);
   if (recordId && section === "events") {
     return guides.event;
   }
   if (recordId && section === "destinations") {
+    if (view === "attempts") {
+      return guides.attempts;
+    }
+    if (view === "recovery") {
+      return guides.recovery;
+    }
     return guides.destination;
   }
   if (recordId && section === "deliveries") {

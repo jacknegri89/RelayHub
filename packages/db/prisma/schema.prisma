@@ -109,6 +109,18 @@ model Organization {
   sources WebhookSource[]
   destinations WebhookDestination[]
   audit AuditLog[]
+  apiKeys OrganizationApiKey[]
+}
+
+model OrganizationApiKey {
+  id String @id @default(uuid())
+  organizationId String
+  name String
+  digest String @unique
+  createdAt DateTime @default(now())
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
 }
 
 model OrganizationMember {
@@ -118,6 +130,7 @@ model OrganizationMember {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  destinationEmailSubscriptions DestinationEmailSubscription[]
 
   @@id([organizationId, userId])
   @@index([userId])
@@ -151,12 +164,51 @@ model WebhookDestination {
   subscriptions Subscription[]
   deliveries Delivery[]
   consecutiveFailures Int @default(0)
+  failureStreakId String?
   lastHealthObservationAt DateTime?
   dailyStats DestinationDailyStat[]
   incidents DestinationIncident[]
+  emailSubscriptions DestinationEmailSubscription[]
 
   @@unique([id, organizationId])
   @@index([organizationId, createdAt])
+}
+
+model DestinationEmailSubscription {
+  id String @id @default(uuid())
+  destinationId String
+  organizationId String
+  userId String
+  email String
+  locale String
+  verifiedAt DateTime?
+  challengeExpiresAt DateTime?
+  failedChecks Int @default(0)
+  member OrganizationMember @relation(fields: [organizationId, userId], references: [organizationId, userId], onDelete: Cascade)
+  destination WebhookDestination @relation(fields: [destinationId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  messages DestinationEmailMessage[]
+
+  @@unique([destinationId, userId])
+  @@index([organizationId, userId])
+  @@index([challengeExpiresAt])
+}
+
+model DestinationEmailMessage {
+  id BigInt @id @default(autoincrement())
+  subscriptionId String
+  eventKey String
+  kind String
+  destinationName String
+  occurredAt DateTime
+  nextAttemptAt DateTime @default(now())
+  firstAttemptAt DateTime?
+  attempts Int @default(0)
+  finishedAt DateTime?
+  failed Boolean @default(false)
+  subscription DestinationEmailSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, eventKey])
+  @@index([finishedAt, nextAttemptAt])
 }
 
 model DestinationDailyStat {
@@ -184,6 +236,7 @@ model DestinationIncident {
   resolvedAt DateTime?
   resolvedOrder BigInt?
   failureCount Int
+  failureStreakId String?
   destination WebhookDestination @relation(fields: [destinationId, organizationId], references: [id, organizationId], onDelete: Cascade)
 
   // The migration also enforces one unresolved incident per destination.
@@ -267,8 +320,10 @@ model DeliveryAttempt {
   durationMs Int?
   outcome String @default("in_progress")
   retryAt DateTime?
+  failureStreakId String?
 
   @@unique([deliveryId, number])
+  @@index([failureStreakId, deliveryId])
 }
 
 model OutboxEntry {

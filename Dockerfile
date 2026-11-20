@@ -8,5 +8,6 @@ RUN pnpm install --frozen-lockfile && pnpm generate && pnpm build
 FROM build
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN chown -R node:node /app/apps/web/.next
+RUN install -d -m 0700 -o node -g node /var/lib/relayhub-receiver
 USER node
 CMD ["node", "scripts/run.mjs", "start", "0.0.0.0"]

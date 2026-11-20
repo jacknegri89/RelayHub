@@ -67,7 +67,12 @@ export default async function Workspace() {
           >
             <label>
               {t("Organization name", "Nome dell’organizzazione")}{" "}
-              <input name="name" maxLength={80} required />
+              <input
+                name="name"
+                maxLength={80}
+                required
+                placeholder={t("e.g. Online store", "Es. Negozio online")}
+              />
             </label>
           </ActionForm>
         </section>
