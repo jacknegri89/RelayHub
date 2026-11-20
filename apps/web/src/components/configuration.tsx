@@ -143,11 +143,11 @@ export async function Destinations({
           >
             <DestinationFields />
           </ActionForm>
-          {settings().HOSTED_DEMO_SECRET && !settings().isDemo && (
+          {settings().VERIFICATION_RECEIVER_SECRET && !settings().isDemo && (
             <p className="muted">
-              Hosted demo receiver{" "}
+              Built-in verification receiver{" "}
               <code className="break">
-                {settings().RELAYHUB_BASE_URL + "/api/demo/receiver/success"}
+                {settings().RELAYHUB_BASE_URL + "/api/receiver/verify"}
               </code>
             </p>
           )}
@@ -261,7 +261,7 @@ export async function Destinations({
                         required
                         maxLength={100}
                         defaultValue={
-                          item.subscriptions[0].eventType || "demo.test"
+                          item.subscriptions[0].eventType || "relayhub.test"
                         }
                       />
                     </label>

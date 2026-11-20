@@ -62,12 +62,6 @@ export default async function AuthPage({
       <section className="auth-content">
         <div className="auth-panel">
           <PageHeading title={title} />
-          {registering && settings().HOSTED_DEMO_SECRET && (
-            <p className="muted">
-              Use fictional data and an address ending in{" "}
-              <code>@demo.relayhub.example</code>.
-            </p>
-          )}
           <ActionForm endpoint={endpoint} label={title} nextPath="/workspace">
             <input
               type="hidden"
@@ -87,6 +81,18 @@ export default async function AuthPage({
                   name="name"
                   autoComplete="name"
                   maxLength={80}
+                  required
+                />
+              </label>
+            )}
+            {registering && !settings().isDemo && (
+              <label>
+                Invitation code{" "}
+                <input
+                  name="invite"
+                  type="password"
+                  autoComplete="off"
+                  maxLength={43}
                   required
                 />
               </label>

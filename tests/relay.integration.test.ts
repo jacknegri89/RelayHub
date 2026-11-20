@@ -5,6 +5,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { database } from "@relayhub/db";
 import { storeEvent } from "@relayhub/db/events";
 import { withinLimit } from "@relayhub/db/rate-limit";
+import {
+  claimRegistrationInvite,
+  issueRegistrationInvite,
+} from "@relayhub/db/registration-invites";
 import { settings } from "@relayhub/shared/config";
 import { signature } from "@relayhub/shared/protocol";
 import { claim } from "../apps/worker/src/delivery";
@@ -140,6 +144,14 @@ afterAll(async () => {
 });
 
 describe("RelayHub with PostgreSQL, Redis and HTTP", () => {
+  it("allows a valid registration invitation to be claimed only once", async () => {
+    const { code } = await issueRegistrationInvite();
+    const reservations = await Promise.all(
+      Array.from({ length: 8 }, () => claimRegistrationInvite(code)),
+    );
+    expect(reservations.filter(Boolean)).toHaveLength(1);
+    expect(await claimRegistrationInvite("invalid")).toBe(false);
+  });
   it("enforces an atomic shared request budget across concurrent callers", async () => {
     const key = "integration:" + randomUUID();
     const results = await Promise.all(

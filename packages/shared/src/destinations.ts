@@ -26,12 +26,14 @@ export function destinationUrl(raw: string) {
     ) &&
     !url.search
   ) {
-    return { url, isDemo: true, isHostedDemo: false };
+    return { url, isDemo: true, isVerificationReceiver: false };
   }
-  const isHostedDemo = Boolean(
-    config.HOSTED_DEMO_SECRET &&
+  const ownOrigin = url.origin === config.RELAYHUB_BASE_URL;
+  const isVerificationReceiver = Boolean(
+    config.VERIFICATION_RECEIVER_SECRET &&
     !config.isDemo &&
-    url.origin === config.RELAYHUB_BASE_URL,
+    ownOrigin &&
+    url.pathname === "/api/receiver/verify",
   );
   if (
     url.protocol !== "https:" ||
@@ -41,15 +43,13 @@ export function destinationUrl(raw: string) {
     !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
       domain,
     ) ||
-    (!isHostedDemo && !config.hosts.has(domain)) ||
-    (isHostedDemo &&
-      !/^\/api\/demo\/receiver\/(success|retry)$/.test(url.pathname))
+    (!isVerificationReceiver && (ownOrigin || !config.hosts.has(domain)))
   ) {
     throw new DestinationBlocked(
       "Destination must use an approved HTTPS hostname",
     );
   }
-  return { url, isDemo: false, isHostedDemo };
+  return { url, isDemo: false, isVerificationReceiver };
 }
 
 export function publicAddress(address: string) {

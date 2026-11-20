@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "../server/auth";
 import { Brand } from "../components/brand";
-import { RelayPreview } from "../components/relay-preview";
+import { RelaySignal } from "../components/relay-signal";
 import styles from "./landing.module.css";
 
 export default async function Home() {
@@ -34,15 +34,15 @@ export default async function Home() {
             </p>
             <div className={styles.actions}>
               <Link href="/register">
-                Create demo account <span aria-hidden="true">↗</span>
+                Create an account <span aria-hidden="true">↗</span>
               </Link>
-              <a href="#simulator">
-                Try the simulator <span aria-hidden="true">↓</span>
+              <a href="#delivery-flow">
+                How it works <span aria-hidden="true">↓</span>
               </a>
             </div>
           </div>
-          <div className={styles.preview} id="simulator">
-            <RelayPreview />
+          <div className={styles.preview}>
+            <RelaySignal />
           </div>
         </section>
         <section className={styles.flow} aria-labelledby="delivery-flow">
@@ -67,8 +67,8 @@ export default async function Home() {
       </main>
       <footer className={styles.footer}>
         <p>RelayHub · Webhook delivery</p>
-        <Link href="/register">
-          Try a real delivery <span aria-hidden="true">↗</span>
+        <Link href="/workspace">
+          Open workspace <span aria-hidden="true">↗</span>
         </Link>
       </footer>
     </div>

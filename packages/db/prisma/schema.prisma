@@ -250,6 +250,14 @@ model RequestCounter {
   @@index([expiresAt])
 }
 
+model RegistrationInvite {
+  digest String @id
+  expiresAt DateTime
+  usedAt DateTime?
+
+  @@index([expiresAt])
+}
+
 model IngressReceipt {
   sourceId String
   signature String

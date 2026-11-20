@@ -129,8 +129,8 @@ async function saveDestination(
 ) {
   const checked = destinationUrl(command.url);
   let suppliedSecret = command.secret;
-  if (checked.isHostedDemo) {
-    suppliedSecret = settings().HOSTED_DEMO_SECRET;
+  if (checked.isVerificationReceiver) {
+    suppliedSecret = settings().VERIFICATION_RECEIVER_SECRET;
   }
   if (checked.isDemo) {
     suppliedSecret = settings().DEMO_RECEIVER_SECRET;

@@ -2,7 +2,7 @@
 
 RelayHub receives signed JSON webhooks and delivers them asynchronously to configured HTTP receivers. It gives an operator one place to inspect retries, failures and delivery history.
 
-[Public portfolio demo](https://relayhub-chi.vercel.app) · Try the simulator, or sign up with a fictional address ending in `@demo.relayhub.example` and use the hosted HTTPS receiver shown in **Destinations**.
+[Hosted RelayHub](https://relayhub-chi.vercel.app) · Sign in or activate an invitation. Create a source and use the built-in HTTPS verification receiver shown in **Destinations** to confirm delivery.
 
 - Multi-organization access with owner, admin and viewer roles.
 - Signed ingress with size limits, timestamp validation and concurrent deduplication.

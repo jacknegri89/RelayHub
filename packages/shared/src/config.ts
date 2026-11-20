@@ -22,7 +22,7 @@ const schema = z.object({
     .optional()
     .transform((value) => value || undefined),
   TRUST_PROXY: z.enum(["0", "1"]).default("0"),
-  HOSTED_DEMO_SECRET: z.string().min(32).optional(),
+  VERIFICATION_RECEIVER_SECRET: z.string().min(32).optional(),
   PAYLOAD_LIMIT_BYTES: integer(262144, 1024, 1048576),
   WEBHOOK_WINDOW_SECONDS: integer(300, 30, 900),
   DELIVERY_TIMEOUT_MS: integer(5000, 500, 30000),

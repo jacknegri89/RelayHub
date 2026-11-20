@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { settings } from "@relayhub/shared/config";
+import { claimRegistrationInvite } from "@relayhub/db/registration-invites";
 import { z } from "zod";
 import { isJson, parseJson, readBody } from "@relayhub/shared/protocol";
 import { auth } from "../../../../server/auth";
@@ -39,7 +40,11 @@ export function POST(request: Request) {
     let authBody: unknown = json;
     if (path !== "/api/auth/sign-out") {
       const proofData = z
-        .object({ formProof: z.string(), website: z.literal("").optional() })
+        .object({
+          formProof: z.string(),
+          website: z.literal("").optional(),
+          invite: z.string().optional(),
+        })
         .passthrough()
         .safeParse(json);
       if (
@@ -51,6 +56,7 @@ export function POST(request: Request) {
       const {
         formProof: _formProof,
         website: _website,
+        invite,
         ...authFields
       } = proofData.data;
       void _formProof;
@@ -62,17 +68,24 @@ export function POST(request: Request) {
       if (!credentials.success) {
         throw new HttpError(422, "invalid_credentials");
       }
-      if (
-        path === "/api/auth/sign-up/email" &&
-        settings().HOSTED_DEMO_SECRET &&
-        !credentials.data.email.toLowerCase().endsWith("@demo.relayhub.example")
-      ) {
-        throw new HttpError(422, "use_demo_email");
-      }
       const address = createHash("sha256")
         .update(credentials.data.email.trim().toLowerCase())
         .digest("hex");
       await throttle("auth-account:" + address, 8);
+      if (path === "/api/auth/sign-up/email" && !settings().isDemo) {
+        const signup = z
+          .object({
+            name: z.string().trim().min(1).max(80),
+            password: z.string().min(12).max(128),
+          })
+          .safeParse(authBody);
+        if (!signup.success) {
+          throw new HttpError(422, "invalid_credentials");
+        }
+        if (!invite || !(await claimRegistrationInvite(invite.trim()))) {
+          throw new HttpError(403, "invalid_invitation");
+        }
+      }
     }
     const headers = new Headers(request.headers);
     headers.delete("content-length");

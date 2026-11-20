@@ -5,17 +5,13 @@ import {
   signatureMatches,
   validTimestamp,
 } from "@relayhub/shared/protocol";
-import { handle, HttpError } from "../../../../../server/http";
+import { handle, HttpError } from "../../../../server/http";
 
-export function POST(
-  request: Request,
-  { params }: { params: Promise<{ scenario: string }> },
-) {
+export function POST(request: Request) {
   return handle(async () => {
     const config = settings();
-    const { scenario } = await params;
-    const secret = config.HOSTED_DEMO_SECRET;
-    if (!secret || config.isDemo || !["success", "retry"].includes(scenario)) {
+    const secret = config.VERIFICATION_RECEIVER_SECRET;
+    if (config.isDemo || !secret) {
       throw new HttpError(404, "endpoint_not_found");
     }
     const timestamp = request.headers.get("x-relayhub-timestamp") ?? "";
@@ -31,13 +27,6 @@ export function POST(
     if (!signatureMatches(secret, timestamp, body, signature)) {
       throw new HttpError(401, "invalid_signature");
     }
-    if (scenario === "retry") {
-      return new Response(null, {
-        status: 503,
-        headers: { "retry-after": "10", "cache-control": "no-store" },
-      });
-    }
-    // The hosted receiver has no business side effects or payload storage.
     return new Response(null, {
       status: 204,
       headers: { "cache-control": "no-store" },

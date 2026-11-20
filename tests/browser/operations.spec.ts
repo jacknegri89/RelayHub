@@ -6,27 +6,32 @@ import { sampleEvent, submitSigned } from "../../scripts/demo-fixtures";
 
 const { DEMO_RECEIVER_URL } = settings();
 
-test("public homepage simulates a delivery and a retry at desktop and mobile widths", async ({
+test("the public animation starts automatically and respects pause and reduced motion", async ({
   page,
 }) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: /webhooks.*under control/i }),
   ).toBeVisible();
-  const simulator = page.getByRole("region", { name: "Webhook simulator" });
-  await simulator.getByRole("button", { name: "Simulate retry" }).click();
-  await expect(simulator.getByRole("status")).toHaveText(
-    "503 · Retry scheduled",
-  );
-  await expect(simulator.getByRole("status")).toHaveText("204 · Delivered");
-  await expect(
-    simulator.getByText("Attempt 1 returned 503. Attempt 2 returned 204."),
-  ).toBeVisible();
+  const art = page.getByRole("figure", {
+    name: "Animated diagram of webhook routing",
+  });
+  const canvas = art.locator("canvas");
+  const frame = () => canvas.evaluate((surface) => surface.toDataURL());
+  const first = await frame();
+  await expect.poll(frame).not.toBe(first);
+  await art.getByRole("button", { name: "Pause animation" }).click();
+  const frozen = await frame();
+  await page.waitForTimeout(120);
+  expect(await frame()).toBe(frozen);
+  await art.getByRole("button", { name: "Resume animation" }).click();
+  await expect.poll(frame).not.toBe(frozen);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.reload();
-  await simulator.getByRole("button", { name: "Simulate delivery" }).click();
-  await expect(simulator.getByRole("status")).toHaveText("204 · Delivered");
+  await expect(
+    art.getByRole("button", { name: "Pause animation" }),
+  ).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     375,
   );

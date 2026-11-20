@@ -10,7 +10,7 @@ const messages: Record<string, string> = {
   permission_denied: "Your role does not allow this action.",
   rate_limited: "Too many requests. Wait a minute and try again.",
   invalid_credentials: "Check your email address and password.",
-  use_demo_email: "Use a fictional address ending in @demo.relayhub.example.",
+  invalid_invitation: "Enter an unused, unexpired invitation code.",
   INVALID_EMAIL_OR_PASSWORD: "Check your email address and password.",
   USER_ALREADY_EXISTS: "This email address cannot be registered.",
   destination_not_allowed:

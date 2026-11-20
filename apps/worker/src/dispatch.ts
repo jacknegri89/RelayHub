@@ -136,5 +136,8 @@ export async function retainRecent(now = Date.now()) {
   await db.ingressReceipt.deleteMany({
     where: { expiresAt: { lt: new Date(now) } },
   });
+  await db.registrationInvite.deleteMany({
+    where: { expiresAt: { lt: new Date(now) } },
+  });
   await db.auditLog.deleteMany({ where: { createdAt: { lt: cutoff } } });
 }

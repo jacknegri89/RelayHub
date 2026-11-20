@@ -1,0 +1,68 @@
+.figure {
+  position: relative;
+  margin: 0;
+  border: 1px solid #31515f;
+  background: #081720;
+  border-radius: 0.7rem;
+  box-shadow:
+    0 28px 75px #000b,
+    0 0 75px #2fb6d72b;
+}
+.stage {
+  position: relative;
+  min-height: clamp(17rem, 32vw, 29rem);
+  background-image:
+    radial-gradient(ellipse at 50% 49%, #15526495, transparent 60%),
+    radial-gradient(#52849961 1px, transparent 1px);
+  background-size:
+    auto,
+    17px 17px;
+}
+.stage canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+}
+.ingress,
+.egress {
+  position: absolute;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid #385b68;
+  border-radius: 0.25rem;
+  color: #bcebf2;
+  background: #081720;
+  font:
+    0.77rem "Cascadia Mono",
+    "Consolas",
+    monospace;
+}
+.ingress {
+  top: 1rem;
+  left: 1rem;
+}
+.egress {
+  right: 1rem;
+  bottom: 1rem;
+}
+.caption {
+  border-top: 1px solid #294c5c;
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.81rem;
+  color: #c1d6df;
+}
+.caption button {
+  color: #d7f9ff;
+  background: #132933;
+  border-color: #537685;
+  font-size: 0.77rem;
+}
+.caption button:hover {
+  background: #203f4c;
+}
