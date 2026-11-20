@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "../../server/auth";
 import { Brand } from "../../components/brand";
 import { ActionForm } from "../../components/forms";
+import { PolicyLinks } from "../../components/policy-links";
 import Link from "next/link";
 
 export default async function WorkspaceLayout({
@@ -23,6 +24,7 @@ export default async function WorkspaceLayout({
         </Link>
         <div className="account">
           <span>{session.user.email}</span>
+          <Link href="/workspace/security">Security</Link>
           <ActionForm
             endpoint="/api/auth/sign-out"
             label="Sign out"
@@ -31,6 +33,9 @@ export default async function WorkspaceLayout({
         </div>
       </header>
       {children}
+      <footer className="workspace-footer">
+        <PolicyLinks />
+      </footer>
     </>
   );
 }

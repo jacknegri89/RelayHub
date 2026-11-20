@@ -6,7 +6,7 @@ import { sampleEvent, submitSigned } from "../../scripts/demo-fixtures";
 
 const { DEMO_RECEIVER_URL } = settings();
 
-test("the public animation starts automatically and respects pause and reduced motion", async ({
+test("the public animation reacts to the pointer and respects reduced motion", async ({
   page,
 }) => {
   await page.goto("/");
@@ -26,18 +26,15 @@ test("the public animation starts automatically and respects pause and reduced m
     });
   const first = await frame();
   await expect.poll(frame).not.toBe(first);
-  await art.getByRole("button", { name: "Pause animation" }).click();
-  const frozen = await frame();
-  await page.waitForTimeout(120);
-  expect(await frame()).toBe(frozen);
-  await art.getByRole("button", { name: "Resume animation" }).click();
-  await expect.poll(frame).not.toBe(frozen);
+  await page.waitForTimeout(4700);
+  const idle = await frame();
+  await canvas.hover({ position: { x: 12, y: 80 } });
+  await expect.poll(async () => (await frame()) !== idle).toBe(true);
+  await expect(art.getByRole("button")).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.reload();
-  await expect(
-    art.getByRole("button", { name: "Pause animation" }),
-  ).toHaveCount(0);
+  await expect(art.getByRole("button")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     375,
   );

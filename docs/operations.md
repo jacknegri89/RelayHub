@@ -37,7 +37,9 @@ The primary origin is [relayhub-webhooks.vercel.app](https://relayhub-webhooks.v
 
 Provision a dedicated PostgreSQL database and a Redis endpoint with TCP/TLS access and `noeviction`. Apply the Prisma migrations to that database before deploying. Set the Production environment variables listed above, with `RELAYHUB_MODE=production`, `RELAYHUB_BASE_URL` set to the stable HTTPS production origin, and fresh session and encryption keys. Provide approved HTTPS receiver domains in `DESTINATION_HOSTS`. The loopback-only demo receiver runs in the local Compose stack.
 
-Production registration requires a single-use invitation that expires after 48 hours. From a trusted terminal with the production `DATABASE_URL` already injected, run `pnpm exec tsx scripts/create-invite.ts` to issue one. Deliver the code privately. The database stores only its hash. Invitations control access and do not verify ownership of the supplied email address.
+Public registration accepts email and password. Form proof, the honeypot, and server-side rate limits protect enrollment. Apply the account-security migration before deploying the release. Users can enroll a time-based authenticator from **Workspace → Security** and should store their recovery codes separately.
+
+After the first account enrolls in MFA, keep the second-factor checks in any rollback release. Verify the authenticator challenge and recovery-code behavior before promoting a previous build.
 
 Set `VERIFICATION_RECEIVER_SECRET` to a separate random key of at least 32 characters to enable the built-in receiver. It verifies the signature over the raw payload and returns HTTP 204. The destination form shows the exact URL. To deliver to another system, add its HTTPS hostname to `DESTINATION_HOSTS` and configure a destination and route for it.
 

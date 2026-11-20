@@ -34,6 +34,19 @@ model User {
   sessions Session[]
   accounts Account[]
   memberships OrganizationMember[]
+  twoFactorEnabled Boolean @default(false)
+  twoFactor TwoFactor?
+}
+
+model TwoFactor {
+  id String @id @default(uuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secret String
+  backupCodes String
+  verified Boolean @default(true)
+  failedVerificationCount Int @default(0)
+  lockedUntil DateTime?
 }
 
 model Session {

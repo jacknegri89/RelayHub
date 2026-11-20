@@ -1,13 +1,13 @@
 .landing {
-  --paper: #f4eadc;
-  --copper: #fca980;
-  --subtle: #c0b1ad;
-  --rule: #463638;
+  --paper: #f0f3e4;
+  --signal: #cef977;
+  --subtle: #b7c2ad;
+  --rule: #384434;
   --mono: "Cascadia Mono", "Consolas", monospace;
   --gutter: clamp(1rem, 4.1vw, 5rem);
   min-height: 100svh;
   color: var(--paper);
-  background: #110e10;
+  background: #111613;
 }
 .header,
 .hero,
@@ -34,7 +34,7 @@
 }
 .header a:hover,
 .footer a:hover {
-  color: var(--copper);
+  color: var(--signal);
 }
 .header nav {
   display: flex;
@@ -65,8 +65,8 @@
   inset: 0 calc(-1 * var(--gutter));
   z-index: -1;
   background:
-    radial-gradient(ellipse at 73% 50%, #411e282e, transparent 62%),
-    repeating-linear-gradient(0deg, transparent 0 5px, #ffc5a203 5px 6px);
+    radial-gradient(ellipse at 73% 50%, #445c293c, transparent 62%),
+    repeating-linear-gradient(0deg, transparent 0 5px, #d7fba004 5px 6px);
   content: "";
 }
 .copy {
@@ -94,7 +94,7 @@
   width: max-content;
 }
 .copy h1 > span:last-child {
-  color: var(--copper);
+  color: var(--signal);
 }
 .copy h1 [data-relay-reveal] {
   display: block;
@@ -111,10 +111,6 @@
   line-height: 1.55;
   color: var(--subtle);
 }
-.copy > .inviteNote {
-  margin: 0.7rem 0 0;
-  font: 0.74rem/1.45 var(--mono);
-}
 .actions a {
   display: inline-flex;
   justify-content: space-between;
@@ -122,8 +118,8 @@
   gap: 1.5rem;
   min-height: 3.15rem;
   padding: 0.65rem 1rem;
-  color: #25120c;
-  background: var(--copper);
+  color: #1b2712;
+  background: var(--signal);
   font-size: 0.9rem;
   font-weight: 750;
   text-decoration: none;
@@ -144,12 +140,24 @@
   gap: 2rem;
   border-top: 1px solid var(--rule);
   padding-block: clamp(3.75rem, 9vw, 8rem);
+  position: relative;
+  isolation: isolate;
 }
 .flow h2 {
   margin: 0;
   font-size: clamp(2.85rem, 4.85vw, 6.4rem);
   line-height: 0.9;
   scroll-margin-top: 2rem;
+}
+.flow::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(-1 * var(--gutter));
+  background: #d3e3bb;
+}
+.flow h2 {
+  color: #1b2712;
 }
 .flow ol {
   list-style: none;
@@ -161,6 +169,7 @@
 .flow li {
   display: grid;
   grid-template-columns: 3.2rem minmax(0, 1fr);
+  color: #1b2712;
   padding: 1.25rem 0;
   border-bottom: 1px solid var(--rule);
   counter-increment: flow;
@@ -168,7 +177,7 @@
 .flow li::before {
   content: counter(flow, decimal-leading-zero);
   padding-top: 0.4rem;
-  color: var(--copper);
+  color: #3d522b;
   font: 0.72rem var(--mono);
 }
 .flow li strong {
@@ -176,7 +185,7 @@
 }
 .flow li p {
   margin: 0.28rem 0 0;
-  color: var(--subtle);
+  color: #3a4932;
   font-size: 0.91rem;
 }
 .footer {
@@ -216,5 +225,15 @@
   .actions a,
   .actions a span {
     transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer {
+    flex-wrap: wrap;
+  }
+  .footer nav {
+    order: 1;
+    flex-basis: 100%;
   }
 }

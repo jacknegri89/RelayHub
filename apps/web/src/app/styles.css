@@ -1,19 +1,19 @@
 :root {
   color-scheme: dark;
-  --paper: #181316;
-  --surface: #231b21;
-  --raised: #30252d;
-  --ink: #f4eadc;
-  --muted: #c0b1ad;
-  --line: #514048;
-  --accent: #fca980;
-  --accent-hover: #ffd2b9;
-  --dark: #110e10;
-  --sidebar: #1e171c;
-  --control-line: #987b80;
+  --paper: #151c16;
+  --surface: #1e281f;
+  --raised: #2d382d;
+  --ink: #f0f3e4;
+  --muted: #b7c2ad;
+  --line: #3e4b38;
+  --accent: #cef977;
+  --accent-hover: #e2ffa9;
+  --dark: #111613;
+  --sidebar: #1a221b;
+  --control-line: #74856e;
   --failed: #ffa297;
   --success: #a6e5c6;
-  --trace-grid: #50363c;
+  --trace-grid: #354733;
   --heading-font: "Bricolage Grotesque Variable", system-ui, sans-serif;
   font:
     16px/1.55 "Onest Variable",
@@ -468,7 +468,7 @@ time {
   padding: clamp(1.25rem, 3.6vw, 2.75rem) clamp(0.9rem, 2.8vw, 1.5rem);
   background-color: var(--dark);
   background-image:
-    radial-gradient(ellipse at 37% 65%, #84453838 0%, transparent 78%),
+    radial-gradient(ellipse at 37% 65%, #566d3038 0%, transparent 78%),
     radial-gradient(var(--trace-grid) 1px, transparent 1px);
   background-size:
     auto,
@@ -613,7 +613,7 @@ tbody tr:focus-within {
 .status[data-status="partial"],
 .status[data-status="retry_scheduled"],
 .status[data-status="in_progress"] {
-  background: #462b27;
+  background: #354228;
   color: var(--accent);
 }
 .action-form {
@@ -803,4 +803,94 @@ details form {
   .route-trace {
     margin-right: 0.3rem;
   }
+}
+
+.policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.82rem;
+}
+.auth-panel .policy-links {
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+}
+.policy-page,
+.security-page {
+  width: min(100% - 2rem, 72rem);
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+.policy-page > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.policy-page header > a {
+  color: inherit;
+  text-decoration: none;
+}
+.policy-page article {
+  max-width: 67ch;
+  margin: 3rem auto 0;
+}
+.policy-page article h2 {
+  margin-top: 2.1rem;
+}
+.policy-page li {
+  margin-block: 0.6rem;
+}
+.cookie-list > div {
+  border-top: 1px solid var(--line);
+  padding: 0.8rem 0;
+}
+.cookie-list dt {
+  font-weight: 700;
+}
+.cookie-list dd {
+  margin: 0.25rem 0 0;
+}
+.security-page {
+  padding-top: 2.2rem;
+}
+.security-panel {
+  max-width: 38rem;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+.security-panel canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+}
+.recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.6rem;
+  padding: 0;
+  list-style: none;
+}
+.recovery-codes li {
+  background: var(--dark);
+  border: 1px solid var(--line);
+  padding: 0.55rem;
+}
+.factor-details {
+  margin-block: 1.1rem;
+}
+.factor-details summary {
+  cursor: pointer;
+}
+.factor-details form {
+  margin-top: 0.8rem;
+}
+.workspace-footer {
+  margin-inline: auto;
+  width: min(100% - 2rem, 72rem);
+  padding-block: 1.1rem;
+  border-top: 1px solid var(--line);
 }

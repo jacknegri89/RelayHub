@@ -19,7 +19,9 @@ A lost encryption key makes existing envelopes unreadable. Application-level enc
 
 ## Account enrollment
 
-Production enrollment requires a single-use invitation. Registration stores the supplied email as a sign-in identifier. The hosted app does not verify ownership or send password-reset messages. Deliver invitations through a trusted channel.
+Public registration stores the supplied email as a sign-in identifier. The hosted app does not verify ownership or send password-reset messages. Form proof, the honeypot, and server-side limits protect enrollment.
+
+Users can enable MFA with a time-based authenticator app. The first code confirms enrollment. A short-lived challenge cookie then gates subsequent sign-ins. The server encrypts authenticator secrets and recovery codes. Recovery codes can each be used once.
 
 Organization owners grant membership using the account UUID shown on the member's authenticated **Organizations** page. Exchange it over an established channel.
 
@@ -29,7 +31,7 @@ Organization owners grant membership using the account UUID shown on the member'
 | Admin             | Yes           | Yes                                   |                |
 | Viewer            | Yes           |                                       |                |
 
-Manage members in **Workspace → Settings**. Roles apply to one organization at a time. Platform operators issue registration invitations from a trusted terminal, as described in [Operations](operations.md#vercel-deployment).
+Manage members in **Workspace → Settings**. Roles apply to one organization at a time.
 
 ## Browser policy
 

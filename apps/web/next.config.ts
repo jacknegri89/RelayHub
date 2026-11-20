@@ -13,7 +13,15 @@ const config: NextConfig = {
     }
     const previousHost = new URL(previous).host.replaceAll(".", "\\.");
     // Keep API clients and saved webhook destinations on the old host working.
-    return ["/", "/login", "/register", "/workspace/:path*"].map((source) => ({
+    return [
+      "/",
+      "/login",
+      "/register",
+      "/verify",
+      "/privacy",
+      "/cookies",
+      "/workspace/:path*",
+    ].map((source) => ({
       source,
       has: [{ type: "host", value: previousHost }],
       destination: current + source,

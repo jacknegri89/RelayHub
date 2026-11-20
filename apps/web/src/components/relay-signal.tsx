@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -9,28 +9,30 @@ import styles from "./relay-signal.module.css";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
+const INTRO_SECONDS = 4.5;
+
 export function RelaySignal() {
   const figure = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const animation = useRef<gsap.core.Tween | null>(null);
-  const paused = useRef(false);
-  const [isPaused, setPaused] = useState(false);
-  const [canAnimate, setCanAnimate] = useState(false);
 
   useGSAP(
     () => {
       const surface = canvas.current;
       const context = surface?.getContext("2d");
-      if (!surface || !context || !figure.current) {
+      if (!surface || !context) {
         return;
       }
-
-      const phase = { angle: 0.7 };
+      const phase = { angle: 0.7, offset: 0 };
       let width = surface.clientWidth;
       let height = surface.clientHeight;
-      let visible = true;
       const paint = () =>
-        paintSignal(surface, context, width, height, phase.angle);
+        paintSignal(
+          surface,
+          context,
+          width,
+          height,
+          phase.angle + phase.offset,
+        );
       const size = new ResizeObserver(([entry]) => {
         if (!entry) {
           return;
@@ -42,46 +44,50 @@ export function RelaySignal() {
       size.observe(surface);
       paint();
 
-      const visibility = new IntersectionObserver(([entry]) => {
-        visible = Boolean(entry?.isIntersecting);
-        animation.current?.paused(paused.current || !visible);
-      });
-      visibility.observe(surface);
-
       const media = gsap.matchMedia();
       media.add("(prefers-reduced-motion: no-preference)", () => {
-        setCanAnimate(true);
-        animation.current = gsap.to(phase, {
-          angle: phase.angle + TURN,
-          duration: 12,
-          ease: "none",
-          repeat: -1,
+        gsap.to(phase, {
+          angle: phase.angle + TURN * 0.66,
+          duration: INTRO_SECONDS,
+          ease: "power2.out",
           onUpdate: paint,
-          paused: paused.current || !visible,
+        });
+        const moveSignal = gsap.quickTo(phase, "offset", {
+          duration: 0.5,
+          ease: "power3.out",
+          onUpdate: paint,
         });
 
+        const followPointer = (event: PointerEvent) => {
+          if (event.pointerType !== "mouse" && event.pointerType !== "pen") {
+            return;
+          }
+          const bounds = surface.getBoundingClientRect();
+          moveSignal(
+            ((event.clientX - bounds.left) / bounds.width - 0.5) * TURN * 0.7,
+          );
+        };
+
+        function centerSignal() {
+          moveSignal(0);
+        }
+
+        surface.addEventListener("pointermove", followPointer);
+        surface.addEventListener("pointerleave", centerSignal);
         animatePage(surface);
         return () => {
-          animation.current = null;
-          setCanAnimate(false);
+          surface.removeEventListener("pointermove", followPointer);
+          surface.removeEventListener("pointerleave", centerSignal);
         };
       });
 
       return () => {
         size.disconnect();
-        visibility.disconnect();
         media.revert();
       };
     },
     { scope: figure },
   );
-
-  function toggleMotion() {
-    const next = !paused.current;
-    paused.current = next;
-    setPaused(next);
-    animation.current?.paused(next);
-  }
 
   return (
     <figure
@@ -91,14 +97,9 @@ export function RelaySignal() {
     >
       <canvas ref={canvas} aria-hidden="true" />
       <figcaption className={styles.caption}>
-        <span>
-          Ingress <span aria-hidden="true">⟶</span> HTTPS delivery
-        </span>
-        {canAnimate && (
-          <button type="button" onClick={toggleMotion}>
-            {(isPaused && "Resume animation") || "Pause animation"}
-          </button>
-        )}
+        <span>Signed ingress</span>
+        <span aria-hidden="true" />
+        <span>HTTPS delivery</span>
       </figcaption>
     </figure>
   );
@@ -121,8 +122,10 @@ function animatePage(surface: HTMLCanvasElement) {
         surface,
         {
           opacity: 0,
-          duration: 1.2,
-          clearProps: "opacity",
+          scale: 0.94,
+          duration: 1.18,
+          ease: "power2.out",
+          clearProps: "opacity,transform",
         },
         0.15,
       );

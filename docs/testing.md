@@ -71,10 +71,11 @@ For a manual retry, change the failed destination to the demo `/hooks/success` e
 ## Verify a hosted deployment
 
 1. Check `GET /api/health/ready` on the stable production origin.
-2. Register with a disposable account and a single-use invitation. Create an organization and route a source to the built-in verification receiver shown in **Destinations**.
+2. Register with a disposable email. Create an organization and route a source to the built-in verification receiver shown in **Destinations**.
 3. Send a signed event to the source URL. Expect HTTP 202 from ingress and HTTP 204 in the delivery timeline. Re-submit the identical signed request within the timestamp window. Expect HTTP 200 and the original event ID.
 4. Sign in again and confirm that the workspace and delivery history are still present.
-5. Check the homepage on a phone-size viewport. Verify that the animation starts, pauses, and respects the system's reduced-motion preference.
+5. Enable two-factor authentication using a disposable authenticator key. Sign in again and verify TOTP, a one-time recovery code, and normal sign-in after disabling MFA.
+6. Check the homepage on a phone-size viewport. Verify that the opening animation settles, reacts to the pointer on desktop, and respects the system's reduced-motion preference.
 
 ### Send a signed event
 

@@ -25,7 +25,7 @@ erDiagram
 
 Auth models follow the Prisma adapter contract. Membership has a composite primary key and a user index. Composite foreign keys across organization-scoped relations prevent cross-tenant routes, events and deliveries at the database layer. Server queries also scope access using the membership of the current session.
 
-Production invitations store a SHA-256 digest, expiry, and optional consumption timestamp. The registration handler claims each invitation atomically.
+Each enrolled account can have one MFA record. It stores encrypted authenticator material and recovery codes, the enrollment verification flag, and challenge lockout state.
 
 ## Uniqueness and indexes
 

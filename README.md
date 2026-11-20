@@ -10,11 +10,11 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 ## Try the hosted app
 
-1. Open the [registration page](https://relayhub-webhooks.vercel.app/register). Enter your name, email address, and a single-use invitation code from the operator.
+1. Open the [registration page](https://relayhub-webhooks.vercel.app/register). Enter your name and email address, then choose a password of at least 12 characters.
 2. Create an organization, then add a source and a destination. The **Destinations** page shows the built-in HTTPS verification receiver.
 3. Link the source to the destination and send a signed event. Open **Events** or **Deliveries** to follow the recorded attempt through to HTTP 204.
 
-Invitation codes expire after 48 hours. Email is the sign-in identifier. The hosted app currently does not send verification or password-reset email. See [Operations](docs/operations.md#vercel-deployment) for deployment limits and configuration.
+Email is the sign-in identifier. Enable two-factor authentication under **Workspace → Security** with an authenticator app, then save the one-use recovery codes. Verification and password-reset email require a configured mail transport. See [Privacy Policy](https://relayhub-webhooks.vercel.app/privacy), [Cookie Policy](https://relayhub-webhooks.vercel.app/cookies), and [Operations](docs/operations.md#vercel-deployment).
 
 ## How a delivery works
 
@@ -38,7 +38,7 @@ pnpm setup
 docker compose -p relayhub-demo up --build -d --wait
 ```
 
-Open [the local registration page](http://localhost:3000/register), choose a password of at least 12 characters, and create an organization. Local demo mode runs on loopback and accepts registration without an invitation. The Compose migration service applies the schema before the web app and worker start.
+Open [the local registration page](http://localhost:3000/register), choose a password of at least 12 characters, and create an organization. Local demo mode runs on loopback. The Compose migration service applies the schema before the web app and worker start.
 
 Use `docker compose -p relayhub-demo stop` to stop the services and keep local data. The [Testing guide](docs/testing.md) covers seeded scenarios, retries, queue recovery, and running the application processes directly on your host.
 

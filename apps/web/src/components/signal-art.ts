@@ -6,14 +6,14 @@ const ROUTES = [
     entry: 0.28,
     exit: 0.2,
     bend: -0.16,
-    ink: ["#4c2840", "#ad6183", "#ef9e94"],
+    ink: ["#1a422f", "#4ca475", "#a1efcc"],
   },
-  { entry: 0.46, exit: 0.47, bend: 0, ink: ["#5e2418", "#db6840", "#ffd5a2"] },
+  { entry: 0.46, exit: 0.47, bend: 0, ink: ["#304315", "#9dbb41", "#e7ff97"] },
   {
     entry: 0.72,
     exit: 0.78,
     bend: 0.14,
-    ink: ["#421e27", "#ba4c3a", "#f8a66e"],
+    ink: ["#1c3a41", "#4d8c91", "#a6ddd5"],
   },
 ] as const;
 
@@ -49,7 +49,7 @@ export function paintSignal(
 
 function drawGraticule(context: CanvasRenderingContext2D) {
   context.lineWidth = 1;
-  context.strokeStyle = "#e1b8a229";
+  context.strokeStyle = "#c5e8ab35";
   context.beginPath();
   for (let column = 55; column < 1000; column += 74) {
     for (let row = 62; row < 630; row += 74) {
@@ -162,7 +162,7 @@ function drawPackets(
 ) {
   context.save();
   context.lineCap = "round";
-  context.strokeStyle = "#fff3d3";
+  context.strokeStyle = "#f7ffdc";
   context.lineWidth = 2.2;
   for (let index = 0; index < 3; index += 1) {
     const progress =

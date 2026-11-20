@@ -1,6 +1,4 @@
 import { createHash } from "node:crypto";
-import { settings } from "@relayhub/shared/config";
-import { claimRegistrationInvite } from "@relayhub/db/registration-invites";
 import { z } from "zod";
 import { isJson, parseJson, readBody } from "@relayhub/shared/protocol";
 import { auth } from "../../../../server/auth";
@@ -13,17 +11,42 @@ import {
 import { throttle } from "../../../../server/rate";
 import { validFormProof } from "../../../../server/form-proof";
 
-const allowed = new Set([
+const credentialPaths = new Set([
   "/api/auth/sign-in/email",
   "/api/auth/sign-up/email",
-  "/api/auth/sign-out",
+]);
+const signOutPath = "/api/auth/sign-out";
+const enablePath = "/api/auth/two-factor/enable";
+const disablePath = "/api/auth/two-factor/disable";
+const passwordInput = z
+  .object({ password: z.string().min(12).max(128) })
+  .strict();
+const factorInputs = new Map<string, z.ZodType>([
+  [enablePath, passwordInput],
+  [disablePath, passwordInput],
+  [
+    "/api/auth/two-factor/verify-totp",
+    z
+      .object({
+        code: z
+          .string()
+          .trim()
+          .regex(/^\d{6}$/),
+      })
+      .strict(),
+  ],
+  [
+    "/api/auth/two-factor/verify-backup-code",
+    z.object({ code: z.string().trim().min(8).max(64) }).strict(),
+  ],
 ]);
 
 export function POST(request: Request) {
   return handle(async () => {
     assertOrigin(request);
     const path = new URL(request.url).pathname;
-    if (!allowed.has(path)) {
+    const factorInput = factorInputs.get(path);
+    if (!credentialPaths.has(path) && !factorInput && path !== signOutPath) {
       throw new HttpError(404, "endpoint_not_found");
     }
     if (!isJson(request.headers.get("content-type"))) {
@@ -38,12 +61,19 @@ export function POST(request: Request) {
       throw new HttpError(422, "invalid_json");
     }
     let authBody: unknown = json;
-    if (path !== "/api/auth/sign-out") {
+    if (factorInput) {
+      const factor = factorInput.safeParse(json);
+      if (!factor.success) {
+        throw new HttpError(422, "invalid_factor");
+      }
+      await limitFactorAttempt(path, request);
+      authBody = factor.data;
+    }
+    if (credentialPaths.has(path)) {
       const proofData = z
         .object({
           formProof: z.string(),
           website: z.literal("").optional(),
-          invite: z.string().optional(),
         })
         .passthrough()
         .safeParse(json);
@@ -56,7 +86,6 @@ export function POST(request: Request) {
       const {
         formProof: _formProof,
         website: _website,
-        invite,
         ...authFields
       } = proofData.data;
       void _formProof;
@@ -72,7 +101,7 @@ export function POST(request: Request) {
         .update(credentials.data.email.trim().toLowerCase())
         .digest("hex");
       await throttle("auth-account:" + address, 8);
-      if (path === "/api/auth/sign-up/email" && !settings().isDemo) {
+      if (path === "/api/auth/sign-up/email") {
         const signup = z
           .object({
             name: z.string().trim().min(1).max(80),
@@ -81,9 +110,6 @@ export function POST(request: Request) {
           .safeParse(authBody);
         if (!signup.success) {
           throw new HttpError(422, "invalid_credentials");
-        }
-        if (!invite || !(await claimRegistrationInvite(invite.trim()))) {
-          throw new HttpError(403, "invalid_invitation");
         }
       }
     }
@@ -98,4 +124,19 @@ export function POST(request: Request) {
     result.headers.set("cache-control", "no-store");
     return result;
   });
+}
+
+async function limitFactorAttempt(path: string, request: Request) {
+  await throttle("auth-factor:" + clientAddress(request), 20);
+  if (path !== enablePath && path !== disablePath) {
+    return;
+  }
+  const session = await auth().api.getSession({ headers: request.headers });
+  if (!session) {
+    throw new HttpError(401, "authentication_required");
+  }
+  await throttle("auth-factor-management:" + session.user.id, 6);
+  if (path === enablePath && session.user.twoFactorEnabled) {
+    throw new HttpError(409, "factor_already_enabled");
+  }
 }

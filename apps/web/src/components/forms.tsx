@@ -5,14 +5,24 @@ import { useRouter } from "next/navigation";
 import { Motion } from "./motion";
 
 type FormValues = Record<string, string | boolean>;
-type Result = { id?: string; secret?: string; eventId?: string };
+type Result = {
+  id?: string;
+  secret?: string;
+  eventId?: string;
+  twoFactorRedirect?: boolean;
+};
 const messages: Record<string, string> = {
   permission_denied: "Your role does not allow this action.",
   rate_limited: "Too many requests. Wait a minute and try again.",
   invalid_credentials: "Check your email address and password.",
-  invalid_invitation: "Enter an unused, unexpired invitation code.",
   INVALID_EMAIL_OR_PASSWORD: "Check your email address and password.",
   USER_ALREADY_EXISTS: "This email address cannot be registered.",
+  INVALID_CODE: "The code did not match. Try again.",
+  INVALID_BACKUP_CODE: "The recovery code did not match or was already used.",
+  INVALID_TWO_FACTOR_COOKIE: "This verification step expired. Sign in again.",
+  ACCOUNT_TEMPORARILY_LOCKED:
+    "Too many failed codes. Wait before trying again.",
+  invalid_factor: "Check the code or password and try again.",
   destination_not_allowed:
     "Use an approved HTTPS hostname or the configured demo receiver.",
   registered_user_not_found: "This ID does not match a registered account.",
@@ -89,7 +99,9 @@ export function ActionForm({
       if (result.secret) {
         setSecret(result.secret);
       }
-      if (nextPath) {
+      if (result.twoFactorRedirect) {
+        router.push("/verify");
+      } else if (nextPath) {
         router.push(nextPath);
       } else if (onId && result.id) {
         router.push(onId + result.id);
