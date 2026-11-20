@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Brand } from "../../components/brand";
 import { ActionForm } from "../../components/forms";
-import { Motion } from "../../components/motion";
+import { AuthTrace } from "../../components/auth-trace";
 import { PageHeading } from "../../components/page-heading";
 import { issueFormProof } from "../../server/form-proof";
 import { PolicyLinks } from "../../components/policy-links";
@@ -62,8 +62,13 @@ export default async function AuthPage({ params }: AuthParams) {
     endpoint = "/api/auth/sign-up/email";
     passwordAutocomplete = "new-password";
   }
+  let step: "login" | "register" | "verify" = "login";
+  if (registering) {
+    step = "register";
+  }
   if (verifying) {
     title = t("Verify your sign-in", "Verifica il tuo accesso");
+    step = "verify";
   }
   return (
     <main id="main" className="auth-shell">
@@ -77,37 +82,8 @@ export default async function AuthPage({ params }: AuthParams) {
         <LanguageSwitch />
 
         <div className="auth-context">
-          <p className="auth-caption">
-            {t(
-              "Webhook delivery, end to end.",
-              "L’intero percorso dei tuoi webhook.",
-            )}
-          </p>
-          <Motion kind="signal" className="auth-route">
-            <ol
-              aria-label={t(
-                "How RelayHub handles a webhook",
-                "Il percorso di un webhook in RelayHub",
-              )}
-            >
-              <li>
-                <span data-joint aria-hidden="true" />
-                {t("Sender", "Mittente")}
-              </li>
-              <li>
-                <span data-joint aria-hidden="true" />
-                RelayHub
-              </li>
-              <li>
-                <span data-joint aria-hidden="true" />
-                {t("Destination", "Destinazione")}
-              </li>
-            </ol>
-            <div className="auth-trace" aria-hidden="true">
-              <span data-trace />
-              <span className="signal-packet" data-packet />
-            </div>
-          </Motion>
+          <AuthCaption step={step} />
+          <AuthTrace step={step} />
           <p>
             {t(
               "Accept signed events, route them to your destinations, and inspect every attempt.",
@@ -185,6 +161,36 @@ export default async function AuthPage({ params }: AuthParams) {
         </div>
       </section>
     </main>
+  );
+}
+
+async function AuthCaption({
+  step,
+}: {
+  step: "login" | "register" | "verify";
+}) {
+  const { t } = await getLocale();
+  if (step === "verify") {
+    return (
+      <p className="auth-caption">
+        {t("One more ", "Serve una ")}
+        <em>{t("signature.", "seconda firma.")}</em>
+      </p>
+    );
+  }
+  if (step === "register") {
+    return (
+      <p className="auth-caption">
+        {t("Open your ", "Apri il tuo ")}
+        <em>relay.</em>
+      </p>
+    );
+  }
+  return (
+    <p className="auth-caption">
+      {t("Back on the ", "Di nuovo sulla ")}
+      <em>{t("timeline.", "linea del tempo.")}</em>
+    </p>
   );
 }
 

@@ -13,5 +13,8 @@
 
 ### Changed
 
+- Redesigned the whole product as a spacetime diagram of webhooks: light-cone logo, Instrument Serif, Geist and Geist Mono, and a void/bone/photon palette.
+- The homepage diagram lets visitors send signed or tampered events, take endpoints offline and watch 503 bounces, backoff and retries; it pauses, follows the pointer and renders a still frame for reduced motion.
+- Delivery and event pages show animated, replayable traces of every attempt, bounce and backoff, next to the text timeline.
 - Updated the homepage motion, RelayHub monogram, favicon, and self-hosted typography.
 - Connected the public GitHub repository to Vercel production and enabled automated verification on Linux.

@@ -76,12 +76,49 @@ export function Motion({
   );
 }
 
+// Counts each [data-count] number up from zero, formatted for the page language.
+function countUp(
+  element: HTMLDivElement,
+  timeline: ReturnType<typeof gsap.timeline>,
+) {
+  const format = new Intl.NumberFormat(document.documentElement.lang || "en");
+  for (const target of element.querySelectorAll<HTMLElement>("[data-count]")) {
+    const finalValue = Number(target.dataset.count);
+    // Update React's own text node so later re-renders still reach the DOM.
+    const text = target.firstChild;
+    if (!Number.isFinite(finalValue) || finalValue <= 0 || !text) {
+      continue;
+    }
+    const finalText = text.nodeValue;
+    const counter = { value: 0 };
+    timeline.to(
+      counter,
+      {
+        value: finalValue,
+        duration: 1.1,
+        ease: "power3.out",
+        onUpdate: () => {
+          text.nodeValue = format.format(Math.round(counter.value));
+        },
+        onComplete: () => {
+          text.nodeValue = finalText;
+        },
+        onInterrupt: () => {
+          text.nodeValue = finalText;
+        },
+      },
+      0.1,
+    );
+  }
+}
+
 function animateSignal(element: HTMLDivElement) {
   const traces = element.querySelectorAll("[data-trace]");
   const joints = element.querySelectorAll("[data-joint]");
   const packet = element.querySelector<HTMLElement>("[data-packet]");
   const packetTrack = packet?.parentElement;
   const timeline = gsap.timeline({ defaults: { ease: "power2.out" } });
+  countUp(element, timeline);
   if (traces.length) {
     timeline.from(
       traces,

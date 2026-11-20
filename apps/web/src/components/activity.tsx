@@ -6,6 +6,7 @@ import type { Query } from "../app/workspace/[organizationId]/[[...section]]/pag
 import { ActionForm } from "./forms";
 import { Status, ShortId, Time, stateLabel } from "./display";
 import { DeliveryActivity } from "./delivery-activity";
+import { DeliveryTrace, EventCone } from "./delivery-trace";
 import { PageHeading } from "./page-heading";
 import { Motion } from "./motion";
 
@@ -478,6 +479,7 @@ export async function EventDetail({
           <code>{event.correlationId}</code>
         </dd>
       </dl>
+      <EventCone deliveries={event.deliveries} />
       <h2>{t("Deliveries", "Consegne")}</h2>
       <DeliveryTable rows={rows} organizationId={organizationId} />
     </>
@@ -531,8 +533,10 @@ export async function DeliveryDetail({
           endpoint={"/api/organizations/" + organizationId}
           label={t("Retry delivery", "Riprova la consegna")}
           fields={{ action: "delivery_retry", id }}
+          className="action-form retry-form"
         />
       )}
+      <DeliveryTrace delivery={delivery} />
       <section className="panel">
         <h2>{t("Delivery timeline", "Cronologia della consegna")}</h2>
         <Motion kind="timeline">

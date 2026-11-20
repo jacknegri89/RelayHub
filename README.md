@@ -6,7 +6,9 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 [Open RelayHub](https://relayhub-webhooks.vercel.app) · [Start locally](#run-locally) · [API reference](docs/api.yaml) · [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml)
 
-![RelayHub homepage showing its animated webhook routing illustration](docs/images/relayhub-home.webp)
+![RelayHub homepage: a live spacetime diagram where signed events cross RelayHub, fan out to endpoints, and a 503 bounces back before its retry](docs/images/relayhub-home.webp)
+
+The homepage diagram is interactive: send a signed event, tamper with its signature, or switch an endpoint off to watch the 503, the backoff and the retry. In the workspace, every delivery shows the same trace for its real attempts.
 
 ## Try the hosted app
 
@@ -61,6 +63,7 @@ The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`,
 ## Contributors
 
 - [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
+- [Claude](https://claude.com/claude-code) — Designed and built the spacetime redesign, its GSAP motion, and the browser checks.
 - [Codex](https://github.com/openai/codex) — Assisted with implementation, design, testing, and documentation.
 
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.

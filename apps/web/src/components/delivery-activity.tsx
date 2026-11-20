@@ -1,6 +1,8 @@
 import { getLocale } from "../server/locale";
 import { Motion } from "./motion";
 
+const MAX_INFLIGHT_DOTS = 12;
+
 export async function DeliveryActivity({
   received,
   delivered,
@@ -24,6 +26,11 @@ export async function DeliveryActivity({
       maximumFractionDigits: 1,
     }).format(delivered / total);
   }
+  // One pulsing dot per delivery in flight, so activity is visible at a glance.
+  const dots: number[] = [];
+  for (let index = 0; index < Math.min(inflight, MAX_INFLIGHT_DOTS); index++) {
+    dots.push(index);
+  }
 
   return (
     <section className="activity-board" aria-labelledby="delivery-activity">
@@ -41,7 +48,7 @@ export async function DeliveryActivity({
             <span className="route-joint" data-joint aria-hidden="true" />
             {t("Events received", "Eventi ricevuti")}
           </dt>
-          <dd>{received.toLocaleString(locale)}</dd>
+          <dd data-count={received}>{received.toLocaleString(locale)}</dd>
         </dl>
         <div className="route-trace" aria-hidden="true">
           <span data-trace />
@@ -51,11 +58,15 @@ export async function DeliveryActivity({
           <dl>
             <div>
               <dt>{t("Delivered", "Consegnati")}</dt>
-              <dd>{delivered.toLocaleString(locale)}</dd>
+              <dd className="delivered-count" data-count={delivered}>
+                {delivered.toLocaleString(locale)}
+              </dd>
             </div>
             <div>
               <dt>{t("Failed", "Falliti")}</dt>
-              <dd>{failed.toLocaleString(locale)}</dd>
+              <dd className="failed-count" data-count={failed}>
+                {failed.toLocaleString(locale)}
+              </dd>
             </div>
           </dl>
           {total > 0 && (
@@ -69,7 +80,16 @@ export async function DeliveryActivity({
       <dl className="activity-measures">
         <div>
           <dt>{t("In progress now", "In corso")}</dt>
-          <dd>{inflight.toLocaleString(locale)}</dd>
+          <dd>
+            {inflight.toLocaleString(locale)}
+            {dots.length > 0 && (
+              <span className="inflight-dots" aria-hidden="true">
+                {dots.map((dot) => (
+                  <i key={dot} />
+                ))}
+              </span>
+            )}
+          </dd>
         </div>
         <div>
           <dt>{t("Success rate", "Tasso di successo")}</dt>
