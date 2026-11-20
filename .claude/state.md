@@ -25,4 +25,4 @@
 - [ ] Vercel Hobby daemon provisioned-memory and Upstash Redis command quotas apply. Continuous processing after quota exhaustion is unavailable on these plans.
 - [ ] Password reset and verified email enrollment require a trusted mail transport. Membership uses the account UUID from the member's login, shared through a trusted channel.
 - [x] Public source and main branch at https://github.com/jacknegri89/relayhub. Vercel project relayhub is connected to the repository via vercel git connect.
-- [/] Validate the first source-triggered Vercel deployment and GitHub Actions for the branding release.
+- [/] Pushes to main trigger Vercel production and GitHub Actions. Clean checkout needs next typegen before root tsc for the Next image import. Await deployment and CI results for the identity release.

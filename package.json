@@ -24,7 +24,7 @@
     "start": "node scripts/run.mjs start",
     "build": "pnpm --filter @relayhub/web build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm --filter @relayhub/web exec next typegen && tsc --noEmit",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run tests/protocol.test.ts",
