@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { isJson, parseJson, readBody } from "@relayhub/shared/protocol";
+import { accountEmailConfigured } from "@relayhub/shared/mail";
 import { auth } from "../../../../server/auth";
 import {
   assertOrigin,
@@ -121,6 +122,16 @@ export function POST(request: Request) {
       body: JSON.stringify(authBody),
     });
     const result = await auth().handler(authRequest);
+    if (
+      path === "/api/auth/sign-up/email" &&
+      accountEmailConfigured() &&
+      result.ok
+    ) {
+      return Response.json(
+        { status: true },
+        { headers: { "cache-control": "no-store" } },
+      );
+    }
     result.headers.set("cache-control", "no-store");
     return result;
   });
