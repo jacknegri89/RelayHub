@@ -17,7 +17,13 @@ test("the public animation starts automatically and respects pause and reduced m
     name: "Animated diagram of webhook routing",
   });
   const canvas = art.locator("canvas");
-  const frame = () => canvas.evaluate((surface) => surface.toDataURL());
+  const frame = () =>
+    canvas.evaluate((surface) => {
+      if (!(surface instanceof HTMLCanvasElement)) {
+        throw new Error("Expected the animated canvas");
+      }
+      return surface.toDataURL();
+    });
   const first = await frame();
   await expect.poll(frame).not.toBe(first);
   await art.getByRole("button", { name: "Pause animation" }).click();
