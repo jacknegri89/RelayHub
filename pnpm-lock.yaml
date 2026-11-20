@@ -81,6 +81,9 @@ importers:
       '@fontsource-variable/public-sans':
         specifier: 5.3.0
         version: 5.3.0
+      '@fontsource/barlow-condensed':
+        specifier: 5.3.0
+        version: 5.3.0
       '@gsap/react':
         specifier: 2.1.2
         version: 2.1.2(gsap@3.15.1)(react@19.3.1)
@@ -525,6 +528,9 @@ packages:
 
   '@fontsource-variable/public-sans@5.3.0':
     resolution: {integrity: sha512-AVfkmAt50BMXWpOO21FAntiJFKGX6xTc2dSL8dxtDteONe9IuRXJWGbs0EbG955vAMCq23ENeuopuW87cGWDSQ==}
+
+  '@fontsource/barlow-condensed@5.3.0':
+    resolution: {integrity: sha512-RA7MmIx0v3eQ6Gcf74qLVLOwLB0GpPOzx+eU9iG/AmCnSJGcIWYeU8y6CEMGZ210MGwGg5CZhzLkkvyZdTTk1g==}
 
   '@gsap/react@2.1.2':
     resolution: {integrity: sha512-JqliybO1837UcgH2hVOM4VO+38APk3ECNrsuSM4MuXp+rbf+/2IG2K1YJiqfTcXQHH7XlA0m3ykniFYstfq0Iw==}
@@ -2852,6 +2858,8 @@ snapshots:
       levn: 0.4.1
 
   '@fontsource-variable/public-sans@5.3.0': {}
+
+  '@fontsource/barlow-condensed@5.3.0': {}
 
   '@gsap/react@2.1.2(gsap@3.15.1)(react@19.3.1)':
     dependencies:

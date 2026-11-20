@@ -5,6 +5,7 @@
   "dependencies": {
     "@better-auth/prisma-adapter": "1.7.26",
     "@fontsource-variable/public-sans": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0",
     "@gsap/react": "2.1.2",
     "@relayhub/db": "workspace:*",
     "@relayhub/shared": "workspace:*",

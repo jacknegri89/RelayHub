@@ -2,18 +2,15 @@
 
 import { useRef, useState } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { paintSignal, TURN } from "./signal-art";
 import styles from "./relay-signal.module.css";
 
-gsap.registerPlugin(useGSAP);
-
-const TURN = 2 * Math.PI;
-const RINGS = 9;
-const MARKS = 75;
-const PARTICLES = 20;
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export function RelaySignal() {
-  const scope = useRef<HTMLElement>(null);
+  const figure = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const animation = useRef<gsap.core.Tween | null>(null);
   const paused = useRef(false);
@@ -24,46 +21,59 @@ export function RelaySignal() {
     () => {
       const surface = canvas.current;
       const context = surface?.getContext("2d");
-      if (!surface || !context) {
+      if (!surface || !context || !figure.current) {
         return;
       }
-      const phase = { angle: 0.85 };
-      const paint = () => drawSignal(surface, context, phase.angle);
-      const observer = new ResizeObserver(paint);
-      observer.observe(surface);
+
+      const phase = { angle: 0.7 };
+      let width = surface.clientWidth;
+      let height = surface.clientHeight;
+      let visible = true;
+      const paint = () =>
+        paintSignal(surface, context, width, height, phase.angle);
+      const size = new ResizeObserver(([entry]) => {
+        if (!entry) {
+          return;
+        }
+        width = entry.contentRect.width;
+        height = entry.contentRect.height;
+        paint();
+      });
+      size.observe(surface);
       paint();
+
+      const visibility = new IntersectionObserver(([entry]) => {
+        visible = Boolean(entry?.isIntersecting);
+        animation.current?.paused(paused.current || !visible);
+      });
+      visibility.observe(surface);
+
       const media = gsap.matchMedia();
-      media.add(
-        {
-          motion: "(prefers-reduced-motion: no-preference)",
-          reduced: "(prefers-reduced-motion: reduce)",
-        },
-        ({ conditions }) => {
-          const enabled = Boolean(conditions?.motion);
-          setCanAnimate(enabled);
-          if (!enabled) {
-            paint();
-            return;
-          }
-          animation.current = gsap.to(phase, {
-            angle: phase.angle + TURN,
-            duration: 14,
-            ease: "none",
-            repeat: -1,
-            onUpdate: paint,
-            paused: paused.current,
-          });
-          return () => {
-            animation.current = null;
-          };
-        },
-      );
+      media.add("(prefers-reduced-motion: no-preference)", () => {
+        setCanAnimate(true);
+        animation.current = gsap.to(phase, {
+          angle: phase.angle + TURN,
+          duration: 12,
+          ease: "none",
+          repeat: -1,
+          onUpdate: paint,
+          paused: paused.current || !visible,
+        });
+
+        animatePage(surface);
+        return () => {
+          animation.current = null;
+          setCanAnimate(false);
+        };
+      });
+
       return () => {
-        observer.disconnect();
+        size.disconnect();
+        visibility.disconnect();
         media.revert();
       };
     },
-    { scope },
+    { scope: figure },
   );
 
   function toggleMotion() {
@@ -75,19 +85,14 @@ export function RelaySignal() {
 
   return (
     <figure
-      ref={scope}
+      ref={figure}
       className={styles.figure}
       aria-label="Animated diagram of webhook routing"
     >
-      <div className={styles.stage}>
-        <canvas ref={canvas} aria-hidden="true" />
-        <span className={styles.ingress}>Signed ingress</span>
-        <span className={styles.egress}>HTTPS delivery</span>
-      </div>
+      <canvas ref={canvas} aria-hidden="true" />
       <figcaption className={styles.caption}>
         <span>
-          Receive <span aria-hidden="true">→</span> Route{" "}
-          <span aria-hidden="true">→</span> Deliver
+          Ingress <span aria-hidden="true">⟶</span> HTTPS delivery
         </span>
         {canAnimate && (
           <button type="button" onClick={toggleMotion}>
@@ -99,86 +104,38 @@ export function RelaySignal() {
   );
 }
 
-function drawSignal(
-  canvas: HTMLCanvasElement,
-  context: CanvasRenderingContext2D,
-  angle: number,
-) {
-  const width = canvas.clientWidth;
-  const height = canvas.clientHeight;
-  if (!width || !height) {
-    return;
+function animatePage(surface: HTMLCanvasElement) {
+  const main = surface.closest("main");
+  const title = main?.querySelectorAll("[data-relay-reveal]");
+  if (title?.length) {
+    gsap
+      .timeline()
+      .from(title, {
+        yPercent: 105,
+        duration: 1.05,
+        stagger: 0.14,
+        ease: "power4.out",
+        clearProps: "transform",
+      })
+      .from(
+        surface,
+        {
+          opacity: 0,
+          duration: 1.2,
+          clearProps: "opacity",
+        },
+        0.15,
+      );
   }
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  const pixelsWide = Math.round(width * ratio);
-  const pixelsHigh = Math.round(height * ratio);
-  if (canvas.width !== pixelsWide || canvas.height !== pixelsHigh) {
-    canvas.width = pixelsWide;
-    canvas.height = pixelsHigh;
-  }
-  context.setTransform(ratio, 0, 0, ratio, 0, 0);
-  context.clearRect(0, 0, width, height);
-  const centerX = width * 0.5;
-  const centerY = height * 0.48;
-  const radius = Math.min(width, height) * 0.26;
-  drawOrbit(context, centerX, centerY, radius, angle);
-  drawFlow(context, centerX, centerY, radius, angle);
-}
 
-function drawOrbit(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  radius: number,
-  angle: number,
-) {
-  const roll = angle;
-  const horizontal = Math.cos(roll);
-  const vertical = Math.sin(roll);
-  for (let ring = 0; ring < RINGS; ring += 1) {
-    const tilt = (ring * Math.PI) / RINGS + angle;
-    context.beginPath();
-    for (let mark = 0; mark <= MARKS; mark += 1) {
-      const position = (mark * TURN) / MARKS;
-      const depth = Math.sin(position) * Math.sin(tilt);
-      const perspective = 1 + depth * 0.24;
-      const localX = radius * Math.cos(position) * perspective;
-      const localY = radius * Math.sin(position) * Math.cos(tilt) * perspective;
-      const pointX = x + localX * horizontal - localY * vertical;
-      const pointY = y + localX * vertical + localY * horizontal;
-      if (mark === 0) {
-        context.moveTo(pointX, pointY);
-      } else {
-        context.lineTo(pointX, pointY);
-      }
-    }
-    context.strokeStyle = "rgba(109, 231, 250, " + (0.13 + ring * 0.045) + ")";
-    context.lineWidth = 1.25;
-    context.stroke();
+  const flow = main?.querySelector("[data-relay-flow]");
+  if (flow) {
+    gsap.from(flow.children, {
+      y: 24,
+      duration: 0.75,
+      stagger: 0.11,
+      clearProps: "transform",
+      scrollTrigger: { trigger: flow, start: "top 90%", once: true },
+    });
   }
-}
-
-function drawFlow(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  radius: number,
-  angle: number,
-) {
-  const extent = radius * 1.8;
-  context.save();
-  context.shadowBlur = 13;
-  context.shadowColor = "#68e9ff";
-  for (let index = 0; index < PARTICLES; index += 1) {
-    const position = ((angle / TURN) * 3 + index / PARTICLES) % 1;
-    const offset = (position - 0.5) * extent * 2;
-    const wave =
-      Math.sin(position * TURN * 1.5 + angle + (index % 3)) * radius * 0.34;
-    const opacity = Math.sin(Math.PI * position) * 0.8 + 0.15;
-    context.fillStyle = "rgba(147, 239, 255, " + opacity + ")";
-    context.beginPath();
-    context.arc(x + offset, y + wave, 2 + (index % 3), 0, TURN);
-    context.fill();
-  }
-  context.restore();
 }

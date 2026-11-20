@@ -1,19 +1,19 @@
 :root {
   color-scheme: dark;
-  --paper: #0e151c;
-  --surface: #141e27;
-  --raised: #1d2b36;
-  --ink: #edf7fc;
-  --muted: #afc2cf;
-  --line: #30424f;
-  --accent: #75edfa;
-  --accent-hover: #a6f6ff;
-  --dark: #090d12;
-  --sidebar: #101820;
-  --control-line: #698090;
+  --paper: #181316;
+  --surface: #231b21;
+  --raised: #30252d;
+  --ink: #f4eadc;
+  --muted: #c0b1ad;
+  --line: #514048;
+  --accent: #fca980;
+  --accent-hover: #ffd2b9;
+  --dark: #110e10;
+  --sidebar: #1e171c;
+  --control-line: #987b80;
   --failed: #ffa297;
   --success: #a6e5c6;
-  --trace-grid: #315869;
+  --trace-grid: #50363c;
   font:
     16px/1.55 "Public Sans Variable",
     system-ui,
@@ -472,7 +472,7 @@ time {
   padding: clamp(1.25rem, 3.6vw, 2.75rem) clamp(0.9rem, 2.8vw, 1.5rem);
   background-color: var(--dark);
   background-image:
-    radial-gradient(ellipse at 37% 65%, #1a769f38 0%, transparent 78%),
+    radial-gradient(ellipse at 37% 65%, #84453838 0%, transparent 78%),
     radial-gradient(var(--trace-grid) 1px, transparent 1px);
   background-size:
     auto,
@@ -511,7 +511,6 @@ time {
   position: relative;
   color: var(--accent);
   background: var(--control-line);
-  box-shadow: 0 0 13px #5ddcf54f;
   margin-right: 0.7rem;
 }
 .activity-outbound {
@@ -618,7 +617,7 @@ tbody tr:focus-within {
 .status[data-status="partial"],
 .status[data-status="retry_scheduled"],
 .status[data-status="in_progress"] {
-  background: #17313a;
+  background: #462b27;
   color: var(--accent);
 }
 .action-form {

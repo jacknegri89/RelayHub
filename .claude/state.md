@@ -13,8 +13,9 @@
 - packages/db/src/events.ts atomically accepts encrypted events, receipted signatures, unique deliveries and outbox entries. PostgreSQL is the authority. Redis payloads are identifiers/generations only.
 - apps/worker/src/delivery.ts claims and fences attempts; dispatch.ts republishes, recovers and applies retention; send.ts pins verified outbound DNS without redirects.
 - apps/web/src/components/activity.tsx renders actual metrics and history; configuration.tsx renders sources, destinations, routes and membership.
-- UI refresh: carbon and electric cyan, local Public Sans, GSAP canvas orbit runs automatically with pause and reduced-motion support. Dashboard diagram uses actual activity. No simulator in the public UI.
-- UI refresh verified on the optimized build: Playwright passed desktop and 375 px flows; manual browser checks passed reduced motion, keyboard focus, 768/375 px and the Test delivery shortcut through HTTP 200.
+- UI redesign: near-black, ivory and copper palette across marketing, sign-in and workspace. Landing uses self-hosted Barlow Condensed and Public Sans.
+- apps/web/src/components/relay-signal.tsx coordinates Canvas, GSAP intro, ScrollTrigger delivery steps, pause and reduced motion. signal-art.ts renders the original folded signal paths and moving packets. The drawing loop stops outside the viewport.
+- [x] Copper redesign is live at https://relayhub-chi.vercel.app (dpl_C9A6BKmWtB3LYSdXhVvobsja97Cg). Lint, typecheck, production build and 41 local tests passed. Public smoke passed headline/animation, flow anchor, pause, reduced motion, layouts from 320 to 1440 px, invited registration, signed and deduplicated events, actual HTTPS delivery 204, rejection of unsigned requests and homepage after sign-in.
 - apps/mock-receiver/src/index.ts verifies signatures and simulates 200, 400, 429, 500, latency and timeout. Demo deduplication is process-local.
 - Commands: pnpm setup, generate, migrate, build, start, worker, receiver, seed, demo, test, test:integration, test:e2e. README covers PowerShell, Linux and Compose.
 - [ ] Run Compose on a Docker host and CI on GitHub before cutting v1.0.0.
