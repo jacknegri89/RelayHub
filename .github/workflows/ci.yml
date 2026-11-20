@@ -80,6 +80,18 @@ jobs:
           curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:3002/ready
           RELAYHUB_TEST_MAILPIT_URL=http://127.0.0.1:8025 pnpm test:integration
           pnpm test:e2e
+      - name: Verify account mail in an isolated local mailbox
+        env:
+          RELAYHUB_BASE_URL: http://localhost:3081
+          RELAYHUB_ACCOUNT_EMAIL: "1"
+          RELAYHUB_MAILPIT_URL: http://127.0.0.1:8025
+          RELAYHUB_TEST_MAILPIT_URL: http://127.0.0.1:8025
+        run: |
+          node apps/web/node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port 3081 > account-web.log 2>&1 &
+          account_web_pid=$!
+          trap 'kill "$account_web_pid" 2>/dev/null || true' EXIT
+          curl --fail --retry 20 --retry-all-errors --retry-delay 1 http://localhost:3081/api/health/ready
+          pnpm exec playwright test -c tests/account-browser/playwright.config.ts
   compose:
     runs-on: ubuntu-latest
     timeout-minutes: 20
