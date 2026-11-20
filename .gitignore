@@ -9,3 +9,8 @@ packages/db/generated/
 test-results/
 playwright-report/
 *.log
+
+# Local assistant instructions and session state
+/.claude/
+/AGENTS.md
+/CLAUDE.md
