@@ -56,4 +56,9 @@ Use `docker compose -p relayhub-demo stop` to stop the services and keep local d
 
 The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`, and the Prisma schema and data layer in `packages/db`. For development, see [Contributing](CONTRIBUTING.md). For vulnerability disclosure, see [Security policy](SECURITY.md).
 
+## Contributors
+
+- [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
+- [OpenAI Codex](https://github.com/openai/codex) — Assisted with implementation, design, testing, and documentation.
+
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.
