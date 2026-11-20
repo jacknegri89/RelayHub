@@ -17,6 +17,10 @@ import {
   Destinations,
   Settings,
 } from "../../../../components/configuration";
+import {
+  DestinationAlertPage,
+  DestinationDetail,
+} from "../../../../components/destination-alerts";
 
 export type Query = Record<string, string | string[] | undefined>;
 
@@ -54,6 +58,11 @@ export default async function OrganizationPage({
   if (section.length === 2 && section[0] === "events") {
     return <EventDetail organizationId={organizationId} id={section[1]} />;
   }
+  if (section.length === 2 && section[0] === "destinations") {
+    return (
+      <DestinationDetail organizationId={organizationId} id={section[1]} />
+    );
+  }
   if (section.length === 2 && section[0] === "deliveries") {
     return (
       <DeliveryDetail
@@ -67,6 +76,15 @@ export default async function OrganizationPage({
     notFound();
   }
   switch (section[0]) {
+    case "alerts":
+      return (
+        <LoadingSection>
+          <DestinationAlertPage
+            organizationId={organizationId}
+            query={await searchParams}
+          />
+        </LoadingSection>
+      );
     case "sources":
       return (
         <LoadingSection>

@@ -30,13 +30,20 @@ function followPhoton(root: HTMLElement, photon: SVGCircleElement) {
   scroller.scrollLeft += offset;
 }
 
-// Without motion, show the end of a long trace: that is where the outcome is.
+// Center the final label itself; the SVG tail includes room for translated text.
 function revealOutcome(root: HTMLElement) {
   const scroller = root.querySelector<HTMLElement>(".trace-scroll");
-  if (!scroller) {
+  if (!scroller || scroller.scrollWidth <= scroller.clientWidth) {
     return;
   }
-  scroller.scrollLeft = scroller.scrollWidth;
+  const labels = scroller.querySelectorAll<SVGTextElement>("text[data-step]");
+  const label = labels.item(labels.length - 1);
+  if (label) {
+    const bounds = label.getBoundingClientRect();
+    const inset = Math.max(0, (scroller.clientWidth - bounds.width) / 2);
+    scroller.scrollLeft +=
+      bounds.left - scroller.getBoundingClientRect().left - inset;
+  }
 }
 
 // Replays a server-rendered trace in order. Elements opt in with data-step:
@@ -118,6 +125,7 @@ function buildTimeline(root: HTMLElement) {
   if (photon) {
     timeline.to(photon, { autoAlpha: 0, duration: 0.2 });
   }
+  timeline.eventCallback("onComplete", () => revealOutcome(root));
   return timeline;
 }
 
@@ -153,7 +161,7 @@ export function TracePlayer({
       });
       return () => media.revert();
     },
-    { scope },
+    { scope, dependencies: [children], revertOnUpdate: true },
   );
 
   function replay() {

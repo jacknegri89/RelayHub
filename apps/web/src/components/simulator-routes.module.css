@@ -1,0 +1,390 @@
+.board {
+  padding: 0 clamp(0.85rem, 2vw, 1.5rem) 0.9rem;
+  background: var(--void);
+  --wire: clamp(1.6rem, 6cqw, 3rem);
+  --rail: var(--rule-strong);
+}
+.receipt,
+.receipt > span,
+.row,
+.toggle {
+  display: flex;
+  align-items: center;
+}
+.receipt,
+.row {
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.receipt {
+  flex-wrap: wrap;
+  min-height: 2.9rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--dust);
+  font-size: 0.8rem;
+}
+.receipt > span {
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.receipt strong {
+  color: var(--bone);
+  font-weight: 600;
+}
+.receipt code {
+  font: 0.74rem var(--font-mono);
+}
+.flow {
+  display: grid;
+  grid-template-columns: minmax(7.8rem, 0.78fr) minmax(0, 1.8fr);
+  padding-top: 1rem;
+}
+.ingress {
+  position: relative;
+}
+.signal {
+  position: absolute;
+  pointer-events: none;
+}
+.shop,
+.relay {
+  position: absolute;
+  left: 0;
+  right: var(--wire);
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--rail);
+  border-radius: 0.45rem;
+  background: var(--void-1);
+  text-align: center;
+}
+.shop {
+  top: 0;
+  font: 530 0.86rem var(--font-sans);
+}
+.shop::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 4rem;
+  background: var(--rail);
+}
+.relay {
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: var(--photon);
+  background: var(--void-2);
+}
+.relay strong {
+  display: block;
+  font-size: 1rem;
+}
+.relay::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: calc(50% - 4px);
+  border-inline: 4px solid transparent;
+  border-top: 5px solid var(--dust);
+}
+.relay small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--dust);
+  font: 0.73rem/1.3 var(--font-mono);
+}
+.relay[data-tone="failed"] {
+  border-color: var(--failed);
+}
+.relay[data-tone="failed"] small {
+  color: var(--failed);
+}
+.relay::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: var(--wire);
+  border-top: 1px solid var(--rail);
+}
+.routes {
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  margin: 0;
+  padding: 0 0 0 var(--wire);
+  list-style: none;
+}
+.routes::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(100% / 6);
+  bottom: calc(100% / 6);
+  border-left: 1px solid var(--rail);
+}
+.routes li {
+  position: relative;
+  display: grid;
+  align-content: center;
+  min-height: 4.5rem;
+  --outcome-color: var(--dust);
+}
+.routes li[data-tone="in_flight"] {
+  --outcome-color: var(--photon);
+}
+.routes li[data-tone="delivered"] {
+  --outcome-color: var(--delivered);
+}
+.routes li[data-tone="retrying"] {
+  --outcome-color: var(--retry);
+}
+.routes li[data-tone="failed"] {
+  --outcome-color: var(--failed);
+}
+.routes li::before,
+.routes li::after {
+  position: absolute;
+  content: "";
+  top: 50%;
+}
+.routes li::before {
+  right: 100%;
+  width: var(--wire);
+  border-top: 1px solid var(--rail);
+}
+.routes li::after {
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--outcome-color);
+  transform: translateY(-50%);
+}
+.row {
+  min-width: 0;
+  padding: 0.55rem 0.7rem 0.55rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.45rem;
+  background: var(--void-1);
+}
+.result {
+  min-width: 0;
+}
+.result strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 575;
+}
+.result > span {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--outcome-color);
+}
+.result code,
+.result small {
+  font: inherit;
+  color: var(--dust);
+}
+.result code {
+  white-space: nowrap;
+}
+.result small {
+  white-space: nowrap;
+}
+.toggle {
+  flex: none;
+  justify-content: end;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  padding: 0 0.25rem;
+  color: var(--dust);
+  background: transparent;
+  font: 500 0.72rem var(--font-mono);
+}
+.toggle:hover {
+  background: var(--void-2);
+  color: var(--bone);
+}
+.track {
+  width: 1.5rem;
+  height: 0.85rem;
+  padding: 2px;
+  border: 1px solid var(--dust);
+  border-radius: 1rem;
+}
+.track::after {
+  display: block;
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--dust);
+}
+.toggle[aria-checked="true"] .track {
+  border-color: var(--delivered);
+}
+.toggle[aria-checked="true"] .track::after {
+  background: var(--delivered);
+  transform: translateX(0.6rem);
+}
+.board[data-timeline="true"] .flow {
+  display: block;
+  padding-top: 0.4rem;
+}
+.board[data-timeline="true"] .routes {
+  padding: 0;
+}
+.board[data-timeline="true"] .routes li {
+  min-height: 3.15rem;
+}
+.board[data-timeline="true"] .row {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+}
+.board[data-timeline="true"] .routes::before,
+.board[data-timeline="true"] .routes li::before,
+.board[data-timeline="true"] .routes li::after {
+  content: none;
+}
+.rejection {
+  margin: 0.35rem 0;
+  color: var(--failed);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .signal {
+    top: 2rem;
+    left: calc((100% - var(--wire)) / 2 - 3px);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--photon);
+    box-shadow: 0 0 6px var(--photon);
+    animation: ingress 0.95s linear both;
+  }
+  @keyframes ingress {
+    to {
+      top: 50%;
+    }
+  }
+  .track::after {
+    transition: transform 180ms ease;
+  }
+  .routes li[data-tone="in_flight"]::after {
+    animation: transmit 0.85s ease-out infinite;
+  }
+  .board[data-paused="true"] .signal,
+  .board[data-paused="true"] .routes li[data-tone="in_flight"]::after {
+    animation-play-state: paused;
+  }
+  @keyframes transmit {
+    from {
+      transform: translate(calc(0px - var(--wire)), -50%);
+    }
+    to {
+      transform: translate(0, -50%);
+    }
+  }
+}
+@container (max-width: 34rem) {
+  .board {
+    --wire: 1.15rem;
+  }
+  .flow {
+    display: block;
+  }
+  .ingress {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: var(--wire);
+    padding-bottom: 1.15rem;
+  }
+  .shop,
+  .relay {
+    position: relative;
+    inset: auto;
+    transform: none;
+  }
+  .shop::after {
+    left: 100%;
+    top: 50%;
+    width: var(--wire);
+    height: 1px;
+  }
+  .relay::before {
+    top: calc(50% - 4px);
+    right: 100%;
+    bottom: auto;
+    left: auto;
+    border: 0;
+    border-block: 4px solid transparent;
+    border-left: 5px solid var(--dust);
+  }
+  .signal {
+    top: calc(50% - 0.575rem - 3px);
+    left: calc(50% - var(--wire) / 2);
+    animation-name: ingressAcross;
+  }
+  @keyframes ingressAcross {
+    to {
+      left: calc(50% + var(--wire) / 2);
+    }
+  }
+  .relay::after {
+    top: 100%;
+    left: 50%;
+    width: 0;
+    height: 0.6rem;
+    border: 0;
+    border-left: 1px solid var(--rail);
+  }
+  .ingress::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: calc(25% - var(--wire) / 4);
+    bottom: 0.55rem;
+    border-top: 1px solid var(--rail);
+  }
+  .routes::before {
+    top: -0.55rem;
+  }
+  .row {
+    padding-inline: 0.55rem;
+  }
+  .routes li {
+    min-height: 4.25rem;
+  }
+}
+
+/* At phone widths the whole second line belongs to the delivery result. */
+@container (max-width: 25rem) {
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name switch" "receipt receipt";
+    gap: 0 0.4rem;
+    padding-block: 0.4rem;
+  }
+  .result {
+    display: contents;
+  }
+  .result strong {
+    grid-area: name;
+  }
+  .result > span {
+    grid-area: receipt;
+    margin: 0;
+  }
+  .toggle {
+    grid-area: switch;
+    min-height: 2rem;
+  }
+}

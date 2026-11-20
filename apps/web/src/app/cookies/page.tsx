@@ -16,7 +16,29 @@ export async function generateMetadata() {
 export default async function CookiePage() {
   const { t } = await getLocale();
   return (
-    <PolicyPage title={t("Cookie Policy", "Informativa sui cookie")}>
+    <PolicyPage
+      title={t("Cookie Policy", "Informativa sui cookie")}
+      guideTitle={t(
+        "Check what your browser stores",
+        "Controlla cosa conserva il browser",
+      )}
+      guide={
+        <>
+          {t("Look up ", "Consulta ")}
+          <a href="#session">
+            {t("the sign-in cookie", "il cookie di accesso")}
+          </a>
+          {t(" or ", " o ")}
+          <a href="#language">
+            {t("the language cookie", "il cookie della lingua")}
+          </a>
+          {t(
+            " to see what each remembers and for how long.",
+            " per capire cosa memorizzano e per quanto tempo.",
+          )}
+        </>
+      }
+    >
       <p>
         {t(
           "RelayHub uses essential first-party cookies for sign-in and account security.",
@@ -25,7 +47,7 @@ export default async function CookiePage() {
       </p>
       <dl className="cookie-list">
         <div>
-          <dt>{t("Session token", "Token di sessione")}</dt>
+          <dt id="session">{t("Session token", "Token di sessione")}</dt>
           <dd>
             {t(
               "Keeps you signed in so you can use your workspace. In the hosted app the session expires after up to seven days from issue or refresh. Signing out clears the session.",
@@ -57,7 +79,9 @@ export default async function CookiePage() {
           </dd>
         </div>
         <div>
-          <dt>{t("Language preference", "Preferenza di lingua")}</dt>
+          <dt id="language">
+            {t("Language preference", "Preferenza di lingua")}
+          </dt>
           <dd>
             {t(
               "When you choose a language, relayhub_lang remembers English or Italian for one year on this browser.",

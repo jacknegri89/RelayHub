@@ -150,9 +150,48 @@ model WebhookDestination {
   createdAt DateTime @default(now())
   subscriptions Subscription[]
   deliveries Delivery[]
+  consecutiveFailures Int @default(0)
+  lastHealthObservationAt DateTime?
+  dailyStats DestinationDailyStat[]
+  incidents DestinationIncident[]
 
   @@unique([id, organizationId])
   @@index([organizationId, createdAt])
+}
+
+model DestinationDailyStat {
+  destinationId String
+  organizationId String
+  day DateTime @db.Date
+  successCount Int @default(0)
+  failureCount Int @default(0)
+  responseDurationMs BigInt @default(0)
+  responseCount Int @default(0)
+  destination WebhookDestination @relation(fields: [destinationId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@id([destinationId, day])
+  @@index([organizationId, day])
+  @@index([day])
+}
+
+model DestinationIncident {
+  // The opening attempt's UUID survives raw delivery retention.
+  id String @id
+  destinationId String
+  organizationId String
+  openedAt DateTime
+  openedOrder BigInt @default(autoincrement())
+  resolvedAt DateTime?
+  resolvedOrder BigInt?
+  failureCount Int
+  destination WebhookDestination @relation(fields: [destinationId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  // The migration also enforces one unresolved incident per destination.
+  @@index([organizationId, resolvedAt, openedAt])
+  @@index([organizationId, openedAt, openedOrder])
+  @@index([organizationId, resolvedAt, resolvedOrder])
+  @@index([destinationId, openedAt])
+  @@index([resolvedAt])
 }
 
 model Subscription {

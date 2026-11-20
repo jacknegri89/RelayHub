@@ -12,6 +12,7 @@ import { recordOutcome, type JobData } from "./delivery";
 export const QUEUE_NAME = "relayhub-deliveries";
 const PUBLISH_INTERVAL_MS = 10_000;
 const BATCH_SIZE = 50;
+const HEALTH_HISTORY_DAYS = 7;
 const queueable = deliveryStates.filter((state) =>
   canTransition(state, "queued"),
 );
@@ -103,9 +104,22 @@ export async function recover() {
 
 export async function retainRecent(now = Date.now()) {
   const db = database();
+  // Keep today and six complete UTC days, independently of raw event retention.
+  const firstHealthDay = new Date(now);
+  firstHealthDay.setUTCHours(0, 0, 0, 0);
+  firstHealthDay.setUTCDate(
+    firstHealthDay.getUTCDate() - HEALTH_HISTORY_DAYS + 1,
+  );
+  await db.destinationDailyStat.deleteMany({
+    where: { day: { lt: firstHealthDay } },
+  });
   const cutoff = new Date(
     now - settings().RETENTION_DAYS * 24 * 60 * 60 * 1000,
   );
+  // An active outage remains visible for as long as it lasts.
+  await db.destinationIncident.deleteMany({
+    where: { resolvedAt: { lt: cutoff } },
+  });
   const events = await db.webhookEvent.findMany({
     where: {
       receivedAt: { lt: cutoff },

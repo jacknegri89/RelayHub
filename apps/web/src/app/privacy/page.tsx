@@ -15,14 +15,40 @@ export async function generateMetadata() {
 export default async function PrivacyPage() {
   const { t } = await getLocale();
   return (
-    <PolicyPage title={t("Privacy Policy", "Informativa sulla privacy")}>
+    <PolicyPage
+      title={t("Privacy Policy", "Informativa sulla privacy")}
+      guideTitle={t("Find a privacy answer", "Consulta l’informativa")}
+      guide={
+        <>
+          {t("See ", "Consulta ")}
+          <a href="#data">
+            {t("which data RelayHub handles", "quali dati tratta RelayHub")}
+          </a>
+          {t(" and ", " e ")}
+          <a href="#retention">
+            {t("how long it keeps them", "per quanto tempo li conserva")}
+          </a>
+          .{" "}
+          {t(
+            "For a privacy request, ",
+            "Per una richiesta relativa alla privacy, ",
+          )}
+          <a href="#operator">
+            {t("contact the operator", "contatta il gestore")}
+          </a>
+          .
+        </>
+      }
+    >
       <p>
         {t(
           "This notice applies to the hosted RelayHub service at relayhub-webhooks.vercel.app.",
           "Questa informativa riguarda il servizio RelayHub disponibile su relayhub-webhooks.vercel.app.",
         )}
       </p>
-      <h2>{t("Who operates RelayHub", "Chi gestisce RelayHub")}</h2>
+      <h2 id="operator">
+        {t("Who operates RelayHub", "Chi gestisce RelayHub")}
+      </h2>
       <p>
         {t(
           "Giacomo Negri operates the hosted service. For questions or privacy requests, use the contact details on the",
@@ -37,7 +63,7 @@ export default async function PrivacyPage() {
           "Evita di pubblicare dati dell’account o contenuti dei webhook nelle segnalazioni pubbliche.",
         )}
       </p>
-      <h2>{t("Data and purposes", "Dati trattati e finalità")}</h2>
+      <h2 id="data">{t("Data and purposes", "Dati trattati e finalità")}</h2>
       <ul>
         <li>
           <strong>{t("Account data.", "Dati dell’account.")}</strong>{" "}
@@ -81,11 +107,17 @@ export default async function PrivacyPage() {
           "Vercel ospita l’applicazione e il servizio di consegna. Neon fornisce il database PostgreSQL e Upstash la coda Redis. RelayHub invia il contenuto dei webhook alle destinazioni configurate dai gestori dell’area di lavoro. Scegli destinazioni che hai il permesso di utilizzare.",
         )}
       </p>
-      <h2>{t("Retention", "Tempi di conservazione")}</h2>
+      <h2 id="retention">{t("Retention", "Tempi di conservazione")}</h2>
       <p>
         {t(
           "Account and configuration records are kept while needed to operate the account or workspace. Terminal delivery records and audit history are removed after the configured retention period. Pending deliveries remain available for retry. Backup and provider log retention may differ from the live service.",
           "I dati dell’account e della configurazione vengono conservati per il tempo necessario al funzionamento dell’account o dell’area di lavoro. Le consegne concluse e la cronologia di audit vengono eliminate al termine del periodo di conservazione configurato. Le consegne in attesa restano disponibili per ulteriori tentativi. I fornitori possono applicare tempi diversi ai propri backup e registri.",
+        )}
+      </p>
+      <p>
+        {t(
+          "Destination charts cover seven UTC dates. An open outage stays in the workspace until recovery. The retention period for its alert history starts at recovery.",
+          "I grafici di ogni destinazione coprono sette giorni UTC. Un guasto aperto resta visibile fino al ripristino. Da quel momento decorre il periodo di conservazione dei relativi avvisi.",
         )}
       </p>
       <h2>{t("Your choices and rights", "Scelte e diritti")}</h2>

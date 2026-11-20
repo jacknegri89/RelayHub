@@ -2,6 +2,7 @@ import {
   CROSS_SECONDS,
   ENDPOINTS,
   LANE_POSITION,
+  orderInProgress,
   type Endpoint,
   type Journey,
   type SpacetimeModel,
@@ -9,10 +10,10 @@ import {
 
 export type SpacetimeLabels = {
   sender: string;
-  relay: string;
-  endpoint: string;
-  offline: string;
+  destinations: Record<Endpoint, string>;
   now: string;
+  end: string;
+  time: string;
   verified: string;
   rejected: string;
   delivered: string;
@@ -23,9 +24,9 @@ export type SpacetimeLabels = {
 type Point = { x: number; y: number };
 type Segment = { journeyId: number; from: Point; to: Point };
 type Layout = {
-  horizontal: boolean;
   width: number;
   height: number;
+  plotStart: number;
   spaceStart: number;
   spaceLength: number;
   nowAt: number;
@@ -45,9 +46,10 @@ const DELIVERED = "63 185 80";
 const RETRY = "210 153 34";
 const FAILED = "248 81 73";
 
-const LATTICE_CELL_PX = 30;
-const LENS_RADIUS_PX = 170;
+const HISTORY_SECONDS = 8;
+const COMPACT_PLOT_WIDTH = 430;
 const PICK_RADIUS_PX = 22;
+const SIGNAL_TRAIL_PX = 28;
 const ANNOTATION_SECONDS = 4.2;
 const FLASH_SECONDS = 0.9;
 const CONE_FADE_SECONDS = 8;
@@ -79,11 +81,12 @@ function distanceToSegment(point: Point, segment: Segment) {
 }
 
 export class SpacetimeRenderer {
+  trackedOrder: Journey | null = null;
+  private plotTime = 0;
+  private atEnd = false;
   reveal = 1;
   highlightId: number | null = null;
   pointer: Point | null = null;
-  // Wide screens draw time left → right; phones draw it top → bottom.
-  horizontal = true;
   // Static (reduced motion) frames keep visitor annotations on screen.
   holdAnnotations = false;
 
@@ -104,10 +107,6 @@ export class SpacetimeRenderer {
     this.layout = this.computeLayout(canvas.clientWidth, canvas.clientHeight);
   }
 
-  get isVertical() {
-    return !this.layout.horizontal;
-  }
-
   setLabels(labels: SpacetimeLabels) {
     this.labels = labels;
   }
@@ -121,6 +120,9 @@ export class SpacetimeRenderer {
 
   // Returns the journey whose drawn signal is closest to the pointer.
   pick(point: Point) {
+    if (point.x < this.layout.plotStart || point.x > this.layout.nowAt) {
+      return null;
+    }
     let nearestId: number | null = null;
     let nearestDistance = PICK_RADIUS_PX;
     for (const segment of this.segments) {
@@ -132,6 +134,9 @@ export class SpacetimeRenderer {
     }
     if (nearestId === null) {
       return null;
+    }
+    if (this.trackedOrder?.id === nearestId) {
+      return this.trackedOrder;
     }
     for (const journey of this.model.journeys) {
       if (journey.id === nearestId) {
@@ -146,78 +151,87 @@ export class SpacetimeRenderer {
     if (!width || !height) {
       return;
     }
+    // Keep a completed visitor order available for inspection after the model drops old traffic.
+    this.plotTime = this.model.now;
+    this.atEnd = false;
+    if (this.trackedOrder && !orderInProgress(this.trackedOrder)) {
+      const end = this.trackedOrder.lastActivity + FLASH_SECONDS;
+      this.plotTime = Math.min(this.plotTime, end);
+      this.atEnd = this.plotTime === end;
+    }
     const ratio = this.canvas.width / width;
     const context = this.context;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
     this.segments = [];
 
-    this.drawLattice();
+    this.drawGrid();
     context.save();
     this.clipToReveal();
-    for (const journey of this.model.journeys) {
-      this.drawCone(journey);
+    const focus = this.trackedOrder ?? this.focusedJourney();
+    if (focus) {
+      this.drawCone(focus);
+    }
+    let backgroundEmphasis = 0.75;
+    if (focus) {
+      backgroundEmphasis = 0.22;
     }
     this.drawLanes();
-    let highlighted: Journey | null = null;
-    for (const journey of this.model.journeys) {
-      if (journey.id === this.highlightId) {
-        highlighted = journey;
-        continue;
+    if (!this.trackedOrder) {
+      for (const journey of this.model.journeys) {
+        if (journey !== focus) {
+          this.drawJourney(journey, backgroundEmphasis);
+        }
       }
-      this.drawJourney(journey, this.dimFactor());
     }
-    if (highlighted) {
-      this.drawJourney(highlighted, 1.35);
+    if (focus) {
+      this.drawJourney(focus, 1.25);
+      this.drawAnnotations(focus);
     }
-    this.drawAnnotations();
     context.restore();
     this.drawNowLine();
     this.drawLaneLabels();
-    this.fadeHistoryEdge();
   }
 
   private computeLayout(width: number, height: number): Layout {
-    if (this.horizontal) {
-      // The lower third stays free for the controls and the visitor log.
-      const spaceLength = height * 0.5;
-      return {
-        horizontal: true,
-        width,
-        height,
-        spaceStart: height * 0.15,
-        spaceLength,
-        nowAt: width * 0.82,
-        speed: spaceLength / CROSS_SECONDS,
-      };
+    const nowAt = width - 22;
+    let plotStart = 118;
+    if (width < COMPACT_PLOT_WIDTH) {
+      plotStart = 93;
     }
-    const spaceLength = width * 0.76;
     return {
-      horizontal: false,
       width,
       height,
-      spaceStart: width * 0.12,
-      spaceLength,
-      nowAt: height * 0.16,
-      speed: spaceLength / CROSS_SECONDS,
+      plotStart,
+      spaceStart: 34,
+      spaceLength: Math.max(1, height - 92),
+      nowAt,
+      speed: Math.max(1, nowAt - plotStart) / HISTORY_SECONDS,
     };
   }
 
   private point(position: number, time: number): Point {
     const layout = this.layout;
     const space = layout.spaceStart + position * layout.spaceLength;
-    const age = this.model.now - time;
-    if (layout.horizontal) {
-      return { x: layout.nowAt - age * layout.speed, y: space };
-    }
-    return { x: space, y: layout.nowAt + age * layout.speed };
+    const age = this.plotTime - time;
+    return { x: layout.nowAt - age * layout.speed, y: space };
   }
 
-  private dimFactor() {
-    if (this.highlightId === null) {
-      return 1;
+  // Keep annotations on the order being inspected, or the last test order still on the plot.
+  private focusedJourney() {
+    let lastOrder: Journey | undefined;
+    for (const journey of this.model.journeys) {
+      if (journey.id === this.highlightId) {
+        return journey;
+      }
+      if (
+        journey.origin !== "ambient" &&
+        journey.lastActivity >= this.plotTime - HISTORY_SECONDS
+      ) {
+        lastOrder = journey;
+      }
     }
-    return 0.32;
+    return lastOrder;
   }
 
   private revealEase() {
@@ -228,53 +242,35 @@ export class SpacetimeRenderer {
     const layout = this.layout;
     const progress = this.revealEase();
     this.context.beginPath();
-    if (layout.horizontal) {
-      const left = layout.nowAt * (1 - progress) - 2;
-      this.context.rect(left, 0, layout.width - left, layout.height);
-    } else {
-      const bottom =
-        layout.nowAt + progress * (layout.height - layout.nowAt) + 2;
-      this.context.rect(0, 0, layout.width, bottom);
-    }
+    const visibleWidth = (layout.nowAt - layout.plotStart) * progress;
+    this.context.rect(
+      layout.nowAt - visibleWidth,
+      0,
+      visibleWidth + 6,
+      layout.height - 35,
+    );
     this.context.clip();
   }
 
-  // A diamond lattice of null coordinates drifts with time, like a slow sky.
-  private drawLattice() {
+  // The guide lines share the time scale with the tick labels and the signals.
+  private drawGrid() {
     const layout = this.layout;
     const context = this.context;
-    const half = LATTICE_CELL_PX / 2;
-    const drift = (this.model.now * layout.speed) % LATTICE_CELL_PX;
-    const baseAlpha = 0.08 * this.revealEase();
-    for (let row = -1; row * half < layout.height + half; row++) {
-      for (
-        let column = -2;
-        column * half < layout.width + LATTICE_CELL_PX;
-        column++
-      ) {
-        if ((row + column) % 2 !== 0) {
-          continue;
-        }
-        let x = column * half;
-        let y = row * half;
-        if (layout.horizontal) {
-          x -= drift;
-        } else {
-          y += drift;
-        }
-        let alpha = baseAlpha;
-        let size = 1.1;
-        if (this.pointer) {
-          const distance = Math.hypot(x - this.pointer.x, y - this.pointer.y);
-          if (distance < LENS_RADIUS_PX) {
-            const strength = 1 - distance / LENS_RADIUS_PX;
-            alpha += strength * 0.3;
-            size += strength * 0.6;
-          }
-        }
-        context.fillStyle = color(BONE, alpha);
-        context.fillRect(x - size / 2, y - size / 2, size, size);
-      }
+    const relayY = this.point(LANE_POSITION.relay, this.plotTime).y;
+    context.fillStyle = color(PHOTON, 0.055);
+    context.fillRect(0, relayY - 15, layout.width, 30);
+    context.fillStyle = color(BONE, 0.1);
+    for (let second = 1; second <= HISTORY_SECONDS; second++) {
+      const x = layout.nowAt - second * layout.speed;
+      context.fillRect(Math.round(x), 12, 1, layout.height - 44);
+    }
+    if (
+      this.pointer &&
+      this.pointer.x >= layout.plotStart &&
+      this.pointer.x <= layout.nowAt
+    ) {
+      context.fillStyle = color(PHOTON, 0.45);
+      context.fillRect(Math.round(this.pointer.x), 12, 1, layout.height - 44);
     }
   }
 
@@ -283,24 +279,25 @@ export class SpacetimeRenderer {
     if (!journey.accepted || journey.origin === "ambient") {
       return;
     }
-    const age = this.model.now - journey.arrivesAt;
+    const age = this.plotTime - journey.arrivesAt;
     if (age <= 0 || age > CONE_FADE_SECONDS) {
       return;
     }
     const fade = 1 - age / CONE_FADE_SECONDS;
     const reach = Math.min(age / CROSS_SECONDS, 1.2);
     const apex = this.point(LANE_POSITION.relay, journey.arrivesAt);
-    const near = this.point(LANE_POSITION.relay - reach, this.model.now);
-    const far = this.point(LANE_POSITION.relay + reach, this.model.now);
+    const near = this.point(LANE_POSITION.relay - reach, this.plotTime);
+    const far = this.point(LANE_POSITION.relay + reach, this.plotTime);
     const layout = this.layout;
     const context = this.context;
     context.save();
     context.beginPath();
-    if (layout.horizontal) {
-      context.rect(0, layout.spaceStart, layout.width, layout.spaceLength);
-    } else {
-      context.rect(layout.spaceStart, 0, layout.spaceLength, layout.height);
-    }
+    context.rect(
+      layout.plotStart,
+      layout.spaceStart,
+      layout.nowAt - layout.plotStart,
+      layout.spaceLength,
+    );
     context.clip();
     context.beginPath();
     context.moveTo(apex.x, apex.y);
@@ -370,23 +367,18 @@ export class SpacetimeRenderer {
 
   private strokeLane(position: number, strokeStyle: string, lineWidth: number) {
     const layout = this.layout;
-    const now = this.point(position, this.model.now);
+    const now = this.point(position, this.plotTime);
     const context = this.context;
     context.strokeStyle = strokeStyle;
     context.lineWidth = lineWidth;
     context.beginPath();
-    if (layout.horizontal) {
-      context.moveTo(0, now.y);
-      context.lineTo(now.x, now.y);
-    } else {
-      context.moveTo(now.x, layout.height);
-      context.lineTo(now.x, now.y);
-    }
+    context.moveTo(layout.plotStart, now.y);
+    context.lineTo(now.x, now.y);
     context.stroke();
   }
 
   private drawJourney(journey: Journey, emphasis: number) {
-    const now = this.model.now;
+    const now = this.plotTime;
     const ingress = this.travel(journey.id, {
       from: LANE_POSITION.sender,
       to: LANE_POSITION.relay,
@@ -503,7 +495,7 @@ export class SpacetimeRenderer {
       dashed?: boolean;
     },
   ) {
-    const now = this.model.now;
+    const now = this.plotTime;
     if (now < signal.start) {
       return false;
     }
@@ -533,19 +525,47 @@ export class SpacetimeRenderer {
     context.setLineDash([]);
     this.segments.push({ journeyId, from: tail, to: head });
     if (progress < 1) {
-      this.glow(head, signal.channels);
+      this.drawSignalHead(tail, head, signal.channels, signal.alpha);
     }
     return true;
   }
 
-  // The head of a signal in flight: a plain dot with a thin ring, no glow.
-  private glow(point: Point, channels: string) {
+  // A short trail shows the direction of requests and returning errors on both axes.
+  private drawSignalHead(
+    tail: Point,
+    point: Point,
+    channels: string,
+    emphasis: number,
+  ) {
     const context = this.context;
-    context.fillStyle = color(channels, 1);
+    const alpha = Math.min(1, emphasis);
+    const dx = point.x - tail.x;
+    const dy = point.y - tail.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance > 0) {
+      const fraction = Math.min(1, SIGNAL_TRAIL_PX / distance);
+      const startX = point.x - dx * fraction;
+      const startY = point.y - dy * fraction;
+      const trail = context.createLinearGradient(
+        startX,
+        startY,
+        point.x,
+        point.y,
+      );
+      trail.addColorStop(0, color(channels, 0));
+      trail.addColorStop(1, color(channels, alpha));
+      context.strokeStyle = trail;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(startX, startY);
+      context.lineTo(point.x, point.y);
+      context.stroke();
+    }
+    context.fillStyle = color(channels, alpha);
     context.beginPath();
     context.arc(point.x, point.y, 2.6, 0, Math.PI * 2);
     context.fill();
-    context.strokeStyle = color(channels, 0.35);
+    context.strokeStyle = color(channels, 0.35 * alpha);
     context.lineWidth = 1;
     context.beginPath();
     context.arc(point.x, point.y, 6, 0, Math.PI * 2);
@@ -558,7 +578,7 @@ export class SpacetimeRenderer {
     channels: string,
     emphasis: number,
   ) {
-    const age = this.model.now - time;
+    const age = this.plotTime - time;
     if (age < 0 || age > FLASH_SECONDS) {
       return;
     }
@@ -582,7 +602,7 @@ export class SpacetimeRenderer {
     shape: "dot" | "tick" | "cross",
     emphasis: number,
   ) {
-    if (this.model.now < time) {
+    if (this.plotTime < time) {
       return;
     }
     const center = this.point(position, time);
@@ -616,7 +636,7 @@ export class SpacetimeRenderer {
     end: number,
     emphasis: number,
   ) {
-    const now = this.model.now;
+    const now = this.plotTime;
     const visibleEnd = Math.min(now, end);
     const offset = 7 / this.layout.spaceLength;
     const from = this.point(LANE_POSITION.relay + offset, start);
@@ -632,7 +652,7 @@ export class SpacetimeRenderer {
     context.setLineDash([]);
     this.segments.push({ journeyId, from, to });
     if (now < end) {
-      this.glow(to, RETRY);
+      this.drawSignalHead(from, to, RETRY, emphasis);
     }
   }
 
@@ -682,28 +702,33 @@ export class SpacetimeRenderer {
     return notes;
   }
 
-  private drawAnnotations() {
+  private drawAnnotations(journey: Journey) {
     const context = this.context;
     context.font = "500 11px " + MONO_FONT;
     context.textBaseline = "middle";
     context.textAlign = "left";
-    for (const journey of this.model.journeys) {
-      const highlighted = journey.id === this.highlightId;
-      if (journey.origin === "ambient" && !highlighted) {
-        continue;
+    // Each lane labels its latest visible result. Earlier attempts retain their marks.
+    const latestByLane = new Map<number, Annotation>();
+    for (const note of this.annotationsFor(journey)) {
+      const age = this.plotTime - note.time;
+      if (age >= 0 && age <= HISTORY_SECONDS) {
+        latestByLane.set(note.position, note);
       }
-      for (const note of this.annotationsFor(journey)) {
-        const age = this.model.now - note.time;
-        if (age < 0) {
-          continue;
-        }
-        let alpha = 1;
-        if (!highlighted && !this.holdAnnotations) {
-          if (age > ANNOTATION_SECONDS) {
-            continue;
-          }
-          alpha = clamp((ANNOTATION_SECONDS - age) / 0.8, 0, 1);
-        }
+    }
+    for (const note of latestByLane.values()) {
+      let alpha = 1;
+      if (
+        !this.trackedOrder &&
+        journey.id !== this.highlightId &&
+        !this.holdAnnotations
+      ) {
+        alpha = clamp(
+          (ANNOTATION_SECONDS - (this.plotTime - note.time)) / 0.8,
+          0,
+          1,
+        );
+      }
+      if (alpha > 0) {
         this.drawNote(note, alpha);
       }
     }
@@ -713,16 +738,12 @@ export class SpacetimeRenderer {
     const anchor = this.point(note.position, note.time);
     const context = this.context;
     const width = context.measureText(note.text).width + 14;
-    let x = anchor.x + 9;
-    let y = anchor.y - 16;
-    if (!this.layout.horizontal) {
-      x = anchor.x - width - 8;
-      y = anchor.y - 12;
-      if (x < 4) {
-        x = anchor.x + 10;
-      }
-    }
-    x = clamp(x, 4, this.layout.width - width - 4);
+    const y = anchor.y - 14;
+    const x = clamp(
+      anchor.x - width / 2,
+      this.layout.plotStart + 2,
+      this.layout.nowAt - width,
+    );
     context.fillStyle = color("11 13 16", 0.82 * alpha);
     context.fillRect(x, y - 9, width, 18);
     context.strokeStyle = color(note.tone, 0.6 * alpha);
@@ -736,61 +757,49 @@ export class SpacetimeRenderer {
     const layout = this.layout;
     const context = this.context;
     const alpha = this.revealEase();
-    const start = this.point(-0.08, this.model.now);
-    const end = this.point(1.08, this.model.now);
-    context.strokeStyle = color(BONE, 0.55 * alpha);
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(start.x, start.y);
-    context.lineTo(end.x, end.y);
-    context.stroke();
-
-    context.font = "500 10px " + MONO_FONT;
-    context.fillStyle = color(BONE, 0.62 * alpha);
+    const axisY = layout.height - 31;
+    context.fillStyle = color(PHOTON, 0.62 * alpha);
+    context.fillRect(layout.nowAt, 12, 1, axisY - 12);
+    context.fillStyle = color(BONE, 0.3);
+    context.fillRect(
+      layout.plotStart,
+      axisY,
+      layout.nowAt - layout.plotStart,
+      1,
+    );
+    context.font = "500 11px " + MONO_FONT;
     context.textBaseline = "middle";
-    // Second marks: the time axis ruler, measured back from now.
-    for (let second = 1; second <= 12; second++) {
-      const mark = this.point(1.08, this.model.now - second);
-      if (mark.x < 0 || mark.y > layout.height) {
-        break;
-      }
-      const tickLength = 4;
-      context.fillStyle = color(BONE, 0.32 * alpha);
-      if (layout.horizontal) {
-        context.fillRect(mark.x, mark.y - tickLength, 1, tickLength);
-      } else {
-        context.fillRect(mark.x, mark.y, tickLength, 1);
-      }
-      if (second % 2 === 0) {
-        context.fillStyle = color(BONE, 0.45 * alpha);
-        if (layout.horizontal) {
-          context.textAlign = "center";
-          context.fillText("−" + second + " s", mark.x, mark.y + 9);
-        } else {
-          context.textAlign = "right";
-          context.fillText("−" + second + "s", layout.width - 2, mark.y);
-        }
-      }
+    context.textAlign = "left";
+    context.fillStyle = color(BONE, 0.72);
+    context.fillText(this.labels.time, 10, axisY + 15);
+    let tickInterval = 2;
+    if (layout.width < COMPACT_PLOT_WIDTH) {
+      tickInterval = 4;
+    }
+    context.textAlign = "center";
+    for (
+      let second = tickInterval;
+      second <= HISTORY_SECONDS;
+      second += tickInterval
+    ) {
+      const x = layout.nowAt - second * layout.speed;
+      context.fillRect(Math.round(x), axisY, 1, 4);
+      context.fillText("−" + second + " s", x, axisY + 15);
     }
     context.fillStyle = color(PHOTON, alpha);
-    if (layout.horizontal) {
-      context.textAlign = "center";
-      context.fillText(this.labels.now.toUpperCase(), end.x, end.y + 9);
-    } else {
-      context.textAlign = "right";
-      context.fillText(
-        this.labels.now.toUpperCase(),
-        layout.width - 2,
-        start.y - 10,
-      );
+    let endLabel = this.labels.now;
+    if (this.atEnd) {
+      endLabel = this.labels.end;
     }
+    context.fillText(endLabel, layout.nowAt, axisY + 15);
   }
 
   private drawLaneLabels() {
     const layout = this.layout;
     const context = this.context;
     const alpha = this.revealEase();
-    context.font = "600 10.5px " + MONO_FONT;
+    context.font = '550 12px "Geist Variable", system-ui, sans-serif';
+    context.textAlign = "left";
     context.textBaseline = "middle";
     const labels: { position: number; text: string; channels: string }[] = [
       {
@@ -804,58 +813,21 @@ export class SpacetimeRenderer {
       labels.push(this.endpointLabel(endpoint));
     }
     for (const label of labels) {
-      const anchor = this.point(label.position, this.model.now);
+      const anchor = this.point(label.position, this.plotTime);
       context.fillStyle = color(label.channels, 0.92 * alpha);
-      if (layout.horizontal) {
-        context.textAlign = "left";
-        context.fillText(label.text.toUpperCase(), anchor.x + 14, anchor.y);
-      } else {
-        context.textAlign = "center";
-        context.fillText(label.text.toUpperCase(), anchor.x, anchor.y - 28);
-      }
+      context.fillText(label.text, 10, anchor.y);
+      context.beginPath();
+      context.arc(layout.plotStart, anchor.y, 2.5, 0, 2 * Math.PI);
+      context.fill();
     }
   }
 
   private endpointLabel(endpoint: Endpoint) {
-    const letter = endpoint.toUpperCase();
-    let text = this.labels.endpoint + " " + letter;
-    if (!this.layout.horizontal) {
-      text = letter;
-    }
+    let text = this.labels.destinations[endpoint];
     if (this.model.online[endpoint]) {
       return { position: LANE_POSITION[endpoint], text, channels: BONE };
     }
-    if (this.layout.horizontal) {
-      text += " · " + this.labels.offline;
-    } else {
-      text += "×";
-    }
+    text += " ×";
     return { position: LANE_POSITION[endpoint], text, channels: FAILED };
-  }
-
-  // Erases the oldest history so the diagram dissolves into the page.
-  private fadeHistoryEdge() {
-    const layout = this.layout;
-    const context = this.context;
-    context.save();
-    context.globalCompositeOperation = "destination-out";
-    let fade: CanvasGradient;
-    if (layout.horizontal) {
-      // Strong under the headline (left), clear around "now" (right).
-      fade = context.createLinearGradient(0, 0, layout.width * 0.62, 0);
-      fade.addColorStop(0, "rgb(0 0 0 / 0.97)");
-      fade.addColorStop(0.62, "rgb(0 0 0 / 0.82)");
-      fade.addColorStop(1, "rgb(0 0 0 / 0)");
-      context.fillStyle = fade;
-      context.fillRect(0, 0, layout.width * 0.62, layout.height);
-    } else {
-      const start = layout.height * 0.72;
-      fade = context.createLinearGradient(0, start, 0, layout.height);
-      fade.addColorStop(0, "rgb(0 0 0 / 0)");
-      fade.addColorStop(1, "rgb(0 0 0 / 0.9)");
-      context.fillStyle = fade;
-      context.fillRect(0, start, layout.width, layout.height - start);
-    }
-    context.restore();
   }
 }

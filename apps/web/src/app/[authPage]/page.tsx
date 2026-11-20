@@ -9,6 +9,7 @@ import { AuthTrace } from "../../components/auth-trace";
 import { PageHeading } from "../../components/page-heading";
 import { issueFormProof } from "../../server/form-proof";
 import { PolicyLinks } from "../../components/policy-links";
+import { SectionGuide } from "../../components/section-guide";
 
 type AuthParams = { params: Promise<{ authPage: string }> };
 
@@ -82,14 +83,8 @@ export default async function AuthPage({ params }: AuthParams) {
         <LanguageSwitch />
 
         <div className="auth-context">
-          <AuthCaption step={step} />
+          <AuthGuide step={step} />
           <AuthTrace step={step} />
-          <p>
-            {t(
-              "Accept signed events, route them to your destinations, and inspect every attempt.",
-              "Ricevi eventi firmati, inviali alle tue destinazioni e controlla ogni tentativo di consegna.",
-            )}
-          </p>
         </div>
       </aside>
       <section className="auth-content">
@@ -164,33 +159,47 @@ export default async function AuthPage({ params }: AuthParams) {
   );
 }
 
-async function AuthCaption({
-  step,
-}: {
-  step: "login" | "register" | "verify";
-}) {
+async function AuthGuide({ step }: { step: "login" | "register" | "verify" }) {
   const { t } = await getLocale();
   if (step === "verify") {
     return (
-      <p className="auth-caption">
-        {t("One more ", "Serve una ")}
-        <em>{t("signature.", "seconda firma.")}</em>
-      </p>
+      <SectionGuide
+        title={t(
+          "Have your phone ready",
+          "Tieni a portata di mano il telefono",
+        )}
+      >
+        {t(
+          "Open the RelayHub entry in your authenticator app. If you have lost access to the app, use one of the recovery codes you saved during setup.",
+          "Apri la voce RelayHub nell’app di autenticazione. Se hai perso l’accesso all’app, usa uno dei codici di recupero salvati durante la configurazione.",
+        )}
+      </SectionGuide>
     );
   }
   if (step === "register") {
     return (
-      <p className="auth-caption">
-        {t("Open your ", "Apri il tuo ")}
-        <em>relay.</em>
-      </p>
+      <SectionGuide
+        title={t(
+          "Open your first workspace",
+          "Apri la tua prima area di lavoro",
+        )}
+      >
+        {t(
+          "Enter your name, email and a password of at least 12 characters. After registration, create an organization or share your account ID with the owner of an existing one.",
+          "Inserisci nome, email e una password di almeno 12 caratteri. Dopo la registrazione puoi creare un’organizzazione o condividere l’ID del tuo account con il proprietario di una già esistente.",
+        )}
+      </SectionGuide>
     );
   }
   return (
-    <p className="auth-caption">
-      {t("Back on the ", "Di nuovo sulla ")}
-      <em>{t("timeline.", "linea del tempo.")}</em>
-    </p>
+    <SectionGuide
+      title={t("Return to your workspace", "Rientra nella tua area di lavoro")}
+    >
+      {t(
+        "Use the email and password you registered with. After signing in, choose the organization whose events you want to follow.",
+        "Usa l’email e la password scelte durante la registrazione. Dopo l’accesso, scegli l’organizzazione di cui vuoi seguire gli eventi.",
+      )}
+    </SectionGuide>
   );
 }
 

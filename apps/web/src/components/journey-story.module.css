@@ -1,226 +1,209 @@
 .story {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.25fr);
+  gap: clamp(2rem, 8vw, 8rem);
+  align-items: start;
   width: min(calc(100% - var(--gutter) * 2), 84rem);
   margin-inline: auto;
-  padding-block: clamp(4rem, 10vw, 9rem) clamp(3rem, 6vw, 6rem);
+  padding-block: clamp(3.2rem, 7vw, 7rem);
   border-top: 1px solid var(--rule);
 }
-/* The section receives focus after the "Follow one event" glide. */
-.story:focus {
-  outline: none;
+.guide h2 {
+  max-width: 15ch;
+  margin-bottom: 1.2rem;
+  font: 600 clamp(2rem, 3.3vw, 3.5rem)/1.06 var(--font-sans);
+  letter-spacing: -0.05em;
+  text-wrap: balance;
 }
-.heading {
-  max-width: 44rem;
-  margin-bottom: clamp(2rem, 5vw, 4.5rem);
-}
-.eyebrow {
-  margin: 0 0 1rem;
-  color: var(--dust);
-  font: 500 0.78rem/1.2 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.heading h2 {
-  margin: 0;
-  font: 600 clamp(1.7rem, 2.8vw, 2.4rem)/1.15 var(--font-sans);
-  letter-spacing: -0.02em;
-}
-.layout {
-  display: grid;
-  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 1fr);
-  gap: clamp(2rem, 7vw, 8rem);
-  align-items: start;
-}
-.figure {
-  position: sticky;
-  top: clamp(1rem, 8vh, 5rem);
-  margin: 0;
-  height: min(78svh, 40rem);
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--rule);
-  border-radius: 0.8rem;
-  background:
-    radial-gradient(circle, rgb(230 232 235 / 0.07) 1px, transparent 1.4px) 0
-      0 / 22px 22px,
-    var(--void-1);
-}
-/* Absolute sizing keeps the diagram inside the sticky box at every height. */
-.figure svg {
-  position: absolute;
-  inset: 1rem;
-  width: calc(100% - 2rem);
-  height: calc(100% - 2rem);
-  overflow: visible;
-}
-.lanes line {
-  stroke: rgb(230 232 235 / 0.2);
-  stroke-width: 1;
-}
-.lanes .horizon {
-  stroke: rgb(88 166 255 / 0.55);
-}
-.lanes text {
-  fill: var(--dust);
-  font: 600 9px var(--font-mono);
-  letter-spacing: 0.06em;
-  text-anchor: middle;
-}
-.lanes .axis {
-  text-anchor: end;
-}
-.stage path[data-draw] {
-  fill: none;
-  stroke-dasharray: 1;
-  stroke-linecap: round;
-}
-.ingress {
-  stroke: var(--bone);
-  stroke-width: 1.6;
-}
-.duplicate {
-  stroke: rgb(230 232 235 / 0.45);
-  stroke-width: 1.2;
-}
-.photon {
-  stroke: var(--photon);
-  stroke-width: 1.8;
-}
-.reflection {
-  stroke: var(--failed);
-  stroke-width: 1.6;
-}
-.backoff {
-  stroke: var(--retry);
-  stroke-width: 3;
-}
-.cone {
-  fill: rgb(88 166 255 / 0.07);
-  stroke: none;
-}
-.seal {
-  fill: var(--void);
-  stroke: var(--photon);
-  stroke-width: 1.5;
-}
-.record {
-  fill: none;
-  stroke: var(--bone);
-  stroke-width: 1.2;
-}
-.absorbed {
-  fill: rgb(63 185 80 / 0.2);
-  stroke: var(--delivered);
-  stroke-width: 1.5;
-}
-.failedMark {
-  fill: var(--failed);
-}
-.note,
-.noteDelivered,
-.noteFailed,
-.noteRetry {
-  font: 500 9.5px var(--font-mono);
-  fill: var(--bone);
-}
-.noteDelivered {
-  fill: var(--delivered);
-}
-.noteFailed {
-  fill: var(--failed);
-}
-.noteRetry {
-  fill: var(--retry);
-}
-
-.chapters {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.chapters li {
-  min-height: 62svh;
-  padding: clamp(1rem, 3vw, 2rem) 0 2rem 1.5rem;
-  border-left: 1px solid var(--rule);
-  position: relative;
-  transition: border-color 0.4s ease;
-}
-.chapters li:last-child {
-  min-height: 48svh;
-}
-.chapters li::before {
-  content: "";
-  position: absolute;
-  left: -5px;
-  top: clamp(1.35rem, 3.4vw, 2.4rem);
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  border: 1px solid var(--rule-strong);
-  background: var(--void);
-  transition:
-    background-color 0.4s ease,
-    border-color 0.4s ease;
-}
-.chapterLabel {
-  display: block;
-  margin-bottom: 0.6rem;
-  color: var(--dust);
-  font: 500 0.8rem var(--font-mono);
-}
-.chapters h3 {
-  margin: 0 0 0.9rem;
-  font: 600 clamp(1.15rem, 1.6vw, 1.35rem)/1.25 var(--font-sans);
-  letter-spacing: -0.03em;
-}
-.chapters p {
-  max-width: 34rem;
+.guide p,
+.caption p {
   margin: 0;
   color: var(--dust);
-  font-size: clamp(1rem, 1.2vw, 1.12rem);
   line-height: 1.65;
 }
-.story[data-active-stage="1"] .chapters li:nth-child(1),
-.story[data-active-stage="2"] .chapters li:nth-child(2),
-.story[data-active-stage="3"] .chapters li:nth-child(3),
-.story[data-active-stage="4"] .chapters li:nth-child(4) {
-  border-left-color: var(--photon);
+.steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1.6rem 0 0;
+  padding: 0;
+  border: 0;
+  gap: 0.5rem;
 }
-.story[data-active-stage="1"] .chapters li:nth-child(1)::before,
-.story[data-active-stage="2"] .chapters li:nth-child(2)::before,
-.story[data-active-stage="3"] .chapters li:nth-child(3)::before,
-.story[data-active-stage="4"] .chapters li:nth-child(4)::before {
-  background: var(--photon);
-  border-color: var(--photon);
+.step {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.85rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.35rem;
+  color: var(--dust);
+  cursor: pointer;
+  font-weight: 550;
 }
-.story[data-active-stage="1"] .chapters li:nth-child(1) p,
-.story[data-active-stage="2"] .chapters li:nth-child(2) p,
-.story[data-active-stage="3"] .chapters li:nth-child(3) p,
-.story[data-active-stage="4"] .chapters li:nth-child(4) p {
+.step:hover {
+  border-color: var(--dust);
+}
+.step:has(input:checked) {
   color: var(--bone);
+  border-color: var(--photon);
+  background: var(--void-2);
 }
-
+.step:has(input:focus-visible) {
+  outline: 2px solid var(--photon);
+  outline-offset: 3px;
+}
+.step input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.number {
+  font: 500 0.74rem var(--font-mono);
+}
+.step:has(input:checked) .number {
+  color: var(--photon);
+}
+.figure {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.75rem;
+  overflow: clip;
+  background: var(--void-1);
+}
+.event,
+.receipt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.event {
+  padding: 0.85rem clamp(0.85rem, 2vw, 1.7rem);
+  border-bottom: 1px solid var(--rule);
+}
+.event code {
+  font: 550 0.9rem var(--font-mono);
+}
+.event span {
+  color: var(--dust);
+  font: 500 0.77rem var(--font-mono);
+}
+.plot {
+  background: var(--lattice);
+  padding: 1rem 0.5rem 0;
+}
+.actors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  text-align: center;
+}
+.actors span {
+  font: 550 clamp(0.73rem, 1.2vw, 0.94rem)/1.3 var(--font-sans);
+  overflow-wrap: anywhere;
+}
+.actors span:nth-child(2) {
+  color: var(--photon);
+}
+.svg {
+  display: block;
+  width: 100%;
+  margin-top: 0.6rem;
+}
+.lanes {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-dasharray: 2 4;
+}
+.relayLane {
+  stroke: var(--photon);
+  opacity: 0.45;
+}
+.figure [data-tone="request"] {
+  color: var(--photon);
+}
+.figure [data-tone="success"] {
+  color: var(--delivered);
+}
+.figure [data-tone="failure"] {
+  color: var(--failed);
+}
+.figure [data-tone="retry"] {
+  color: var(--retry);
+}
+.trace,
+.tip {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.trace {
+  stroke-dasharray: 1;
+}
+.tip {
+  stroke-opacity: 0;
+}
+.caption {
+  padding: 1.1rem clamp(0.9rem, 2vw, 1.7rem) 1.45rem;
+  border-top: 1px solid var(--rule);
+}
+.receipt {
+  justify-content: start;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.85rem;
+}
+.receipt code {
+  font: 600 0.8rem var(--font-mono);
+}
+.receipt span {
+  color: var(--dust);
+}
+.caption h3 {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.15rem, 1.6vw, 1.5rem);
+}
+.caption p {
+  max-width: 62ch;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .trace {
+    animation: draw 420ms var(--delay) ease-in-out both;
+  }
+  .tip {
+    animation: tip 90ms calc(var(--delay) + 340ms) both;
+  }
+}
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes tip {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @media (max-width: 760px) {
-  .layout {
+  .story {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+    gap: 1.4rem;
   }
-  .figure {
-    top: 0;
-    z-index: 1;
-    height: 42svh;
-    min-height: 15rem;
-    border-radius: 0 0 0.8rem 0.8rem;
-    box-shadow: 0 1.5rem 2rem var(--void);
-  }
-  .chapters li {
-    min-height: 55svh;
-    padding-top: 2.5rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chapters li,
-  .chapters li::before {
-    transition: none;
+  .steps {
+    max-width: 28rem;
+    margin-top: 1.15rem;
   }
 }

@@ -6,6 +6,7 @@ import { settings } from "@relayhub/shared/config";
 import { requireOrganization } from "../../../server/authorization";
 import { HttpError } from "../../../server/http";
 import { Navigation } from "../../../components/navigation";
+import { readAlertSummary } from "../../../server/destination-monitoring";
 
 export default async function OrganizationLayout({
   children,
@@ -35,7 +36,11 @@ export default async function OrganizationLayout({
           {t("Organizations ↗", "Organizzazioni ↗")}
         </Link>
         <p className="org-name">{access.membership.organization.name}</p>
-        <Navigation base={"/workspace/" + organizationId} />
+        <Navigation
+          organizationId={organizationId}
+          alerts={await readAlertSummary(organizationId)}
+          role={access.membership.role}
+        />
       </aside>
       <main id="main" className="content">
         {settings().isDemo && (
