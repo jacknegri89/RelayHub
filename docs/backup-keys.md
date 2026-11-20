@@ -1,0 +1,8 @@
+# Backup key custody
+
+Keep the recovery secrets and the protected digest log separately from the encrypted PostgreSQL archives. Use an existing offline device or access-controlled password manager. Record which key versions cover each retained snapshot.
+
+- **Archive encryption.** On the recovery host use `gpg --full-generate-key` and create a passphrase-protected key with encryption capability. Inspect `gpg --fingerprint` and verify its full fingerprint through your established private channel. Export only the public key to the backup host with `gpg --armor --export FINGERPRINT`. Import it there and compare the fingerprint again. Store a protected offline copy of the private recovery key and its revocation certificate. Before relying on the copy, decrypt a synthetic rehearsal archive while logged in as the recovery operator.
+- **RelayHub encryption.** Retain the historic and active entries in `ENCRYPTION_KEYS` and the matching `ACTIVE_KEY_ID`. They are needed to decrypt per-resource envelopes after a database restore. Preserve `BETTER_AUTH_SECRET` for the MFA records, mailbox challenges and sessions associated with that deployment. Handle connector, receiver and provider credentials through their normal secret stores.
+- **Recovery log.** Keep the SHA-256, dump time, source and version in a protected operator log. Anyone who knows the public recipient can produce a new encrypted archive. Verify the digest from this independent log before restoring.
+- **Rotation.** Keep older recovery keys and application keyring entries available until the last archive requiring them expires. Test access after each rotation. Expire retained database copies according to the documented privacy policy.
