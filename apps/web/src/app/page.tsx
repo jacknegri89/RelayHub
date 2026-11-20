@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import { settings } from "@relayhub/shared/config";
 import { auth } from "../server/auth";
 import { Brand } from "../components/brand";
 import { RelaySignal } from "../components/relay-signal";
-import "@fontsource/barlow-condensed/latin-700.css";
 import styles from "./landing.module.css";
 
 export default async function Home() {
@@ -54,6 +54,9 @@ export default async function Home() {
                 {accountLabel} <span aria-hidden="true">↗</span>
               </Link>
             </div>
+            {!session && !settings().isDemo && (
+              <p className={styles.inviteNote}>Registration by invitation</p>
+            )}
           </div>
           <RelaySignal />
         </section>

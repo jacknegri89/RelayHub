@@ -19,6 +19,7 @@ export default async function AuthPage({
   }
   await connection();
   const registering = authPage === "register";
+  const requiresInvitation = registering && !settings().isDemo;
   let title = "Sign in";
   let endpoint = "/api/auth/sign-in/email";
   let passwordAutocomplete = "current-password";
@@ -30,7 +31,9 @@ export default async function AuthPage({
   return (
     <main id="main" className="auth-shell">
       <aside className="auth-aside">
-        <Brand />
+        <Link href="/" aria-label="RelayHub home">
+          <Brand />
+        </Link>
         <div className="auth-context">
           <p className="auth-caption">Webhook delivery, end to end.</p>
           <Motion kind="signal" className="auth-route">
@@ -62,6 +65,11 @@ export default async function AuthPage({
       <section className="auth-content">
         <div className="auth-panel">
           <PageHeading title={title} />
+          {requiresInvitation && (
+            <p>
+              Use your own email address and the invitation code you received.
+            </p>
+          )}
           <ActionForm endpoint={endpoint} label={title} nextPath="/workspace">
             <input
               type="hidden"
@@ -85,12 +93,13 @@ export default async function AuthPage({
                 />
               </label>
             )}
-            {registering && !settings().isDemo && (
+            {requiresInvitation && (
               <label>
                 Invitation code{" "}
                 <input
                   name="invite"
-                  type="password"
+                  spellCheck={false}
+                  autoCapitalize="none"
                   autoComplete="off"
                   maxLength={43}
                   required

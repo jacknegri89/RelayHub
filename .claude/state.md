@@ -13,7 +13,7 @@
 - packages/db/src/events.ts atomically accepts encrypted events, receipted signatures, unique deliveries and outbox entries. PostgreSQL is the authority. Redis payloads are identifiers/generations only.
 - apps/worker/src/delivery.ts claims and fences attempts; dispatch.ts republishes, recovers and applies retention; send.ts pins verified outbound DNS without redirects.
 - apps/web/src/components/activity.tsx renders actual metrics and history; configuration.tsx renders sources, destinations, routes and membership.
-- UI redesign: near-black, ivory and copper palette across marketing, sign-in and workspace. Landing uses self-hosted Barlow Condensed and Public Sans.
+- UI redesign: near-black, ivory and copper across marketing, sign-in and workspace. New R monogram and favicon. Self-hosted Bricolage Grotesque headings and Onest body. Registration page explains the personal email and invitation flow.
 - apps/web/src/components/relay-signal.tsx coordinates Canvas, GSAP intro, ScrollTrigger delivery steps, pause and reduced motion. signal-art.ts renders the original folded signal paths and moving packets. The drawing loop stops outside the viewport.
 - [x] Copper redesign is live at https://relayhub-chi.vercel.app (dpl_C9A6BKmWtB3LYSdXhVvobsja97Cg). Lint, typecheck, production build and 41 local tests passed. Public smoke passed headline/animation, flow anchor, pause, reduced motion, layouts from 320 to 1440 px, invited registration, signed and deduplicated events, actual HTTPS delivery 204, rejection of unsigned requests and homepage after sign-in.
 - apps/mock-receiver/src/index.ts verifies signatures and simulates 200, 400, 429, 500, latency and timeout. Demo deduplication is process-local.
@@ -24,4 +24,5 @@
 - [x] Production registration uses hashed, single-use 48-hour invites. RegistrationInvite migration applied locally and on Neon. Same-origin HTTPS receiver /api/receiver/verify uses VERIFICATION_RECEIVER_SECRET. External destination allowlist remains configurable. Local 29 unit, 9 integration and 3 Playwright tests passed.
 - [ ] Vercel Hobby daemon provisioned-memory and Upstash Redis command quotas apply. Continuous processing after quota exhaustion is unavailable on these plans.
 - [ ] Password reset and verified email enrollment require a trusted mail transport. Membership uses the account UUID from the member's login, shared through a trusted channel.
-- Vercel deployments use the CLI from this workspace. Git main is prepared locally and checked for secrets. Public GitHub repository name jacknegri89/relayhub is available. Device login initiated with gh; repository creation and push await approval.
+- [x] Public source and main branch at https://github.com/jacknegri89/relayhub. Vercel project relayhub is connected to the repository via vercel git connect.
+- [/] Validate the first source-triggered Vercel deployment and GitHub Actions for the branding release.

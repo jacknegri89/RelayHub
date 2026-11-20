@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/public-sans/wght.css";
+import "@fontsource-variable/onest/wght.css";
+import "@fontsource-variable/bricolage-grotesque/wght.css";
 import "./styles.css";
 
 export const metadata: Metadata = {
