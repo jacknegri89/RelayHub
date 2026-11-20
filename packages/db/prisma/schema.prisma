@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client"
+  output = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  owner
+  admin
+  viewer
+}
+
+enum DeliveryStatus {
+  pending
+  queued
+  delivering
+  retry_scheduled
+  delivered
+  failed
+  cancelled
+}
+
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  emailVerified Boolean @default(false)
+  image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  accounts Account[]
+  memberships OrganizationMember[]
+}
+
+model Session {
+  id String @id @default(uuid())
+  token String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Account {
+  id String @id @default(uuid())
+  accountId String
+  providerId String
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken String?
+  refreshToken String?
+  idToken String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope String?
+  password String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id String @id @default(uuid())
+  identifier String
+  value String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model RateLimit {
+  id String @id @default(uuid())
+  key String @unique
+  count Int
+  lastRequest BigInt
+}
+
+model Organization {
+  id String @id @default(uuid())
+  name String
+  createdAt DateTime @default(now())
+  members OrganizationMember[]
+  sources WebhookSource[]
+  destinations WebhookDestination[]
+  audit AuditLog[]
+}
+
+model OrganizationMember {
+  organizationId String
+  userId String
+  role Role
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([organizationId, userId])
+  @@index([userId])
+}
+
+model WebhookSource {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  name String
+  secret String
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  subscriptions Subscription[]
+  events WebhookEvent[]
+  ingressReceipts IngressReceipt[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, createdAt])
+}
+
+model WebhookDestination {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  name String
+  url String
+  secret String
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  subscriptions Subscription[]
+  deliveries Delivery[]
+
+  @@unique([id, organizationId])
+  @@index([organizationId, createdAt])
+}
+
+model Subscription {
+  organizationId String
+  sourceId String
+  destinationId String
+  eventType String @default("")
+  source WebhookSource @relation(fields: [sourceId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  destination WebhookDestination @relation(fields: [destinationId, organizationId], references: [id, organizationId], onDelete: Cascade)
+
+  @@id([sourceId, destinationId, eventType])
+  @@index([destinationId, organizationId])
+}
+
+model WebhookEvent {
+  id String @id @default(uuid())
+  organizationId String
+  sourceId String
+  source WebhookSource @relation(fields: [sourceId, organizationId], references: [id, organizationId])
+  externalId String
+  eventType String
+  receivedAt DateTime @default(now())
+  payloadSize Int
+  payloadHash String
+  payload String
+  correlationId String
+  deliveries Delivery[]
+
+  @@unique([sourceId, externalId])
+  @@unique([id, organizationId])
+  @@index([organizationId, receivedAt, id])
+  @@index([receivedAt])
+}
+
+model Delivery {
+  id String @id @default(uuid())
+  organizationId String
+  eventId String
+  destinationId String
+  event WebhookEvent @relation(fields: [eventId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  destination WebhookDestination @relation(fields: [destinationId, organizationId], references: [id, organizationId])
+  status DeliveryStatus @default(pending)
+  generation Int @default(1)
+  runAttempts Int @default(0)
+  attemptCount Int @default(0)
+  leaseToken String?
+  leaseExpiresAt DateTime?
+  lastStatus Int?
+  durationMs Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  queuedAt DateTime?
+  nextAt DateTime @default(now())
+  finishedAt DateTime?
+  attempts DeliveryAttempt[]
+  outbox OutboxEntry?
+
+  @@unique([eventId, destinationId])
+  @@index([organizationId, createdAt, id])
+  @@index([organizationId, status, createdAt])
+  @@index([destinationId, organizationId])
+  @@index([status, leaseExpiresAt])
+}
+
+model DeliveryAttempt {
+  id String @id @default(uuid())
+  deliveryId String
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  number Int
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  httpStatus Int?
+  durationMs Int?
+  outcome String @default("in_progress")
+  retryAt DateTime?
+
+  @@unique([deliveryId, number])
+}
+
+model OutboxEntry {
+  deliveryId String @id
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  generation Int
+  availableAt DateTime
+  publishAfter DateTime
+
+  @@index([publishAfter])
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actorId String
+  action String
+  resourceId String
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([createdAt])
+}
+
+model RequestCounter {
+  key String @id
+  hits Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model IngressReceipt {
+  sourceId String
+  signature String
+  externalId String
+  expiresAt DateTime
+  source WebhookSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@id([sourceId, signature])
+  @@index([expiresAt])
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@relayhub/web",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@better-auth/prisma-adapter": "1.7.26",
+    "@fontsource-variable/public-sans": "5.3.0",
+    "@gsap/react": "2.1.2",
+    "@relayhub/db": "workspace:*",
+    "@relayhub/shared": "workspace:*",
+    "better-auth": "1.7.26",
+    "gsap": "3.15.1",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "start": "next start",
+    "build": "next build"
+  }
+}

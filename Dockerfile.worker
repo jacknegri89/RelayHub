@@ -1,0 +1,12 @@
+FROM node:24.16.0-bookworm-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl && rm -rf /var/lib/apt/lists/*
+RUN npm install --global pnpm@11.25.0
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml prisma.config.ts tsconfig.json ./
+COPY apps/web/package.json ./apps/web/package.json
+COPY apps/mock-receiver/package.json ./apps/mock-receiver/package.json
+COPY apps/worker ./apps/worker/
+COPY packages ./packages/
+RUN pnpm install --frozen-lockfile && pnpm generate
+USER node
+CMD ["node", "--import", "tsx", "apps/worker/src/index.ts"]

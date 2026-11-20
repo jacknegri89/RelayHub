@@ -1,0 +1,36 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "../../server/auth";
+import { Brand } from "../../components/brand";
+import { ActionForm } from "../../components/forms";
+import Link from "next/link";
+
+export default async function WorkspaceLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const requestHeaders = await headers();
+  const session = await auth().api.getSession({ headers: requestHeaders });
+  if (!session) {
+    redirect("/login");
+  }
+  return (
+    <>
+      <header className="topbar">
+        <Link href="/workspace" aria-label="RelayHub organizations">
+          <Brand />
+        </Link>
+        <div className="account">
+          <span>{session.user.email}</span>
+          <ActionForm
+            endpoint="/api/auth/sign-out"
+            label="Sign out"
+            nextPath="/login"
+          />
+        </div>
+      </header>
+      {children}
+    </>
+  );
+}

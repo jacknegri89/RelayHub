@@ -1,0 +1,50 @@
+{
+  "name": "relayhub",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@relayhub/db": "workspace:*",
+    "@relayhub/shared": "workspace:*",
+    "ioredis": "6.0.0"
+  },
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24.11 <25 || >=26"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "generate": "prisma generate",
+    "migrate": "node --env-file-if-exists=.env node_modules/prisma/build/index.js migrate deploy",
+    "dev": "node scripts/run.mjs dev",
+    "worker": "node scripts/run.mjs worker",
+    "receiver": "node scripts/run.mjs receiver",
+    "seed": "node scripts/run.mjs seed",
+    "demo": "node scripts/run.mjs demo",
+    "start": "node scripts/run.mjs start",
+    "build": "pnpm --filter @relayhub/web build",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "vitest run tests/protocol.test.ts",
+    "test:integration": "node --env-file-if-exists=.env node_modules/vitest/vitest.mjs run tests/relay.integration.test.ts",
+    "test:e2e": "node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test"
+  },
+  "devDependencies": {
+    "prisma": "7.10.1",
+    "typescript": "5.9.3",
+    "tsx": "4.23.15",
+    "vitest": "5.1.1",
+    "@playwright/test": "1.65.1",
+    "@axe-core/playwright": "4.14.0",
+    "eslint": "10.15.0",
+    "@next/eslint-plugin-next": "16.4.6",
+    "typescript-eslint": "8.73.0",
+    "prettier": "3.10.1",
+    "@types/node": "24",
+    "@types/react": "19",
+    "@types/react-dom": "19",
+    "@types/pg": "8"
+  }
+}

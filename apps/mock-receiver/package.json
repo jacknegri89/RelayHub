@@ -1,0 +1,9 @@
+{
+  "name": "@relayhub/mock-receiver",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@relayhub/shared": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

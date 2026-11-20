@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: RelayHub Ingress API
+  version: 0.1.0
+  description: >
+    Send signed UTF-8 JSON bytes. Use HMAC-SHA256 with the source secret as UTF-8 text
+    over timestamp + "." + the original body bytes. Send the lowercase hexadecimal digest
+    as v1=<digest>. Timestamp is Unix seconds. Use one stable external ID across retries.
+    Include a unique ID in the signed JSON if otherwise identical events can occur in the same second.
+    Responses contain X-Request-Id for request correlation.
+paths:
+  /api/webhooks/{sourceId}:
+    post:
+      operationId: receiveWebhook
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: X-RelayHub-Timestamp
+          in: header
+          required: true
+          schema: { type: string, pattern: "^[0-9]{10}$" }
+        - name: X-RelayHub-Event-Id
+          in: header
+          required: true
+          schema:
+            {
+              type: string,
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]*$",
+              maxLength: 128,
+            }
+        - name: X-RelayHub-Signature
+          in: header
+          required: true
+          schema: { type: string, pattern: "^v1=[a-f0-9]{64}$" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  {
+                    type: string,
+                    pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]*$",
+                    maxLength: 100,
+                  }
+              additionalProperties: true
+      responses:
+        "200":
+          description: Matching duplicate, original ID returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [eventId, duplicate]
+                properties:
+                  eventId: { type: string, format: uuid }
+                  duplicate: { const: true }
+        "202":
+          description: Event and deliveries committed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [eventId, deliveries]
+                properties:
+                  eventId: { type: string, format: uuid }
+                  deliveries: { type: integer, minimum: 0 }
+        "400":
+          {
+            description: A trusted reverse proxy did not supply a valid client address,
+          }
+        "401":
+          {
+            description: Source unavailable,
+            expired timestamp or invalid signature,
+          }
+        "409":
+          {
+            description: External ID payload conflict or signature replay with a changed ID,
+          }
+        "413": { description: Payload exceeds the configured size }
+        "415": { description: Content type is not application/json }
+        "422": { description: Invalid JSON, event ID or event type }
+        "429":
+          description: Request limit reached
+          headers:
+            Retry-After:
+              { schema: { type: integer }, description: Seconds to wait }
+        "500": { description: Internal processing error }
+  /api/health/live:
+    get:
+      operationId: liveness
+      responses:
+        "200": { description: Web process is running }
+  /api/health/ready:
+    get:
+      operationId: readiness
+      responses:
+        "200": { description: Web process can use PostgreSQL }
+        "503": { description: Web process cannot accept events }
+x-outbound-signing:
+  headers:
+    [
+      X-RelayHub-Delivery-Id,
+      X-RelayHub-Event-Id,
+      X-RelayHub-Timestamp,
+      X-RelayHub-Signature,
+    ]
+  canonicalInput: timestamp + "." + raw HTTP body
+  algorithm: HMAC-SHA256 with destination secret
+  format: v1=<lowercase hex digest>
+  deduplication: Persist the stable Delivery ID in the same transaction as the receiver side effect.

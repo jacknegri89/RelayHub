@@ -1,0 +1,24 @@
+- RelayHub is a multi-tenant webhook gateway with at-least-once HTTP delivery and stable delivery IDs.
+- [x] Workspace, Prisma schema and versioned migrations. Native Windows PostgreSQL 17 applied both migrations; schema diff empty.
+- [x] Session auth, organization roles, scoped management, signed ingress, worker, demo and dashboard.
+- [x] Optimized build verified on Windows: 29 unit, 8 PostgreSQL/Redis integration, 2 Playwright tests passed. Lint, formatting, typecheck and production advisory check passed.
+- [x] Native Redis shutdown/restart: HTTP 202 while queue offline, durable outbox row observed, one eventual HTTP 200. Lease recovery tested with a simulated crash.
+- [x] Compose demo and production config validated; Docker engine absent on this Windows host.
+- Stack: Node 24.16+ LTS target, Windows verification with Node 26.12.1, pnpm 11.25.0, Next 16.4.6, React 19.3.1, TS 5.9.3, Better Auth 1.7.26, Prisma 7.10.1, PostgreSQL 17, Redis 8, BullMQ 6.7.8.
+- Local isolated ports: web 3000, mock receiver 3001, worker health 3002, PostgreSQL 55432, Redis 56379.
+- Env keys: RELAYHUB_MODE, RELAYHUB_BASE_URL, DATABASE_URL, REDIS_URL, BETTER_AUTH_SECRET, ACTIVE_KEY_ID, ENCRYPTION_KEYS, DESTINATION_HOSTS, TRUST_PROXY, DEMO_RECEIVER_URL/SECRET. See docs/operations.md for limits.
+- Schema: User/Session/Account/Verification, Organization/OrganizationMember, Source/Destination/Subscription, WebhookEvent, Delivery/DeliveryAttempt/OutboxEntry, AuditLog, RequestCounter and IngressReceipt.
+- API: POST /api/webhooks/:id (raw HMAC v1, JSON type, external ID); POST /api/organizations[/:id] (same-origin session + role); GET /api/health/live and /ready.
+- apps/web/src/server/authorization.ts guards sessions and tenant role; manage.ts handles scoped configuration, routing, retries and audit; form-proof.ts signs form timestamp.
+- packages/db/src/events.ts atomically accepts encrypted events, receipted signatures, unique deliveries and outbox entries. PostgreSQL is the authority. Redis payloads are identifiers/generations only.
+- apps/worker/src/delivery.ts claims and fences attempts; dispatch.ts republishes, recovers and applies retention; send.ts pins verified outbound DNS without redirects.
+- apps/web/src/components/activity.tsx renders actual metrics and history; configuration.tsx renders sources, destinations, routes and membership.
+- UI refresh: carbon and electric cyan, local Public Sans, public homepage with an explicitly simulated GSAP delivery and retry. Dashboard diagram uses actual activity. motion.tsx and relay-preview.tsx keep decorative motion optional.
+- UI refresh verified on the optimized build: Playwright passed desktop and 375 px flows; manual browser checks passed reduced motion, keyboard focus, 768/375 px and the Test delivery shortcut through HTTP 200.
+- apps/mock-receiver/src/index.ts verifies signatures and simulates 200, 400, 429, 500, latency and timeout. Demo deduplication is process-local.
+- Commands: pnpm setup, generate, migrate, build, start, worker, receiver, seed, demo, test, test:integration, test:e2e. README covers PowerShell, Linux and Compose.
+- [ ] Verify real HTTPS egress and TLS reverse proxy against a staging deployment. Run Compose on a Docker host and CI on GitHub before cutting v1.0.0.
+- [x] Public Vercel production at https://relayhub-chi.vercel.app (dpl_8LhsTBcxHtZt8ddV212fr7mWptB4). Neon and Upstash Free in Frankfurt, both database migrations applied, Vercel BullMQ daemon 1/1 ready. Public browser smoke verified signup/session, signed event, deduplication, HTTPS 204 and retry 503 -> 204 on the same delivery.
+- Hosted demo uses fictional email addresses at demo.relayhub.example and adds fixed HTTPS receiver scenarios. Vercel Hobby daemon provisioned-memory and Redis command quotas apply.
+- [ ] Password reset and verified email enrollment require a trusted mail transport. Membership uses the account UUID from the member's login, shared through a trusted channel.
+- Vercel deployments use the CLI from this workspace. Public GitHub publication was requested and is pending authentication and verification.

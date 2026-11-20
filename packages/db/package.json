@@ -1,0 +1,15 @@
+{
+  "name": "@relayhub/db",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@prisma/client": "7.10.1",
+    "@prisma/adapter-pg": "7.10.1",
+    "pg": "^8.0.0",
+    "@relayhub/shared": "workspace:*"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  }
+}

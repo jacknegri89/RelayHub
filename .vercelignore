@@ -1,0 +1,12 @@
+.vercel
+.git
+.claude
+.env*
+**/.env*
+**/node_modules
+**/.next
+**/generated
+**/next-env.d.ts
+test-results
+playwright-report
+**/*.log

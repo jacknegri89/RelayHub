@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+overrides:
+  "@prisma/config>effect": "3.22.1"
+allowBuilds:
+  "@prisma/engines": true
+  esbuild: true
+  msgpackr-extract: false
+  prisma: false
+  sharp: true

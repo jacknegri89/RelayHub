@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": "apps/web",
+      "framework": "nextjs",
+      "buildCommand": "pnpm --dir ../.. generate && pnpm build"
+    }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": { "service": "web" } }],
+  "daemons": {
+    "worker": {
+      "root": ".",
+      "entrypoint": "Dockerfile.worker",
+      "instances": { "fra1": 1 },
+      "resources": { "requests": { "memory": "1Gi" } },
+      "livenessProbe": {
+        "httpGet": { "host": "127.0.0.1", "port": 3002, "path": "/live" },
+        "initialDelaySeconds": 15
+      }
+    }
+  }
+}

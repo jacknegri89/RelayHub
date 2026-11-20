@@ -1,0 +1,232 @@
+.landing {
+  --signal: #75edfa;
+  --cream: #eefaff;
+  --subtle: #adbeca;
+  --stroke: #304b59;
+  min-height: 100svh;
+  background: #090d12;
+  color: var(--cream);
+  isolation: isolate;
+}
+.header {
+  width: min(100% - 3rem, 88rem);
+  margin: 0 auto;
+  min-height: 5.2rem;
+  border-bottom: 1px solid #6dbdce35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  position: relative;
+  z-index: 1;
+}
+.header > a {
+  color: inherit;
+  text-decoration: none;
+}
+.header nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2.5vw, 2.35rem);
+}
+.header nav > a {
+  color: var(--cream);
+  font-size: 0.89rem;
+  text-decoration: none;
+}
+.header nav > a:hover {
+  text-decoration: underline;
+}
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  align-items: center;
+  gap: clamp(2.2rem, 5vw, 6rem);
+  width: min(100% - 3rem, 88rem);
+  min-height: min(72svh, 49rem);
+  margin: 0 auto;
+  padding: clamp(4rem, 8vw, 8rem) 0;
+}
+.hero::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  background:
+    radial-gradient(ellipse at 78% 58%, #12607470 0%, transparent 62%),
+    radial-gradient(ellipse at 95% 5%, #182e3c55 0%, transparent 60%);
+  pointer-events: none;
+}
+.copy {
+  min-width: 0;
+}
+.copy h1 {
+  margin-bottom: 1.35rem;
+  font-size: clamp(3.35rem, 6.9vw, 7.1rem);
+  font-weight: 790;
+  line-height: 0.91;
+  letter-spacing: -0.075em;
+  color: var(--cream);
+  text-wrap: balance;
+}
+.copy h1 span {
+  display: block;
+  color: var(--signal);
+}
+.copy > p {
+  max-width: 34ch;
+  margin-bottom: 2rem;
+  font-size: clamp(1.02rem, 1.65vw, 1.24rem);
+  line-height: 1.55;
+  color: var(--subtle);
+}
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.25rem;
+}
+.actions a,
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--cream);
+  text-decoration: none;
+}
+.actions a:first-child {
+  min-height: 3rem;
+  padding: 0.62rem 1rem;
+  color: #071217;
+  background: var(--signal);
+  border-radius: 0.42rem;
+  box-shadow: 0 6px 30px #54deec38;
+}
+.actions a:first-child:hover {
+  background: #a9f5ff;
+}
+.actions a:last-child:hover,
+.footer a:hover {
+  text-decoration: underline;
+}
+.preview {
+  position: relative;
+  min-width: 0;
+  scroll-margin-top: 1.25rem;
+}
+.preview::before,
+.preview::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+.preview::before {
+  inset: -1.5rem 0.85rem 0;
+  transform: rotate(-5deg);
+  border: 1px solid #6bbfda68;
+  border-radius: 1.15rem;
+  background: #1333404d;
+}
+.preview::after {
+  inset: -2.5rem 1.4rem 1.5rem;
+  border-top: 1px solid #94eeff72;
+  border-radius: 50%;
+  transform: rotate(-9deg);
+}
+.flow {
+  width: min(100% - 3rem, 88rem);
+  margin-inline: auto;
+  padding-block: 2rem clamp(2.25rem, 5vw, 4rem);
+  border-top: 1px solid #6790a148;
+}
+.flow h2 {
+  margin-bottom: 1.3rem;
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+}
+.flow ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.2rem clamp(1rem, 4vw, 3.3rem);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: flow;
+}
+.flow li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.22rem 0.65rem;
+  counter-increment: flow;
+}
+.flow li::before {
+  content: counter(flow, decimal-leading-zero);
+  padding-top: 0.16rem;
+  color: var(--signal);
+  font:
+    0.73rem "Cascadia Mono",
+    "Consolas",
+    monospace;
+}
+.flow li p {
+  grid-column: 2;
+  margin: 0;
+  color: var(--subtle);
+  font-size: 0.89rem;
+}
+.footer {
+  width: min(100% - 3rem, 88rem);
+  border-top: 1px solid #6dbdce35;
+  margin: 0 auto;
+  padding: 1.1rem 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--subtle);
+  font-size: 0.84rem;
+}
+.footer p {
+  margin: 0;
+}
+@media (max-width: 890px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    min-height: auto;
+    padding-top: 3.6rem;
+  }
+  .copy h1 {
+    text-wrap: initial;
+    max-width: 13ch;
+  }
+  .preview::before {
+    inset: -0.6rem 0.6rem 0;
+  }
+  .preview::after {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .header,
+  .hero,
+  .flow,
+  .footer {
+    width: calc(100% - 2rem);
+  }
+  .header {
+    min-height: 4rem;
+  }
+  .hero {
+    padding-top: 2.85rem;
+    padding-bottom: 2.85rem;
+  }
+  .preview::before {
+    display: none;
+  }
+  .flow ol {
+    grid-template-columns: 1fr;
+  }
+}

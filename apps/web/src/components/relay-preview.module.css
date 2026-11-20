@@ -1,0 +1,210 @@
+.console {
+  position: relative;
+  min-width: 0;
+  isolation: isolate;
+  background: #0a1118;
+  border: 1px solid #2d5263;
+  border-radius: 1rem;
+  box-shadow:
+    0 28px 100px #000a,
+    0 0 64px #31c7e047;
+}
+.console::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 #9af6ff3a;
+}
+.consoleHeader,
+.telemetry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 0.95rem clamp(0.85rem, 3vw, 1.35rem);
+  font-size: 0.8rem;
+}
+.consoleHeader > span:first-child {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+  font-weight: 700;
+}
+.consoleTag,
+.telemetry code,
+.telemetry [role="status"],
+.station small,
+.port {
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-variant-numeric: tabular-nums;
+}
+.consoleTag {
+  color: #a9ccd8;
+}
+.indicator {
+  width: 0.5rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #7ef3ff;
+  box-shadow: 0 0 14px #53e8fb;
+}
+.diagram {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  align-content: center;
+  min-height: clamp(12rem, 28vw, 20rem);
+  background-color: #0b1720;
+  background-image:
+    radial-gradient(ellipse at center, #1f819d4a 0%, transparent 67%),
+    radial-gradient(#4c8ea060 1px, transparent 1px);
+  background-size:
+    auto,
+    18px 18px;
+  border-block: 1px solid #263e4a;
+  padding: 1.5rem 0.5rem;
+  overflow: hidden;
+}
+.diagram::before,
+.diagram::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  left: 50%;
+  top: calc(50% - 23px);
+  width: clamp(8rem, 17vw, 15rem);
+  aspect-ratio: 1;
+  border: 1px solid #70e5ff30;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(56deg) rotate(-12deg);
+  box-shadow:
+    0 0 22px #63ebff14,
+    0 0 0 17px #6ee8fa0b,
+    0 0 0 35px #6ee8fa0b;
+}
+.diagram::after {
+  transform: translate(-50%, -50%) rotateY(57deg) rotate(13deg);
+  border-color: #70e5ff21;
+  box-shadow: none;
+}
+.wire {
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 23px);
+  right: 16.7%;
+  left: 16.7%;
+  height: 1px;
+  background: #68c8df;
+  box-shadow: 0 0 12px #46dafea0;
+}
+.packet {
+  position: absolute;
+  left: 0;
+  top: -2px;
+  z-index: 3;
+  width: 20px;
+  height: 5px;
+  border-radius: 8px;
+  background: #e8fdff;
+  box-shadow: 0 0 18px 5px #5bf0ffaa;
+  opacity: 0;
+}
+.station {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: 3.2rem auto auto;
+  justify-items: center;
+  align-items: center;
+  color: #eefaff;
+  font-weight: 710;
+  font-size: clamp(0.72rem, 1.6vw, 0.97rem);
+}
+.station small {
+  color: #a6bfcf;
+  font-size: clamp(0.65rem, 1.2vw, 0.76rem);
+  font-weight: 400;
+}
+.port,
+.processor {
+  display: grid;
+  place-items: center;
+  width: clamp(2.5rem, 5vw, 3.25rem);
+  aspect-ratio: 1;
+  border: 1px solid #5a99ad;
+  background: #11242d;
+  color: #b6f0ff;
+  border-radius: 0.5rem;
+  font-size: 0.72rem;
+}
+.processor {
+  grid-auto-flow: column;
+  grid-auto-columns: 0.24rem;
+  justify-content: center;
+  gap: 0.2rem;
+  border-color: #8ef6ff;
+  box-shadow:
+    inset 0 0 22px #54d0eb62,
+    0 0 0 5px #69dbff3d,
+    0 0 44px #23c5ed73;
+}
+.processor i {
+  width: 100%;
+  height: 45%;
+  background: #8bf2ff;
+  border-radius: 1px;
+}
+.processor i:nth-child(2) {
+  height: 65%;
+}
+.diagram[data-stage="delivered"] .station:last-child .port {
+  color: #cbfbe3;
+  border-color: #87d5af;
+  background: #143126;
+}
+.diagram[data-stage="retrying"] .station:last-child .port {
+  color: #ffd0c3;
+  border-color: #ff947b;
+}
+.telemetry {
+  color: #bedaeb;
+  background: #0d1922;
+}
+.telemetry [data-stage="delivered"] {
+  color: #a4e6c4;
+}
+.telemetry [data-stage="retrying"] {
+  color: #ffae97;
+}
+.history {
+  margin: 0.75rem 1.25rem 0;
+  color: #bfd4e0;
+  font-size: 0.79rem;
+}
+.controls {
+  padding: 0.85rem clamp(0.85rem, 3vw, 1.35rem) 1.05rem;
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.controls button {
+  font-size: 0.81rem;
+  color: #d7f8ff;
+  background: #11212c;
+  border: 1px solid #426d81;
+  min-height: 2.55rem;
+}
+.controls button:hover {
+  background: #1a3947;
+}
+@media (max-width: 420px) {
+  .controls button {
+    flex: 1;
+    padding-inline: 0.45rem;
+  }
+}
