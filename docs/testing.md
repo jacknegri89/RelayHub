@@ -15,6 +15,12 @@ Start with an isolated PostgreSQL and Redis instance. Integration tests delibera
 | Production build    | `pnpm build`                               | Optimized Next.js output                                                            |
 | Dependency audit    | `pnpm audit --prod --audit-level moderate` | Registry advisories for production dependencies                                     |
 
+For a complete local email test, start Mailpit without forwarding, set `RELAYHUB_TEST_MAILPIT_URL` for the integration test process, and keep account mail off on the default test server. Run a second web instance with the same isolated test database and keys, a separate loopback port, `RELAYHUB_ACCOUNT_EMAIL=1`, `RELAYHUB_MAILPIT_URL` and a matching `RELAYHUB_BASE_URL`. From the test shell, set the base URL to that second instance and run `pnpm exec playwright test -c tests/account-browser/playwright.config.ts`. It registers a fictional account, confirms its address from a captured email, resets its password from a second message and checks sign-in. [Mailpit setup](destination-email.md#local-mailbox)
+
+The account integration suite tests expired and replaced links, simultaneous requests, a consumed token, uniform reset responses, session revocation and MFA. The destination suite covers provider throttling, permanent rejection and an ambiguous acknowledgement, and checks actual messages in Mailpit when the test mailbox is configured. CI only uses the local mailbox.
+
+The [backup rehearsal](backup-restore.md#reproduce-the-synthetic-rehearsal) creates and verifies an encrypted archive, restores it into a new database and republishes the remaining job into an isolated queue. Run it before an authorized schema upgrade.
+
 Run the integration and browser suites with the web service, worker, PostgreSQL, Redis, and demo receiver running. Install Chromium with `pnpm exec playwright install chromium`. Set `CHROMIUM_PATH` if you need a specific local Chromium executable. Selected accessibility checks use axe. Exercise keyboard navigation, browser zoom, and screen reader output before making a conformance claim.
 
 The [GitHub Actions workflow](../.github/workflows/ci.yml) provisions isolated services on Linux and runs the full suite.
