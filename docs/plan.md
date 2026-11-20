@@ -4,9 +4,9 @@ RelayHub includes scoped organization management, signed ingress, encrypted even
 
 The public baseline at `d1eed99` includes per-destination seven-day history, failed-attempt details, optional email alerts and grouped retries after recovery. Its [Linux CI run](https://github.com/jacknegri89/RelayHub/actions/runs/44829826335) passed, including the Docker Compose cold-start and worker-restart scenario.
 
-## Local release candidate
+## Account recovery rollout
 
-The `hardening/relayhub-v1` branch adds account email verification and password recovery behind an explicit rollout switch. It also contains an encrypted PostgreSQL restore rehearsal, stricter notification handling, explicit remote TLS verification and lower idle polling. The remaining package version is `0.1.0`. The intended release tag is `v1.0.0` after acceptance.
+Account email verification and password recovery require an explicit rollout switch. The hosted instance can run webhook delivery and destination alerts while public account email is off. This version also includes an encrypted PostgreSQL restore rehearsal, stricter notification handling, explicit remote TLS verification and lower idle polling. The package version is `0.1.0` pending acceptance of `v1.0.0`.
 
 ### Verification on 2026-11-21
 
@@ -17,8 +17,8 @@ The `hardening/relayhub-v1` branch adds account email verification and password 
 
 ### Release gates
 
-1. Run the candidate's Linux CI and real Docker Compose job when a remote branch is authorized, or run the Compose job on a local host with a Docker engine. Both Compose documents and the workflow were validated locally. The Windows test host had no running Docker engine.
-2. Before deploying, back up the intended database and apply the two account migrations listed in [Operations](operations.md#rolling-out-account-mail). Validate the release with the integrated receiver. Keep general account email off until a verified sender is available; a real inbox smoke test is still pending.
-3. When the release checks pass, align the package version and changelog, tag the verified commit and publish only with the owner's authorization. The local candidate has no GitHub release or production deployment.
+1. Require the Linux checks and Docker Compose recovery scenario to pass. Each [CI run](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml) records both results.
+2. Before deploying, back up the target database and apply the two account migrations listed in [Operations](operations.md#rolling-out-account-mail). Exercise the integrated receiver and confirm outage and recovery messages in the destination mailbox.
+3. Enable public account email after testing a verified sender. A `resend.dev` sender supports destination alerts only for the Resend account owner's mailbox. Tag `v1.0.0` after acceptance and version alignment.
 
 See [Architecture](architecture.md) for delivery guarantees, [Operations](operations.md) for deployment requirements, and [Testing](testing.md) for release acceptance.
