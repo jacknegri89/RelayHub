@@ -5,6 +5,8 @@ import { auth } from "../../../server/auth";
 import { AccountSecurity } from "../../../components/account-security";
 import { PageHeading } from "../../../components/page-heading";
 import { SectionGuide } from "../../../components/section-guide";
+import { accountEmailConfigured } from "@relayhub/shared/mail";
+import { ActionForm } from "../../../components/forms";
 
 export async function generateMetadata() {
   const { t } = await getLocale();
@@ -32,6 +34,33 @@ export default async function SecurityPage() {
       </SectionGuide>
       <div>
         <PageHeading title={t("Account security", "Sicurezza dell’account")} />
+        {accountEmailConfigured() && (
+          <section>
+            <h2>{t("Account email", "Email dell’account")}</h2>
+            {session.user.emailVerified && (
+              <p>
+                {t("Verified address", "Indirizzo verificato")} ·{" "}
+                {session.user.email}
+              </p>
+            )}
+            {!session.user.emailVerified && (
+              <>
+                <p>
+                  {t(
+                    "Verify your address to enable password recovery.",
+                    "Verifica il tuo indirizzo per attivare il recupero password.",
+                  )}{" "}
+                  {session.user.email}
+                </p>
+                <ActionForm
+                  endpoint="/api/account-email/request-verification"
+                  label={t("Send verification link", "Invia link di verifica")}
+                  successMessage="verification_requested"
+                />
+              </>
+            )}
+          </section>
+        )}
         <AccountSecurity enabled={Boolean(session.user.twoFactorEnabled)} />
       </div>
     </main>
