@@ -74,6 +74,6 @@ The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`,
 
 - [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
 - [Claude](https://claude.com/claude-code) — Designed and built the spacetime redesign, its GSAP motion, and the browser checks.
-- [Codex](https://github.com/openai/codex) — Assisted with implementation, design, testing, and documentation.
+- codex — Assisted with implementation, design, testing, and documentation.
 
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.
