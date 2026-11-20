@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { runtimeDatabaseUrl } from "@relayhub/db/connection";
 import { can } from "@relayhub/shared/access";
 import { parseConfig } from "@relayhub/shared/config";
 import { destinationUrl, publicAddress } from "@relayhub/shared/destinations";
@@ -19,6 +20,40 @@ import { approvedAddress } from "../apps/worker/src/send";
 
 const timestamp = "1700000000";
 const body = Buffer.from('{ "type": "order.created" }');
+
+describe("database transport", () => {
+  it.each(["prefer", "require", "verify-ca", "verify-full"])(
+    "uses explicit certificate and host verification for %s",
+    (mode) => {
+      const url = new URL(
+        runtimeDatabaseUrl(
+          "postgres://db.example/test?channel_binding=require&sslmode=" + mode,
+        ),
+      );
+      expect(url.searchParams.get("sslmode")).toBe("verify-full");
+      expect(url.searchParams.get("channel_binding")).toBe("require");
+    },
+  );
+  it("requires TLS for remote hosts even without a mode and preserves local Compose", () => {
+    expect(runtimeDatabaseUrl("postgres://db.example/test")).toContain(
+      "sslmode=verify-full",
+    );
+    expect(runtimeDatabaseUrl("postgres://postgres/test")).toBe(
+      "postgres://postgres/test",
+    );
+    expect(() =>
+      runtimeDatabaseUrl(
+        "postgres://localhost/test?host=db.example&sslmode=disable",
+      ),
+    ).toThrow("verify-full");
+    expect(() =>
+      runtimeDatabaseUrl("postgres://db.example/test?sslmode=no-verify"),
+    ).toThrow("verify-full");
+    expect(() => runtimeDatabaseUrl("invalid input")).toThrow(
+      /^Invalid DATABASE_URL$/,
+    );
+  });
+});
 
 describe("webhook protocol", () => {
   it("matches the HMAC-SHA256 v1 reference vector", () => {

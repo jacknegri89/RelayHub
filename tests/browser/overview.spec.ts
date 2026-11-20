@@ -133,7 +133,7 @@ test("a viewer can inspect real trends with a keyboard or touch from 320px to de
     const timings = page.getByRole("region", { name: "HTTP response times" });
     await expect(timings.getByText("120 ms", { exact: true })).toHaveCount(3);
 
-    for (const width of [320, 375, 768, 1440]) {
+    for (const width of [320, 375, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 920 });
       await chart.getByRole("button", { name: "All", exact: true }).tap();
       await days.first().tap();
