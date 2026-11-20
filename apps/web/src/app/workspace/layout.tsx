@@ -18,7 +18,7 @@ export default async function WorkspaceLayout({
   return (
     <>
       <header className="topbar">
-        <Link href="/workspace" aria-label="RelayHub organizations">
+        <Link href="/" aria-label="RelayHub home">
           <Brand />
         </Link>
         <div className="account">

@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { auth } from "../server/auth";
 import { Brand } from "../components/brand";
 import { RelaySignal } from "../components/relay-signal";
@@ -9,8 +8,11 @@ import styles from "./landing.module.css";
 export default async function Home() {
   const requestHeaders = await headers();
   const session = await auth().api.getSession({ headers: requestHeaders });
+  let accountHref = "/register";
+  let accountLabel = "Create an account";
   if (session) {
-    redirect("/workspace");
+    accountHref = "/workspace";
+    accountLabel = "Open workspace";
   }
   return (
     <div className={styles.landing}>
@@ -19,7 +21,7 @@ export default async function Home() {
           <Brand />
         </Link>
         <nav aria-label="Main navigation">
-          <Link href="/login">Sign in</Link>
+          {!session && <Link href="/login">Sign in</Link>}
         </nav>
       </header>
       <main id="main">
@@ -33,8 +35,8 @@ export default async function Home() {
               requests.
             </p>
             <div className={styles.actions}>
-              <Link href="/register">
-                Create an account <span aria-hidden="true">↗</span>
+              <Link href={accountHref}>
+                {accountLabel} <span aria-hidden="true">↗</span>
               </Link>
               <a href="#delivery-flow">
                 How it works <span aria-hidden="true">↓</span>
