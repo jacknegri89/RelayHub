@@ -113,14 +113,14 @@
   gap: 0.9rem;
   min-height: 2.9rem;
   padding: 0 1.1rem;
+  border: 1px solid transparent;
   border-radius: 0.4rem;
   background: var(--action);
   color: var(--action-ink);
   font-weight: 560;
+  line-height: 1;
   text-decoration: none;
-  transition:
-    transform 0.25s var(--ease-out),
-    box-shadow 0.25s ease;
+  transition: background-color 0.2s ease;
 }
 .primary span {
   transition: transform 0.3s var(--ease-out);
@@ -132,18 +132,25 @@
 .primary:hover span {
   transform: translateX(4px);
 }
+/* Same box as .primary so both actions sit on one baseline. */
 .secondary {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: 2.9rem;
+  padding: 0 1.1rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.4rem;
   color: var(--bone);
-  font-weight: 550;
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
-  text-underline-offset: 0.35em;
+  font-weight: 560;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 .secondary:hover {
-  text-decoration-color: var(--photon);
+  border-color: var(--dust);
+  background: var(--void-2);
 }
 
 /* Ledger */

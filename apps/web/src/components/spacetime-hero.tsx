@@ -367,8 +367,13 @@ export function SpacetimeHero() {
               aria-pressed={isPaused}
               onClick={togglePause}
             >
-              {isPaused && t("Resume time", "Riprendi il tempo")}
-              {!isPaused && t("Pause time", "Ferma il tempo")}
+              {/* Both labels share one grid cell, so the width never changes. */}
+              <span data-visible={!isPaused}>
+                {t("Pause time", "Ferma il tempo")}
+              </span>
+              <span data-visible={isPaused}>
+                {t("Resume time", "Riprendi il tempo")}
+              </span>
             </button>
           )}
         </div>
