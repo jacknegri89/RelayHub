@@ -18,7 +18,7 @@
 - apps/mock-receiver/src/index.ts verifies signatures and simulates 200, 400, 429, 500, latency and timeout. Demo deduplication is process-local.
 - Commands: pnpm setup, generate, migrate, build, start, worker, receiver, seed, demo, test, test:integration, test:e2e. README covers PowerShell, Linux and Compose.
 - [ ] Verify real HTTPS egress and TLS reverse proxy against a staging deployment. Run Compose on a Docker host and CI on GitHub before cutting v1.0.0.
-- [x] Public Vercel production at https://relayhub-chi.vercel.app (dpl_8LhsTBcxHtZt8ddV212fr7mWptB4). Neon and Upstash Free in Frankfurt, both database migrations applied, Vercel BullMQ daemon 1/1 ready. Public browser smoke verified signup/session, signed event, deduplication, HTTPS 204 and retry 503 -> 204 on the same delivery.
+- [x] Public Vercel production at https://relayhub-chi.vercel.app (dpl_CEUP7rxUmw5WJXZKUrXRNWJHL1DV). Neon and Upstash Free in Frankfurt, both database migrations applied. Public browser verified the new homepage, simulator and mobile viewport, plus signup/session, signed event, deduplication, HTTPS 204 and retry 503 -> 204 on the same delivery.
 - Hosted demo uses fictional email addresses at demo.relayhub.example and adds fixed HTTPS receiver scenarios. Vercel Hobby daemon provisioned-memory and Redis command quotas apply.
 - [ ] Password reset and verified email enrollment require a trusted mail transport. Membership uses the account UUID from the member's login, shared through a trusted channel.
-- Vercel deployments use the CLI from this workspace. Public GitHub publication was requested and is pending authentication and verification.
+- Vercel deployments use the CLI from this workspace. Git main is prepared locally and checked for secrets. Public GitHub repository name jacknegri89/relayhub is available. Device login initiated with gh; repository creation and push await approval.
