@@ -24,7 +24,9 @@ Use the **EN / IT** switch to change the interface language. RelayHub remembers 
 2. Create an organization, then add a source and a destination. The **Destinations** page shows the built-in HTTPS verification receiver.
 3. Link the source to the destination and send a signed event. Open **Events** or **Deliveries** to follow the recorded attempt through to HTTP 204.
 
-Email is the sign-in identifier. Enable two-factor authentication under **Workspace → Security** with an authenticator app, then save the one-use recovery codes. Verification and password-reset email require a configured mail transport. See [Privacy Policy](https://relayhub-webhooks.vercel.app/privacy), [Cookie Policy](https://relayhub-webhooks.vercel.app/cookies), and [Operations](docs/operations.md#vercel-deployment).
+Email is the sign-in identifier. Enable two-factor authentication under **Workspace → Security** and save the one-use recovery codes. On installations with account email enabled, verify your address there to use **Forgot your password?**. A password change signs out existing sessions. The public demo's core workflow needs only a RelayHub account. [Privacy](https://relayhub-webhooks.vercel.app/privacy) · [Cookies](https://relayhub-webhooks.vercel.app/cookies) · [Account mail rollout](docs/operations.md#rolling-out-account-mail)
+
+The hosted portfolio uses Vercel, Neon and Upstash. Their free quotas can suspend background deliveries or database access. The 1 GiB worker alone can exhaust the monthly Hobby memory allowance in approximately 17.5 days of continuous operation. The local Compose stack can run the full webhook demo while a hosted quota is exhausted. [Free-tier limits and recovery](docs/operations.md#keeping-the-portfolio-demo-within-free-tiers)
 
 ## How a delivery works
 
@@ -51,6 +53,8 @@ docker compose -p relayhub-demo up --build -d --wait
 Open [the local registration page](http://localhost:3000/register), choose a password of at least 12 characters, and create an organization. Local demo mode runs on loopback. The Compose migration service applies the schema before the web app and worker start.
 
 Use `docker compose -p relayhub-demo stop` to stop the services and keep local data. The [Testing guide](docs/testing.md) covers seeded scenarios, retries, queue recovery, and running the application processes directly on your host.
+
+Run `pnpm test` for unit tests. With the isolated services running, use `pnpm test:integration` and `pnpm test:e2e` for PostgreSQL, Redis, HTTP and browser checks. Email tests use fictional recipients and a local mailbox. To rehearse recovery, follow the [encrypted backup and restore drill](docs/backup-restore.md).
 
 ## Documentation
 
