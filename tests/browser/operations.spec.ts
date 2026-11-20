@@ -28,7 +28,11 @@ test("the public animation reacts to the pointer and respects reduced motion", a
   await expect.poll(frame).not.toBe(first);
   await page.waitForTimeout(4700);
   const idle = await frame();
-  await canvas.hover({ position: { x: 12, y: 80 } });
+  const pointerPosition = await canvas.evaluate((surface) => ({
+    x: surface.clientWidth * 0.75,
+    y: surface.clientHeight * 0.5,
+  }));
+  await canvas.hover({ position: pointerPosition });
   await expect.poll(async () => (await frame()) !== idle).toBe(true);
   await expect(art.getByRole("button")).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: "reduce" });

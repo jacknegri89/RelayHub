@@ -1,24 +1,83 @@
 export const TURN = Math.PI * 2;
-const STEPS = 96;
-const FIBERS = 26;
-const ROUTES = [
-  {
-    entry: 0.28,
-    exit: 0.2,
-    bend: -0.16,
-    ink: ["#1a422f", "#4ca475", "#a1efcc"],
-  },
-  { entry: 0.46, exit: 0.47, bend: 0, ink: ["#304315", "#9dbb41", "#e7ff97"] },
-  {
-    entry: 0.72,
-    exit: 0.78,
-    bend: 0.14,
-    ink: ["#1c3a41", "#4d8c91", "#a6ddd5"],
-  },
-] as const;
 
-type Route = (typeof ROUTES)[number];
-type RibbonSample = ReturnType<typeof sampleRibbon>;
+const SKY_WIDTH = 960;
+const SKY_HEIGHT = 640;
+const CENTER = { x: 492, y: 315 };
+const RADIUS = 145;
+const TRACKS = [
+  { radius: 232, depth: 62, tilt: -0.45, ink: "#a6e1fb", speed: 0.83 },
+  { radius: 311, depth: 83, tilt: -0.44, ink: "#ff9c82", speed: -0.68 },
+  { radius: 391, depth: 102, tilt: -0.42, ink: "#c7d9e9", speed: 0.47 },
+] as const;
+type Track = (typeof TRACKS)[number];
+
+function drawSky(context: CanvasRenderingContext2D) {
+  // A fixed low-discrepancy star map avoids flicker between animation frames.
+  for (let index = 1; index < 170; index++) {
+    const x = ((index * 0.754877666) % 1) * SKY_WIDTH;
+    const y = ((index * 0.569840291) % 1) * SKY_HEIGHT;
+    const size = 0.55 + ((index * 1.137) % 1) * 1.4;
+    context.fillStyle = `rgb(190 216 234 / ${0.16 + ((index * 0.607) % 0.5)})`;
+    context.fillRect(x, y, size, size);
+    if (index % 37 === 0) {
+      context.fillRect(x - 3, y, 7, 0.8);
+      context.fillRect(x, y - 3, 0.8, 7);
+    }
+  }
+}
+
+function drawTrack(
+  context: CanvasRenderingContext2D,
+  track: Track,
+  angle: number,
+  front: boolean,
+) {
+  context.save();
+  context.translate(CENTER.x, CENTER.y);
+  context.rotate(track.tilt + Math.sin(angle * 0.3) * 0.025);
+  let start = Math.PI;
+  let end = TURN;
+  if (front) {
+    start = 0;
+    end = Math.PI;
+  }
+  // Separate front and back arcs to occlude the far side behind the relay.
+  context.strokeStyle = track.ink;
+  for (const distance of [-4, 0, 4]) {
+    context.globalAlpha = 0.17;
+    context.lineWidth = 0.9;
+    if (distance === 0) {
+      context.globalAlpha = 0.78;
+      context.lineWidth = 1.7;
+    }
+    context.beginPath();
+    context.ellipse(
+      0,
+      0,
+      track.radius + distance,
+      track.depth + distance / 2,
+      0,
+      start,
+      end,
+    );
+    context.stroke();
+  }
+  context.globalAlpha = 1;
+  const packet = (angle * track.speed + track.depth + TURN * 8) % TURN;
+  if (packet >= start && packet < end) {
+    const x = Math.cos(packet) * track.radius;
+    const y = Math.sin(packet) * track.depth;
+    context.fillStyle = track.ink;
+    context.beginPath();
+    context.arc(x, y, 5, 0, TURN);
+    context.fill();
+    context.globalAlpha = 0.56;
+    context.beginPath();
+    context.arc(x, y, 10, 0, TURN);
+    context.stroke();
+  }
+  context.restore();
+}
 
 export function paintSignal(
   canvas: HTMLCanvasElement,
@@ -26,162 +85,61 @@ export function paintSignal(
   width: number,
   height: number,
   angle: number,
+  globe: HTMLImageElement,
 ) {
   if (!width || !height) {
     return;
   }
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  const pixelsWide = Math.round(width * ratio);
-  const pixelsHigh = Math.round(height * ratio);
-  if (canvas.width !== pixelsWide || canvas.height !== pixelsHigh) {
-    canvas.width = pixelsWide;
-    canvas.height = pixelsHigh;
+  const pixelWidth = Math.round(width * ratio);
+  const pixelHeight = Math.round(height * ratio);
+  if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
   }
-  context.setTransform(pixelsWide / 1000, 0, 0, pixelsHigh / 650, 0, 0);
-  context.clearRect(0, 0, 1000, 650);
-  drawGraticule(context);
-
-  for (const route of ROUTES) {
-    drawRibbon(context, route, angle);
-    drawPackets(context, route, angle);
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, pixelWidth, pixelHeight);
+  const scale = Math.min(pixelWidth / SKY_WIDTH, pixelHeight / SKY_HEIGHT);
+  context.setTransform(
+    scale,
+    0,
+    0,
+    scale,
+    (pixelWidth - scale * SKY_WIDTH) / 2,
+    (pixelHeight - scale * SKY_HEIGHT) / 2,
+  );
+  drawSky(context);
+  const halo = context.createRadialGradient(
+    CENTER.x,
+    CENTER.y,
+    RADIUS * 0.85,
+    CENTER.x,
+    CENTER.y,
+    RADIUS * 1.8,
+  );
+  halo.addColorStop(0, "#80c9ec30");
+  halo.addColorStop(0.4, "#5e94b40e");
+  halo.addColorStop(1, "#659ec200");
+  context.fillStyle = halo;
+  context.fillRect(0, 0, SKY_WIDTH, SKY_HEIGHT);
+  for (const track of TRACKS) {
+    drawTrack(context, track, angle, false);
   }
-}
-
-function drawGraticule(context: CanvasRenderingContext2D) {
-  context.lineWidth = 1;
-  context.strokeStyle = "#c5e8ab35";
-  context.beginPath();
-  for (let column = 55; column < 1000; column += 74) {
-    for (let row = 62; row < 630; row += 74) {
-      context.moveTo(column - 2, row);
-      context.lineTo(column + 2, row);
-      context.moveTo(column, row - 2);
-      context.lineTo(column, row + 2);
-    }
-  }
-  context.stroke();
-
-  context.beginPath();
-  context.ellipse(552, 325, 256, 232, -0.4, 0, TURN);
-  context.stroke();
-  context.beginPath();
-  context.ellipse(552, 325, 295, 267, -0.4, 0, TURN);
-  context.stroke();
-}
-
-function traceRibbon(
-  context: CanvasRenderingContext2D,
-  samples: RibbonSample[],
-  fiber: number,
-  reverse: boolean,
-) {
-  for (let index = 0; index <= STEPS; index += 1) {
-    let sampleIndex = index;
-    if (reverse) {
-      sampleIndex = STEPS - index;
-    }
-    const point = fiberPoint(samples[sampleIndex], fiber);
-    if (index === 0 && !reverse) {
-      context.moveTo(point.x, point.y);
-    } else {
-      context.lineTo(point.x, point.y);
-    }
-  }
-}
-
-function drawRibbon(
-  context: CanvasRenderingContext2D,
-  route: Route,
-  angle: number,
-) {
-  const [shadow, metal, highlight] = route.ink;
-  const foil = context.createLinearGradient(45, 485, 917, 178);
-  foil.addColorStop(0, shadow);
-  foil.addColorStop(0.34, metal);
-  foil.addColorStop(0.51, shadow);
-  foil.addColorStop(0.64, highlight);
-  foil.addColorStop(0.79, metal);
-  foil.addColorStop(1, shadow);
-
-  // All fibers use one centerline and one cross-section per sample.
-  const samples = [];
-  for (let index = 0; index <= STEPS; index += 1) {
-    samples.push(sampleRibbon(route, index / STEPS, angle));
-  }
-  context.beginPath();
-  traceRibbon(context, samples, -1, false);
-  traceRibbon(context, samples, 1, true);
-  context.closePath();
-  context.fillStyle = foil;
-  context.fill();
-
-  for (let index = 0; index <= FIBERS; index += 1) {
-    const fiber = (index / FIBERS) * 2 - 1;
+  if (globe.naturalWidth > 0) {
+    context.drawImage(
+      globe,
+      CENTER.x - RADIUS,
+      CENTER.y - RADIUS,
+      RADIUS * 2,
+      RADIUS * 2,
+    );
+  } else {
     context.beginPath();
-    traceRibbon(context, samples, fiber, false);
-    context.strokeStyle = highlight;
-    context.globalAlpha = 0.26 + 0.11 * Math.cos(index * 2.4);
-    context.lineWidth = 0.8;
-    context.stroke();
+    context.arc(CENTER.x, CENTER.y, RADIUS, 0, TURN);
+    context.fillStyle = "#162636";
+    context.fill();
   }
-  context.globalAlpha = 1;
-}
-
-function sampleRibbon(route: Route, progress: number, angle: number) {
-  const inverse = 1 - progress;
-  const centerX = 28 + 942 * progress;
-  const centerY =
-    650 *
-    (inverse ** 3 * route.entry +
-      3 * inverse ** 2 * progress * (0.92 + route.bend) +
-      3 * inverse * progress ** 2 * (0.02 + route.bend) +
-      progress ** 3 * route.exit);
-  const envelope = Math.sin(Math.PI * progress);
-  const wave = Math.sin(progress * TURN * 1.5 - angle) * envelope;
-  const fold = Math.cos(progress * TURN * 1.55 + route.bend * 5 + wave * 0.45);
-  const width = 6 + 70 * envelope ** 2;
-  return {
-    x: centerX,
-    y: centerY + wave * 13,
-    acrossX: width * Math.sin(progress * TURN * 1.55) * 0.74,
-    acrossY: width * fold,
-  };
-}
-
-function fiberPoint(sample: RibbonSample, fiber: number) {
-  return {
-    x: sample.x + sample.acrossX * fiber,
-    y: sample.y + sample.acrossY * fiber,
-  };
-}
-
-function drawPackets(
-  context: CanvasRenderingContext2D,
-  route: Route,
-  angle: number,
-) {
-  context.save();
-  context.lineCap = "round";
-  context.strokeStyle = "#f7ffdc";
-  context.lineWidth = 2.2;
-  for (let index = 0; index < 3; index += 1) {
-    const progress =
-      ((((angle / TURN) * 4 + index / 3 + route.exit) % 1) + 1) % 1;
-    const fiber = 0.48 - index * 0.44;
-    const start = fiberPoint(sampleRibbon(route, progress, angle), fiber);
-    const endProgress = Math.min(progress + 0.028, 1);
-    const end = fiberPoint(sampleRibbon(route, endProgress, angle), fiber);
-    context.globalAlpha = Math.sin(Math.PI * progress);
-    context.beginPath();
-    context.moveTo(start.x, start.y);
-    context.lineTo(end.x, end.y);
-    context.stroke();
+  for (const track of TRACKS) {
+    drawTrack(context, track, angle, true);
   }
-  for (const progress of [0, 1]) {
-    const point = sampleRibbon(route, progress, angle);
-    context.globalAlpha = 1;
-    context.fillStyle = route.ink[2];
-    context.fillRect(point.x - 3, point.y - 3, 6, 6);
-  }
-  context.restore();
 }

@@ -56,6 +56,16 @@ test("public registration, authenticator challenge, one-use recovery and disabli
 
   await page.getByRole("link", { name: "Security", exact: true }).click();
   await page.getByLabel("Current password").fill(password);
+  await page.getByRole("button", { name: "Passa all’italiano" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Sicurezza dell’account" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Password attuale")).toHaveValue(password);
+  await expect(
+    page.getByRole("button", { name: "Configura l’app di autenticazione" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Switch to English" }).click();
+  await expect(page.getByLabel("Current password")).toHaveValue(password);
   await page.getByRole("button", { name: "Set up authenticator" }).click();
   await expect(
     page.getByRole("img", { name: "Authenticator setup QR code" }),

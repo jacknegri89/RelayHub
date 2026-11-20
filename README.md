@@ -10,6 +10,8 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 ## Try the hosted app
 
+Use the **EN / IT** switch to change the interface language. RelayHub remembers your choice in this browser and keeps partially filled forms in place.
+
 1. Open the [registration page](https://relayhub-webhooks.vercel.app/register). Enter your name and email address, then choose a password of at least 12 characters.
 2. Create an organization, then add a source and a destination. The **Destinations** page shows the built-in HTTPS verification receiver.
 3. Link the source to the destination and send a signed event. Open **Events** or **Deliveries** to follow the recorded attempt through to HTTP 204.

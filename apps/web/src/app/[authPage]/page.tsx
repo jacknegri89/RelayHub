@@ -1,3 +1,5 @@
+import { getLocale } from "../../server/locale";
+import { LanguageSwitch } from "../../components/locale";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -8,11 +10,43 @@ import { PageHeading } from "../../components/page-heading";
 import { issueFormProof } from "../../server/form-proof";
 import { PolicyLinks } from "../../components/policy-links";
 
-export default async function AuthPage({
-  params,
-}: {
-  params: Promise<{ authPage: string }>;
-}) {
+type AuthParams = { params: Promise<{ authPage: string }> };
+
+export async function generateMetadata({ params }: AuthParams) {
+  const { authPage } = await params;
+  const { t } = await getLocale();
+  if (authPage === "verify") {
+    return {
+      title: t("Verify your sign-in", "Verifica il tuo accesso"),
+      description: t(
+        "Complete your sign-in with an authenticator or recovery code.",
+        "Completa l’accesso con l’app di autenticazione o un codice di recupero.",
+      ),
+    };
+  }
+  if (authPage === "register") {
+    return {
+      title: t("Create an account", "Crea un account"),
+      description: t(
+        "Create your RelayHub account to manage webhook deliveries.",
+        "Crea il tuo account RelayHub per gestire le consegne dei webhook.",
+      ),
+    };
+  }
+  if (authPage === "login") {
+    return {
+      title: t("Sign in", "Accedi"),
+      description: t(
+        "Sign in to your RelayHub workspace.",
+        "Accedi alla tua area di lavoro su RelayHub.",
+      ),
+    };
+  }
+  return { title: t("Page unavailable", "Pagina non disponibile") };
+}
+
+export default async function AuthPage({ params }: AuthParams) {
+  const { t } = await getLocale();
   const { authPage } = await params;
   if (!["login", "register", "verify"].includes(authPage)) {
     notFound();
@@ -20,30 +54,45 @@ export default async function AuthPage({
   await connection();
   const registering = authPage === "register";
   const verifying = authPage === "verify";
-  let title = "Sign in";
+  let title = t("Sign in", "Accedi");
   let endpoint = "/api/auth/sign-in/email";
   let passwordAutocomplete = "current-password";
   if (registering) {
-    title = "Create an account";
+    title = t("Create an account", "Crea un account");
     endpoint = "/api/auth/sign-up/email";
     passwordAutocomplete = "new-password";
   }
   if (verifying) {
-    title = "Verify your sign-in";
+    title = t("Verify your sign-in", "Verifica il tuo accesso");
   }
   return (
     <main id="main" className="auth-shell">
       <aside className="auth-aside">
-        <Link href="/" aria-label="RelayHub home">
+        <Link
+          href="/"
+          aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}
+        >
           <Brand />
         </Link>
+        <LanguageSwitch />
+
         <div className="auth-context">
-          <p className="auth-caption">Webhook delivery, end to end.</p>
+          <p className="auth-caption">
+            {t(
+              "Webhook delivery, end to end.",
+              "L’intero percorso dei tuoi webhook.",
+            )}
+          </p>
           <Motion kind="signal" className="auth-route">
-            <ol aria-label="How RelayHub handles a webhook">
+            <ol
+              aria-label={t(
+                "How RelayHub handles a webhook",
+                "Il percorso di un webhook in RelayHub",
+              )}
+            >
               <li>
                 <span data-joint aria-hidden="true" />
-                Sender
+                {t("Sender", "Mittente")}
               </li>
               <li>
                 <span data-joint aria-hidden="true" />
@@ -51,7 +100,7 @@ export default async function AuthPage({
               </li>
               <li>
                 <span data-joint aria-hidden="true" />
-                Destination
+                {t("Destination", "Destinazione")}
               </li>
             </ol>
             <div className="auth-trace" aria-hidden="true">
@@ -60,8 +109,10 @@ export default async function AuthPage({
             </div>
           </Motion>
           <p>
-            Accept signed events, route them to your destinations, and inspect
-            every attempt.
+            {t(
+              "Accept signed events, route them to your destinations, and inspect every attempt.",
+              "Ricevi eventi firmati, inviali alle tue destinazioni e controlla ogni tentativo di consegna.",
+            )}
           </p>
         </div>
       </aside>
@@ -78,13 +129,13 @@ export default async function AuthPage({
               />
               <div hidden>
                 <label>
-                  Company website{" "}
+                  {t("Company website", "Sito aziendale")}{" "}
                   <input name="website" autoComplete="off" tabIndex={-1} />
                 </label>
               </div>
               {registering && (
                 <label>
-                  Name{" "}
+                  {t("Name", "Nome")}{" "}
                   <input
                     name="name"
                     autoComplete="name"
@@ -118,12 +169,16 @@ export default async function AuthPage({
           )}
           {registering && (
             <p>
-              Already registered? <Link href="/login">Sign in</Link>
+              {t("Already registered?", "Hai già un account?")}{" "}
+              <Link href="/login">{t("Sign in", "Accedi")}</Link>
             </p>
           )}
           {!registering && !verifying && (
             <p>
-              New to RelayHub? <Link href="/register">Create an account</Link>
+              {t("New to RelayHub?", "È la prima volta su RelayHub?")}{" "}
+              <Link href="/register">
+                {t("Create an account", "Crea un account")}
+              </Link>
             </p>
           )}
           <PolicyLinks />
@@ -133,17 +188,23 @@ export default async function AuthPage({
   );
 }
 
-function VerifySignIn() {
+async function VerifySignIn() {
+  const { t } = await getLocale();
   return (
     <>
-      <p>Enter the six-digit code from your authenticator app.</p>
+      <p>
+        {t(
+          "Enter the six-digit code from your authenticator app.",
+          "Inserisci il codice a sei cifre generato dalla tua app di autenticazione.",
+        )}
+      </p>
       <ActionForm
         endpoint="/api/auth/two-factor/verify-totp"
-        label="Verify code"
+        label={t("Verify code", "Verifica codice")}
         nextPath="/workspace"
       >
         <label>
-          Authenticator code
+          {t("Authenticator code", "Codice di autenticazione")}
           <input
             name="code"
             inputMode="numeric"
@@ -155,14 +216,16 @@ function VerifySignIn() {
         </label>
       </ActionForm>
       <details className="factor-details">
-        <summary>Use a recovery code</summary>
+        <summary>
+          {t("Use a recovery code", "Usa un codice di recupero")}
+        </summary>
         <ActionForm
           endpoint="/api/auth/two-factor/verify-backup-code"
-          label="Verify recovery code"
+          label={t("Verify recovery code", "Verifica codice di recupero")}
           nextPath="/workspace"
         >
           <label>
-            Recovery code
+            {t("Recovery code", "Codice di recupero")}
             <input
               name="code"
               autoComplete="off"
@@ -174,7 +237,7 @@ function VerifySignIn() {
         </ActionForm>
       </details>
       <p>
-        <Link href="/login">Back to sign in</Link>
+        <Link href="/login">{t("Back to sign in", "Torna all’accesso")}</Link>
       </p>
     </>
   );

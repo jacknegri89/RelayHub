@@ -1,12 +1,32 @@
 "use client";
+import { useLocale } from "./locale";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ActionForm } from "./forms";
 
+const setupErrors: Record<string, [string, string]> = {
+  password: [
+    "Enter your current password and try again.",
+    "Inserisci la password attuale e riprova.",
+  ],
+  code: [
+    "Enter the current six-digit code from your authenticator.",
+    "Inserisci il codice a sei cifre mostrato dall’app di autenticazione.",
+  ],
+  limit: [
+    "Too many attempts. Wait a minute before trying again.",
+    "Troppi tentativi. Attendi un minuto e riprova.",
+  ],
+  network: [
+    "Could not reach RelayHub. Try again.",
+    "Connessione a RelayHub non riuscita. Riprova.",
+  ],
+};
 type Enrollment = { totpURI: string; backupCodes: string[] };
 
 export function AccountSecurity({ enabled }: { enabled: boolean }) {
+  const { t } = useLocale();
   const router = useRouter();
   const [enrollment, setEnrollment] = useState<Enrollment>();
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
@@ -34,12 +54,12 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
         body: JSON.stringify(values),
       });
       if (!response.ok) {
-        let message = "Enter your current password and try again.";
+        let message = "password";
         if (enrollment) {
-          message = "Enter the current six-digit code from your authenticator.";
+          message = "code";
         }
         if (response.status === 429) {
-          message = "Too many attempts. Wait a minute before trying again.";
+          message = "limit";
         }
         setError(message);
         return;
@@ -54,7 +74,7 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
       form.reset();
       setEnrollment(setup);
     } catch {
-      setError("Could not reach RelayHub. Try again.");
+      setError("network");
     } finally {
       setPending(false);
     }
@@ -62,7 +82,9 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
 
   return (
     <section className="panel security-panel" aria-labelledby="mfa-title">
-      <h2 id="mfa-title">Two-factor authentication</h2>
+      <h2 id="mfa-title">
+        {t("Two-factor authentication", "Autenticazione a due fattori")}
+      </h2>
       {recoveryCodes.length > 0 && (
         <RecoveryCodes
           codes={recoveryCodes}
@@ -72,13 +94,21 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
       {enabled && recoveryCodes.length === 0 && (
         <>
           <p role="status">
-            Enabled. Your authenticator or a recovery code is required at
-            sign-in.
+            {t(
+              "Enabled. Your authenticator or a recovery code is required at sign-in.",
+              "Attiva. Per accedere serve l’app di autenticazione o un codice di recupero.",
+            )}
           </p>
           <ActionForm
             endpoint="/api/auth/two-factor/disable"
-            label="Disable two-factor authentication"
-            confirm="Disable two-factor authentication and invalidate your recovery codes?"
+            label={t(
+              "Disable two-factor authentication",
+              "Disattiva l’autenticazione a due fattori",
+            )}
+            confirm={t(
+              "Disable two-factor authentication and invalidate your recovery codes?",
+              "Vuoi disattivare l’autenticazione a due fattori e invalidare i codici di recupero?",
+            )}
           >
             <PasswordInput />
           </ActionForm>
@@ -89,12 +119,19 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
           {!enrollment && (
             <>
               <p>
-                Require a code from your authenticator app after entering your
-                password.
+                {t(
+                  "Require a code from your authenticator app after entering your password.",
+                  "Dopo la password, ti verrà chiesto un codice generato dall’app di autenticazione.",
+                )}
               </p>
               <PasswordInput />
               <button type="submit" disabled={pending}>
-                Set up authenticator
+                {pending && t("Working…", "Attendi…")}
+                {!pending &&
+                  t(
+                    "Set up authenticator",
+                    "Configura l’app di autenticazione",
+                  )}
               </button>
             </>
           )}
@@ -107,7 +144,7 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
           )}
           {error && (
             <p role="alert" className="error-text">
-              {error}
+              {t(...setupErrors[error])}
             </p>
           )}
         </form>
@@ -117,9 +154,10 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
 }
 
 function PasswordInput() {
+  const { t } = useLocale();
   return (
     <label>
-      Current password
+      {t("Current password", "Password attuale")}
       <input
         name="password"
         type="password"
@@ -139,6 +177,7 @@ function AuthenticatorSetup({
   uri: string;
   pending: boolean;
 }) {
+  const { t } = useLocale();
   const canvas = useRef<HTMLCanvasElement>(null);
   const [qrReady, setQrReady] = useState(false);
   const secret = new URL(uri).searchParams.get("secret") ?? "";
@@ -167,17 +206,22 @@ function AuthenticatorSetup({
   return (
     <>
       <p>
-        Scan the QR code with your authenticator app or enter the setup key as a
-        time-based account.
+        {t(
+          "Scan the QR code with your authenticator app or enter the setup key as a time-based account.",
+          "Scansiona il codice QR con l’app di autenticazione oppure inserisci la chiave per configurare un account basato sul tempo.",
+        )}
       </p>
       <canvas
         ref={canvas}
         hidden={!qrReady}
         role="img"
-        aria-label="Authenticator setup QR code"
+        aria-label={t(
+          "Authenticator setup QR code",
+          "Codice QR per configurare l’app di autenticazione",
+        )}
       />
       <label>
-        Manual setup key
+        {t("Manual setup key", "Chiave di configurazione manuale")}
         <input
           readOnly
           value={secret}
@@ -185,7 +229,7 @@ function AuthenticatorSetup({
         />
       </label>
       <label>
-        Authenticator code
+        {t("Authenticator code", "Codice di autenticazione")}
         <input
           name="code"
           inputMode="numeric"
@@ -196,7 +240,12 @@ function AuthenticatorSetup({
         />
       </label>
       <button type="submit" disabled={pending}>
-        Enable two-factor authentication
+        {pending && t("Working…", "Attendi…")}
+        {!pending &&
+          t(
+            "Enable two-factor authentication",
+            "Attiva l’autenticazione a due fattori",
+          )}
       </button>
     </>
   );
@@ -209,11 +258,14 @@ function RecoveryCodes({
   codes: string[];
   onDone: () => void;
 }) {
+  const { t } = useLocale();
   return (
     <>
       <p role="status">
-        Two-factor authentication is enabled. Save these recovery codes in a
-        safe place. Each code works once.
+        {t(
+          "Two-factor authentication is enabled. Save these recovery codes in a safe place. Each code works once.",
+          "L’autenticazione a due fattori è attiva. Conserva questi codici di recupero in un luogo sicuro. Ogni codice è valido una sola volta.",
+        )}
       </p>
       <ul className="recovery-codes">
         {codes.map((code) => (
@@ -223,7 +275,7 @@ function RecoveryCodes({
         ))}
       </ul>
       <button type="button" onClick={onDone}>
-        I saved my recovery codes
+        {t("I saved my recovery codes", "Ho salvato i codici di recupero")}
       </button>
     </>
   );

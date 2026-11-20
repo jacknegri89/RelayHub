@@ -1,7 +1,8 @@
+import { getLocale } from "../server/locale";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { ActionForm } from "./forms";
-import { Status, ShortId } from "./display";
+import { Status, ShortId, stateLabel } from "./display";
 import { PageHeading } from "./page-heading";
 
 export async function Sources({
@@ -11,6 +12,7 @@ export async function Sources({
   organizationId: string;
   editable: boolean;
 }) {
+  const { t } = await getLocale();
   const items = await database().webhookSource.findMany({
     where: { organizationId },
     orderBy: { createdAt: "desc" },
@@ -25,24 +27,32 @@ export async function Sources({
   return (
     <>
       <PageHeading
-        title="Sources"
-        description="Manage public endpoints for signed webhooks."
+        title={t("Sources", "Sorgenti")}
+        description={t(
+          "Manage public endpoints for signed webhooks.",
+          "Gestisci gli endpoint pubblici che ricevono i webhook firmati.",
+        )}
       />
       {editable && (
         <section className="panel">
-          <h2>Create source</h2>
+          <h2>{t("Create source", "Crea sorgente")}</h2>
           <ActionForm
             endpoint={endpoint}
-            label="Create source"
+            label={t("Create source", "Crea sorgente")}
             fields={{ action: "source_create" }}
           >
             <label>
-              Source name <input name="name" required maxLength={80} />
+              {t("Source name", "Nome della sorgente")}{" "}
+              <input name="name" required maxLength={80} />
             </label>
           </ActionForm>
         </section>
       )}
-      {!items.length && <p className="empty">No sources yet.</p>}
+      {!items.length && (
+        <p className="empty">
+          {t("No sources yet.", "Nessuna sorgente configurata.")}
+        </p>
+      )}
       {items.map((item) => (
         <section key={item.id} className="panel">
           <div className="section-head">
@@ -54,16 +64,18 @@ export async function Sources({
               {settings().RELAYHUB_BASE_URL + "/api/webhooks/" + item.id}
             </code>
           </p>
-          <p className="muted">{item._count.events} retained events</p>
+          <p className="muted">
+            {item._count.events} {t("retained events", "eventi conservati")}
+          </p>
           {editable && (
             <div className="edit-grid">
               <ActionForm
                 endpoint={endpoint}
-                label="Save source"
+                label={t("Save source", "Salva sorgente")}
                 fields={{ action: "source_update", id: item.id }}
               >
                 <label>
-                  Source name{" "}
+                  {t("Source name", "Nome della sorgente")}{" "}
                   <input
                     name="name"
                     required
@@ -77,14 +89,20 @@ export async function Sources({
                     type="checkbox"
                     defaultChecked={item.enabled}
                   />{" "}
-                  Enabled
+                  {t("Enabled", "Attivo")}
                 </label>
               </ActionForm>
               <ActionForm
                 endpoint={endpoint}
-                label="Rotate signing secret"
+                label={t(
+                  "Rotate signing secret",
+                  "Sostituisci la chiave di firma",
+                )}
                 fields={{ action: "source_rotate", id: item.id }}
-                confirm="Rotate this source secret? Update the sender before it sends another webhook."
+                confirm={t(
+                  "Rotate this source secret? Update the sender before it sends another webhook.",
+                  "Vuoi sostituire la chiave di firma? Aggiorna il mittente prima del prossimo webhook.",
+                )}
               />
             </div>
           )}
@@ -101,6 +119,7 @@ export async function Destinations({
   organizationId: string;
   editable: boolean;
 }) {
+  const { t } = await getLocale();
   const db = database();
   const [items, sources] = await Promise.all([
     db.webhookDestination.findMany({
@@ -130,22 +149,28 @@ export async function Destinations({
   return (
     <>
       <PageHeading
-        title="Destinations"
-        description="Manage receivers and choose which events they get."
+        title={t("Destinations", "Destinazioni")}
+        description={t(
+          "Manage receivers and choose which events they get.",
+          "Configura i destinatari e scegli gli eventi che ricevono.",
+        )}
       />
       {editable && (
         <section className="panel">
-          <h2>Create destination</h2>
+          <h2>{t("Create destination", "Crea destinazione")}</h2>
           <ActionForm
             endpoint={endpoint}
-            label="Create destination"
+            label={t("Create destination", "Crea destinazione")}
             fields={{ action: "destination_create" }}
           >
             <DestinationFields />
           </ActionForm>
           {settings().VERIFICATION_RECEIVER_SECRET && !settings().isDemo && (
             <p className="muted">
-              Built-in verification receiver{" "}
+              {t(
+                "Built-in verification receiver",
+                "Destinatario integrato per le verifiche",
+              )}{" "}
               <code className="break">
                 {settings().RELAYHUB_BASE_URL + "/api/receiver/verify"}
               </code>
@@ -153,7 +178,7 @@ export async function Destinations({
           )}
           {settings().DEMO_RECEIVER_URL && (
             <p className="muted">
-              Demo receiver:{" "}
+              {t("Demo receiver:", "Destinatario di prova:")}{" "}
               <code className="break">
                 {settings().DEMO_RECEIVER_URL + "/hooks/success"}
               </code>
@@ -161,7 +186,11 @@ export async function Destinations({
           )}
         </section>
       )}
-      {!items.length && <p className="empty">No destinations yet.</p>}
+      {!items.length && (
+        <p className="empty">
+          {t("No destinations yet.", "Nessuna destinazione configurata.")}
+        </p>
+      )}
       {items.map((item) => (
         <section key={item.id} className="panel">
           <div className="section-head">
@@ -171,22 +200,30 @@ export async function Destinations({
           <p>
             <code className="break">{item.url}</code>
           </p>
-          <h3>Routes</h3>
+          <h3>{t("Routes", "Regole di inoltro")}</h3>
           {!item.subscriptions.length && (
-            <p className="muted">No sources are linked.</p>
+            <p className="muted">
+              {t("No sources are linked.", "Nessuna sorgente collegata.")}
+            </p>
           )}
           <ul className="routes">
             {item.subscriptions.map((route) => (
               <li key={route.sourceId + ":" + route.eventType}>
                 <span>
                   {route.source.name}{" "}
-                  <code>{route.eventType || "all event types"}</code>
+                  <code>
+                    {route.eventType ||
+                      t("all event types", "tutti i tipi di evento")}
+                  </code>
                 </span>
                 {editable && (
                   <ActionForm
                     endpoint={endpoint}
-                    label="Remove route"
-                    confirm="Remove this route for future events?"
+                    label={t("Remove route", "Rimuovi regola")}
+                    confirm={t(
+                      "Remove this route for future events?",
+                      "Vuoi rimuovere questa regola per gli eventi futuri?",
+                    )}
                     fields={{
                       action: "route_remove",
                       sourceId: route.sourceId,
@@ -201,10 +238,12 @@ export async function Destinations({
           {editable && (
             <div className="edit-grid">
               <details>
-                <summary>Edit destination</summary>
+                <summary>
+                  {t("Edit destination", "Modifica destinazione")}
+                </summary>
                 <ActionForm
                   endpoint={endpoint}
-                  label="Save destination"
+                  label={t("Save destination", "Salva destinazione")}
                   fields={{ action: "destination_update", id: item.id }}
                 >
                   <DestinationFields item={item} />
@@ -214,25 +253,31 @@ export async function Destinations({
                       name="enabled"
                       defaultChecked={item.enabled}
                     />{" "}
-                    Enabled
+                    {t("Enabled", "Attivo")}
                   </label>
                 </ActionForm>
               </details>
               {!!sources.length && (
                 <details>
-                  <summary>Link source</summary>
+                  <summary>{t("Link source", "Collega sorgente")}</summary>
                   <ActionForm
                     endpoint={endpoint}
-                    label="Save route"
+                    label={t("Save route", "Salva regola")}
                     fields={{ action: "route_save", destinationId: item.id }}
                   >
                     <SourceSelect sources={sources} />
                     <label>
-                      Event type (optional){" "}
+                      {t(
+                        "Event type (optional)",
+                        "Tipo di evento (facoltativo)",
+                      )}{" "}
                       <input
                         name="eventType"
                         maxLength={100}
-                        placeholder="All event types"
+                        placeholder={t(
+                          "All event types",
+                          "Tutti i tipi di evento",
+                        )}
                       />
                     </label>
                   </ActionForm>
@@ -240,10 +285,10 @@ export async function Destinations({
               )}
               {!!item.subscriptions.length && (
                 <details>
-                  <summary>Test delivery</summary>
+                  <summary>{t("Test delivery", "Consegna di prova")}</summary>
                   <ActionForm
                     endpoint={endpoint}
-                    label="Send test"
+                    label={t("Send test", "Invia prova")}
                     onId={"/workspace/" + organizationId + "/events/"}
                     fields={{ action: "test_delivery", destinationId: item.id }}
                   >
@@ -255,7 +300,7 @@ export async function Destinations({
                       )}
                     />
                     <label>
-                      Event type{" "}
+                      {t("Event type", "Tipo di evento")}{" "}
                       <input
                         name="eventType"
                         required
@@ -276,15 +321,20 @@ export async function Destinations({
   );
 }
 
-function DestinationFields({ item }: { item?: { name: string; url: string } }) {
+async function DestinationFields({
+  item,
+}: {
+  item?: { name: string; url: string };
+}) {
+  const { t } = await getLocale();
   return (
     <>
       <label>
-        Destination name{" "}
+        {t("Destination name", "Nome della destinazione")}{" "}
         <input name="name" required maxLength={80} defaultValue={item?.name} />
       </label>
       <label>
-        Destination URL{" "}
+        {t("Destination URL", "URL della destinazione")}{" "}
         <input
           name="url"
           type="url"
@@ -294,7 +344,7 @@ function DestinationFields({ item }: { item?: { name: string; url: string } }) {
         />
       </label>
       <label>
-        Signing secret (optional){" "}
+        {t("Signing secret (optional)", "Chiave di firma (facoltativa)")}{" "}
         <input
           name="secret"
           type="password"
@@ -307,14 +357,15 @@ function DestinationFields({ item }: { item?: { name: string; url: string } }) {
   );
 }
 
-function SourceSelect({
+async function SourceSelect({
   sources,
 }: {
   sources: { id: string; name: string }[];
 }) {
+  const { t } = await getLocale();
   return (
     <label>
-      Source{" "}
+      {t("Source", "Sorgente")}{" "}
       <select name="sourceId" required>
         {sources.map((source) => (
           <option key={source.id} value={source.id}>
@@ -335,6 +386,7 @@ export async function Settings({
   owner: boolean;
   name: string;
 }) {
+  const { t } = await getLocale();
   const members = await database().organizationMember.findMany({
     where: { organizationId },
     orderBy: { createdAt: "asc" },
@@ -344,40 +396,47 @@ export async function Settings({
   return (
     <>
       <PageHeading
-        title="Settings"
-        description="Manage organization membership and roles."
+        title={t("Settings", "Impostazioni")}
+        description={t(
+          "Manage organization membership and roles.",
+          "Gestisci i membri e i ruoli dell’organizzazione.",
+        )}
       />
       <section className="panel">
         <h2>{name}</h2>
         <p className="muted">
-          Organization ID <ShortId id={organizationId} />
+          {t("Organization ID", "ID organizzazione")}{" "}
+          <ShortId id={organizationId} />
         </p>
         {owner && (
           <ActionForm
             endpoint={endpoint}
-            label="Rename organization"
+            label={t("Rename organization", "Rinomina organizzazione")}
             fields={{ action: "organization_rename" }}
           >
             <label>
-              Organization name{" "}
+              {t("Organization name", "Nome dell’organizzazione")}{" "}
               <input name="name" required maxLength={80} defaultValue={name} />
             </label>
           </ActionForm>
         )}
       </section>
       <section className="panel">
-        <h2>Members</h2>
+        <h2>{t("Members", "Membri")}</h2>
         <ul className="routes">
           {members.map((member) => (
             <li key={member.userId}>
               <span className="break">
-                {member.user.email} · {member.role}
+                {member.user.email} · {stateLabel(member.role, t)}
               </span>
               {owner && member.role !== "owner" && (
                 <ActionForm
                   endpoint={endpoint}
-                  label="Remove member"
-                  confirm="Remove this member’s access?"
+                  label={t("Remove member", "Rimuovi membro")}
+                  confirm={t(
+                    "Remove this member’s access?",
+                    "Vuoi revocare l’accesso a questo membro?",
+                  )}
                   fields={{ action: "member_remove", id: member.userId }}
                 />
               )}
@@ -387,11 +446,11 @@ export async function Settings({
         {owner && (
           <ActionForm
             endpoint={endpoint}
-            label="Save member"
+            label={t("Save member", "Salva membro")}
             fields={{ action: "member_save" }}
           >
             <label>
-              Account ID{" "}
+              {t("Account ID", "ID account")}{" "}
               <input
                 name="accountId"
                 required
@@ -402,14 +461,16 @@ export async function Settings({
               />
             </label>
             <p id="member-account-help" className="muted">
-              Ask the member for the account ID shown on their Organizations
-              page.
+              {t(
+                "Ask the member for the account ID shown on their Organizations page.",
+                "Chiedi al membro l’ID account che trova nella sua pagina Organizzazioni.",
+              )}
             </p>
             <label>
-              Role{" "}
+              {t("Role", "Ruolo")}{" "}
               <select name="role">
-                <option value="viewer">Viewer</option>
-                <option value="admin">Admin</option>
+                <option value="viewer">{t("Viewer", "Lettore")}</option>
+                <option value="admin">{t("Admin", "Amministratore")}</option>
               </select>
             </label>
           </ActionForm>

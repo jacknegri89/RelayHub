@@ -1,3 +1,4 @@
+import { getLocale } from "../../../server/locale";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -13,6 +14,7 @@ export default async function OrganizationLayout({
   children: React.ReactNode;
   params: Promise<{ organizationId: string }>;
 }) {
+  const { t } = await getLocale();
   const { organizationId } = await params;
   let access;
   try {
@@ -30,14 +32,16 @@ export default async function OrganizationLayout({
     <div className="workspace">
       <aside className="sidebar">
         <Link href="/workspace" className="org-switch">
-          Organizations ↗
+          {t("Organizations ↗", "Organizzazioni ↗")}
         </Link>
         <p className="org-name">{access.membership.organization.name}</p>
         <Navigation base={"/workspace/" + organizationId} />
       </aside>
       <main id="main" className="content">
         {settings().isDemo && (
-          <p className="demo-label">Local demo environment</p>
+          <p className="demo-label">
+            {t("Local demo environment", "Ambiente di prova locale")}
+          </p>
         )}
         {children}
       </main>

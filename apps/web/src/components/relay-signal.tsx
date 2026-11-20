@@ -1,9 +1,11 @@
 "use client";
 
+import { useLocale } from "./locale";
 import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import globeTexture from "./relay-globe.webp";
 import { paintSignal, TURN } from "./signal-art";
 import styles from "./relay-signal.module.css";
 
@@ -12,6 +14,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 const INTRO_SECONDS = 4.5;
 
 export function RelaySignal() {
+  const { t } = useLocale();
   const figure = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
 
@@ -22,6 +25,7 @@ export function RelaySignal() {
       if (!surface || !context) {
         return;
       }
+      const globe = new Image();
       const phase = { angle: 0.7, offset: 0 };
       let width = surface.clientWidth;
       let height = surface.clientHeight;
@@ -32,7 +36,10 @@ export function RelaySignal() {
           width,
           height,
           phase.angle + phase.offset,
+          globe,
         );
+      globe.addEventListener("load", paint);
+      globe.src = globeTexture.src;
       const size = new ResizeObserver(([entry]) => {
         if (!entry) {
           return;
@@ -82,6 +89,7 @@ export function RelaySignal() {
       });
 
       return () => {
+        globe.removeEventListener("load", paint);
         size.disconnect();
         media.revert();
       };
@@ -93,13 +101,16 @@ export function RelaySignal() {
     <figure
       ref={figure}
       className={styles.figure}
-      aria-label="Animated diagram of webhook routing"
+      aria-label={t(
+        "Animated diagram of webhook routing",
+        "Diagramma animato del percorso di un webhook",
+      )}
     >
       <canvas ref={canvas} aria-hidden="true" />
       <figcaption className={styles.caption}>
-        <span>Signed ingress</span>
+        <span>{t("Signed ingress", "Evento firmato")}</span>
         <span aria-hidden="true" />
-        <span>HTTPS delivery</span>
+        <span>{t("HTTPS delivery", "Consegna HTTPS")}</span>
       </figcaption>
     </figure>
   );

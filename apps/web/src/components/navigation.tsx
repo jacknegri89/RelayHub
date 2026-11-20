@@ -1,33 +1,38 @@
 "use client";
+import { useLocale } from "./locale";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const sections = [
-  ["Overview", ""],
-  ["Sources", "/sources"],
-  ["Destinations", "/destinations"],
-  ["Events", "/events"],
-  ["Deliveries", "/deliveries"],
-  ["Settings", "/settings"],
+  ["Overview", "Panoramica", ""],
+  ["Sources", "Sorgenti", "/sources"],
+  ["Destinations", "Destinazioni", "/destinations"],
+  ["Events", "Eventi", "/events"],
+  ["Deliveries", "Consegne", "/deliveries"],
+  ["Settings", "Impostazioni", "/settings"],
 ];
 
 export function Navigation({ base }: { base: string }) {
+  const { t } = useLocale();
   const pathname = usePathname();
   return (
-    <nav className="navigation" aria-label="Organization">
-      {sections.map(([label, segment]) => {
+    <nav
+      className="navigation"
+      aria-label={t("Organization", "Organizzazione")}
+    >
+      {sections.map(([label, italianLabel, segment]) => {
         const path = base + segment;
         const active =
           pathname === path ||
           Boolean(segment && pathname.startsWith(path + "/"));
         return (
           <Link
-            key={label}
+            key={t(label, italianLabel)}
             href={path}
             aria-current={(active && "page") || undefined}
           >
-            {label}
+            {t(label, italianLabel)}
           </Link>
         );
       })}

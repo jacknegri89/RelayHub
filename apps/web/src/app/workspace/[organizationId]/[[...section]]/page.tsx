@@ -1,3 +1,4 @@
+import { getLocale } from "../../../../server/locale";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
@@ -108,12 +109,13 @@ export default async function OrganizationPage({
   }
 }
 
-function LoadingSection({ children }: { children: React.ReactNode }) {
+async function LoadingSection({ children }: { children: React.ReactNode }) {
+  const { t } = await getLocale();
   return (
     <Suspense
       fallback={
         <p className="loading" role="status">
-          Loading workspace…
+          {t("Loading workspace…", "Caricamento dell’area di lavoro…")}
         </p>
       }
     >

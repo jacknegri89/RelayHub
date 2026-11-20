@@ -19,6 +19,8 @@ Run the integration and browser suites with the web service, worker, PostgreSQL,
 
 The [GitHub Actions workflow](../.github/workflows/ci.yml) provisions isolated services on Linux and runs the full suite.
 
+The language regression changes English to Italian with a partially filled registration form, follows a policy link, and reloads the page. The authenticator test also switches languages with a password already entered.
+
 ## Run the development processes
 
 After installing the workspace dependencies and running `pnpm setup`, start PostgreSQL and Redis:

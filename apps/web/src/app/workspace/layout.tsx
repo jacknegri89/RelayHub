@@ -1,6 +1,8 @@
+import { getLocale } from "../../server/locale";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "../../server/auth";
+import { LanguageSwitch } from "../../components/locale";
 import { Brand } from "../../components/brand";
 import { ActionForm } from "../../components/forms";
 import { PolicyLinks } from "../../components/policy-links";
@@ -11,6 +13,7 @@ export default async function WorkspaceLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { t } = await getLocale();
   const requestHeaders = await headers();
   const session = await auth().api.getSession({ headers: requestHeaders });
   if (!session) {
@@ -19,15 +22,19 @@ export default async function WorkspaceLayout({
   return (
     <>
       <header className="topbar">
-        <Link href="/" aria-label="RelayHub home">
+        <Link
+          href="/"
+          aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}
+        >
           <Brand />
         </Link>
         <div className="account">
           <span>{session.user.email}</span>
-          <Link href="/workspace/security">Security</Link>
+          <LanguageSwitch />
+          <Link href="/workspace/security">{t("Security", "Sicurezza")}</Link>
           <ActionForm
             endpoint="/api/auth/sign-out"
-            label="Sign out"
+            label={t("Sign out", "Esci")}
             nextPath="/login"
           />
         </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "./locale";
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -11,30 +12,92 @@ type Result = {
   eventId?: string;
   twoFactorRedirect?: boolean;
 };
-const messages: Record<string, string> = {
-  permission_denied: "Your role does not allow this action.",
-  rate_limited: "Too many requests. Wait a minute and try again.",
-  invalid_credentials: "Check your email address and password.",
-  INVALID_EMAIL_OR_PASSWORD: "Check your email address and password.",
-  USER_ALREADY_EXISTS: "This email address cannot be registered.",
-  INVALID_CODE: "The code did not match. Try again.",
-  INVALID_BACKUP_CODE: "The recovery code did not match or was already used.",
-  INVALID_TWO_FACTOR_COOKIE: "This verification step expired. Sign in again.",
-  ACCOUNT_TEMPORARILY_LOCKED:
+const messages: Record<string, [string, string]> = {
+  permission_denied: [
+    "Your role does not allow this action.",
+    "Il tuo ruolo non consente questa azione.",
+  ],
+  rate_limited: [
+    "Too many requests. Wait a minute and try again.",
+    "Troppe richieste. Attendi un minuto e riprova.",
+  ],
+  invalid_credentials: [
+    "Check your email address and password.",
+    "Verifica l’indirizzo email e la password.",
+  ],
+  INVALID_EMAIL_OR_PASSWORD: [
+    "Check your email address and password.",
+    "Verifica l’indirizzo email e la password.",
+  ],
+  USER_ALREADY_EXISTS: [
+    "This email address cannot be registered.",
+    "Questo indirizzo email non può essere registrato.",
+  ],
+  INVALID_CODE: [
+    "The code did not match. Try again.",
+    "Il codice non corrisponde. Riprova.",
+  ],
+  INVALID_BACKUP_CODE: [
+    "The recovery code did not match or was already used.",
+    "Il codice di recupero è errato o è già stato utilizzato.",
+  ],
+  INVALID_TWO_FACTOR_COOKIE: [
+    "This verification step expired. Sign in again.",
+    "La verifica è scaduta. Accedi di nuovo.",
+  ],
+  ACCOUNT_TEMPORARILY_LOCKED: [
     "Too many failed codes. Wait before trying again.",
-  invalid_factor: "Check the code or password and try again.",
-  destination_not_allowed:
+    "Troppi codici errati. Attendi prima di riprovare.",
+  ],
+  invalid_factor: [
+    "Check the code or password and try again.",
+    "Controlla il codice o la password e riprova.",
+  ],
+  destination_not_allowed: [
     "Use an approved HTTPS hostname or the configured demo receiver.",
-  registered_user_not_found: "This ID does not match a registered account.",
-  delivery_is_not_failed: "Only failed deliveries can be retried.",
-  test_route_unavailable:
+    "Usa un dominio HTTPS autorizzato o il destinatario di prova configurato.",
+  ],
+  registered_user_not_found: [
+    "This ID does not match a registered account.",
+    "Questo ID non corrisponde a un account registrato.",
+  ],
+  delivery_is_not_failed: [
+    "Only failed deliveries can be retried.",
+    "Puoi riprovare soltanto le consegne fallite.",
+  ],
+  test_route_unavailable: [
     "Enable the destination and add a route for this event type first.",
-  source_unavailable: "Enable the source before requesting a test.",
-  resource_not_found: "This resource is unavailable.",
-  invalid_configuration: "Check the form fields and try again.",
-  authentication_required: "Sign in again to continue.",
-  form_not_ready:
+    "Attiva la destinazione e aggiungi una regola per questo tipo di evento.",
+  ],
+  source_unavailable: [
+    "Enable the source before requesting a test.",
+    "Attiva la sorgente prima di inviare una prova.",
+  ],
+  resource_not_found: [
+    "This resource is unavailable.",
+    "Questa risorsa non è disponibile.",
+  ],
+  invalid_configuration: [
+    "Check the form fields and try again.",
+    "Controlla i campi del modulo e riprova.",
+  ],
+  authentication_required: [
+    "Sign in again to continue.",
+    "Accedi di nuovo per continuare.",
+  ],
+  request_failed: [
+    "The request failed. Check your input and try again.",
+    "Richiesta non riuscita. Controlla i dati e riprova.",
+  ],
+  network_failed: [
+    "Could not reach RelayHub. Try again.",
+    "Connessione a RelayHub non riuscita. Riprova.",
+  ],
+  saved: ["Saved.", "Modifiche salvate."],
+  form_not_ready: [
     "Wait a moment and retry. Reload the form if it has been open for a long time.",
+    "Attendi un momento e riprova. Se il modulo è aperto da molto, ricarica la pagina.",
+  ],
 };
 
 export function ActionForm({
@@ -56,6 +119,7 @@ export function ActionForm({
   onId?: string;
   className?: string;
 }) {
+  const { t } = useLocale();
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -90,10 +154,7 @@ export function ActionForm({
         await response.json();
       if (!response.ok) {
         setFailed(true);
-        setMessage(
-          messages[result.error ?? result.code ?? ""] ??
-            "The request failed. Check your input and try again.",
-        );
+        setMessage(result.error ?? result.code ?? "request_failed");
         return;
       }
       if (result.secret) {
@@ -106,24 +167,25 @@ export function ActionForm({
       } else if (onId && result.id) {
         router.push(onId + result.id);
       } else {
-        setMessage("Saved.");
+        setMessage("saved");
       }
       router.refresh();
     } catch {
       setFailed(true);
-      setMessage("Could not reach RelayHub. Try again.");
+      setMessage("network_failed");
     } finally {
       setPending(false);
     }
   }
 
+  const translatedMessage = messages[message] ?? messages.request_failed;
   let status = "status";
   let button = label;
   if (failed) {
     status = "alert";
   }
   if (pending) {
-    button = "Working…";
+    button = t("Working…", "Attendi…");
   }
   return (
     <form className={className ?? "action-form"} onSubmit={submit}>
@@ -137,7 +199,7 @@ export function ActionForm({
             className={(failed && "error-text") || "form-success"}
             role={status}
           >
-            {message}
+            {t(...translatedMessage)}
           </p>
         </Motion>
       )}
@@ -151,30 +213,43 @@ export function ActionForm({
 }
 
 function SecretReveal({ secret }: { secret: string }) {
-  const [status, setStatus] = useState("");
+  const { t } = useLocale();
+  const [status, setStatus] = useState<"copied" | "select">();
   async function copy() {
     try {
       await navigator.clipboard.writeText(secret);
-      setStatus("Copied.");
+      setStatus("copied");
     } catch {
-      setStatus("Select the secret to copy it.");
+      setStatus("select");
     }
   }
   return (
     <div className="secret">
       <label>
-        Signing secret{" "}
+        {t("Signing secret", "Chiave di firma")}{" "}
         <input
           readOnly
           value={secret}
           onFocus={(event) => event.currentTarget.select()}
         />
       </label>
-      <span className="muted">Save this secret now. It is shown once.</span>
+      <span className="muted">
+        {t(
+          "Save this secret now. It is shown once.",
+          "Salva subito questa chiave. Viene mostrata una sola volta.",
+        )}
+      </span>
       <button type="button" onClick={copy}>
-        Copy secret
+        {t("Copy secret", "Copia chiave")}
       </button>
-      <p role="status">{status}</p>
+      <p role="status">
+        {status === "copied" && t("Copied.", "Chiave copiata.")}
+        {status === "select" &&
+          t(
+            "Select the secret to copy it.",
+            "Seleziona la chiave per copiarla.",
+          )}
+      </p>
     </div>
   );
 }
