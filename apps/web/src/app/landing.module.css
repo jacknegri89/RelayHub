@@ -34,9 +34,6 @@
   font-size: 0.9rem;
   text-decoration: none;
 }
-.header nav .navFlow {
-  color: var(--dust);
-}
 .header nav a:hover {
   color: var(--photon);
 }
@@ -270,9 +267,6 @@
   }
 }
 @media (max-width: 699px) {
-  .header nav .navFlow {
-    display: none;
-  }
   .hero {
     display: block;
     min-height: auto;

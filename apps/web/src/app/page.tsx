@@ -92,9 +92,6 @@ export default async function Home() {
           <Brand />
         </Link>
         <nav aria-label={t("Main navigation", "Navigazione principale")}>
-          <a className={styles.navFlow} href="#journey">
-            {t("How an event travels", "Il viaggio di un evento")}
-          </a>
           <LanguageSwitch />
           <Link className={styles.navAccount} href={navigationHref}>
             {navigationLabel}
