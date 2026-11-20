@@ -27,3 +27,4 @@
 - [x] Public source and main branch at https://github.com/jacknegri89/RelayHub. Vercel project relayhub is connected to the repository via vercel git connect.
 - [x] GitHub Actions verified the clean checkout after adding next typegen to typecheck. The Git-triggered branding build went live and passed public signup, sign-in, signed delivery HTTP 204 and visual checks from 320 to 1440 px.
 - [x] GitHub repository is named RelayHub. English README, live homepage screenshot, contributor guide, runbooks and OpenAPI reference are current. Local link, anchor, formatting and API checks passed.
+- [/] Canonical origin moves to https://relayhub-webhooks.vercel.app. Vercel production sets RELAYHUB_BASE_URL to the new domain and RELAYHUB_PREVIOUS_ORIGIN to the old one. Browser entry points redirect, while signed ingress and exact built-in receiver URLs remain valid. GitHub README credits Codex.

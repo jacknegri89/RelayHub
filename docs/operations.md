@@ -2,21 +2,22 @@
 
 ## Configuration
 
-| Setting                                                 | Purpose                                                                          |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| RELAYHUB_MODE                                           | `production` or explicit loopback-only `demo`                                    |
-| RELAYHUB_BASE_URL                                       | Exact public origin. HTTPS in production                                         |
-| DATABASE_URL / REDIS_URL                                | Private database and queue service URLs                                          |
-| BETTER_AUTH_SECRET                                      | Random secret of at least 32 characters                                          |
-| ACTIVE_KEY_ID / ENCRYPTION_KEYS                         | Active key ID and comma-separated `id:64-hex-characters` keyring                 |
-| DESTINATION_HOSTS                                       | Comma-separated exact production receiver domains                                |
-| VERIFICATION_RECEIVER_SECRET                            | Optional, separate key of at least 32 characters for the built-in HTTPS receiver |
-| TRUST_PROXY                                             | Set to `1` only behind a trusted proxy that overwrites X-Real-IP                 |
-| PAYLOAD_LIMIT_BYTES / WEBHOOK_WINDOW_SECONDS            | Defaults 262144 bytes and 300 seconds                                            |
-| RETENTION_DAYS                                          | Defaults to 30                                                                   |
-| DELIVERY_TIMEOUT_MS / MAX_ATTEMPTS / WORKER_CONCURRENCY | Defaults 5000, 5 and 4                                                           |
-| WORKER_HEALTH_PORT                                      | Loopback worker health port, default 3002                                        |
-| DEMO_RECEIVER_URL / DEMO_RECEIVER_SECRET                | Demo only. Use an explicit loopback or Compose receiver origin                   |
+| Setting                                                 | Purpose                                                                                     |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| RELAYHUB_MODE                                           | `production` or explicit loopback-only `demo`                                               |
+| RELAYHUB_BASE_URL                                       | Exact public origin. HTTPS in production                                                    |
+| RELAYHUB_PREVIOUS_ORIGIN                                | Optional previous HTTPS origin for browser redirects and existing verification destinations |
+| DATABASE_URL / REDIS_URL                                | Private database and queue service URLs                                                     |
+| BETTER_AUTH_SECRET                                      | Random secret of at least 32 characters                                                     |
+| ACTIVE_KEY_ID / ENCRYPTION_KEYS                         | Active key ID and comma-separated `id:64-hex-characters` keyring                            |
+| DESTINATION_HOSTS                                       | Comma-separated exact production receiver domains                                           |
+| VERIFICATION_RECEIVER_SECRET                            | Optional, separate key of at least 32 characters for the built-in HTTPS receiver            |
+| TRUST_PROXY                                             | Set to `1` only behind a trusted proxy that overwrites X-Real-IP                            |
+| PAYLOAD_LIMIT_BYTES / WEBHOOK_WINDOW_SECONDS            | Defaults 262144 bytes and 300 seconds                                                       |
+| RETENTION_DAYS                                          | Defaults to 30                                                                              |
+| DELIVERY_TIMEOUT_MS / MAX_ATTEMPTS / WORKER_CONCURRENCY | Defaults 5000, 5 and 4                                                                      |
+| WORKER_HEALTH_PORT                                      | Loopback worker health port, default 3002                                                   |
+| DEMO_RECEIVER_URL / DEMO_RECEIVER_SECRET                | Demo only. Use an explicit loopback or Compose receiver origin                              |
 
 ## Linux container deployment
 
@@ -31,6 +32,8 @@ The web health endpoints are `/api/health/live` and `/api/health/ready`. Web rea
 `vercel.json` declares a Next.js HTTP service and a BullMQ production daemon in Frankfurt (`fra1`). `Dockerfile.worker` packages the daemon. Keep test data and local keys separate from the hosted environment.
 
 The hosted project is connected to [jacknegri89/RelayHub](https://github.com/jacknegri89/RelayHub). A push to `main` triggers a Vercel production build. GitHub Actions runs checks independently. Confirm the commit in both services when verifying a release.
+
+The primary origin is [relayhub-webhooks.vercel.app](https://relayhub-webhooks.vercel.app). Browser links on the previous hostname redirect to the primary origin. Legacy webhook URLs stay available for existing clients. Browser sessions are scoped to their hostname.
 
 Provision a dedicated PostgreSQL database and a Redis endpoint with TCP/TLS access and `noeviction`. Apply the Prisma migrations to that database before deploying. Set the Production environment variables listed above, with `RELAYHUB_MODE=production`, `RELAYHUB_BASE_URL` set to the stable HTTPS production origin, and fresh session and encryption keys. Provide approved HTTPS receiver domains in `DESTINATION_HOSTS`. The loopback-only demo receiver runs in the local Compose stack.
 

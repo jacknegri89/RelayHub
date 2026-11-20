@@ -5,6 +5,21 @@ const config: NextConfig = {
   serverExternalPackages: ["pg", "@prisma/client", "@prisma/adapter-pg"],
   poweredByHeader: false,
   agentRules: false,
+  async redirects() {
+    const previous = process.env.RELAYHUB_PREVIOUS_ORIGIN;
+    const current = process.env.RELAYHUB_BASE_URL;
+    if (!previous || !current || previous === current) {
+      return [];
+    }
+    const previousHost = new URL(previous).host.replaceAll(".", "\\.");
+    // Keep API clients and saved webhook destinations on the old host working.
+    return ["/", "/login", "/register", "/workspace/:path*"].map((source) => ({
+      source,
+      has: [{ type: "host", value: previousHost }],
+      destination: current + source,
+      permanent: false,
+    }));
+  },
   async headers() {
     let scripts = "'self' 'unsafe-inline'";
     if (process.env.NODE_ENV === "development") {

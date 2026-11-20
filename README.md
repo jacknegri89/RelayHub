@@ -4,13 +4,13 @@
 
 RelayHub accepts signed JSON events, routes them to configured destinations, and delivers them in the background. Each organization has its own sources, destinations, roles, and delivery history.
 
-[Open RelayHub](https://relayhub-chi.vercel.app) · [Start locally](#run-locally) · [API reference](docs/api.yaml) · [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml)
+[Open RelayHub](https://relayhub-webhooks.vercel.app) · [Start locally](#run-locally) · [API reference](docs/api.yaml) · [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml)
 
 ![RelayHub homepage showing its animated webhook routing illustration](docs/images/relayhub-home.webp)
 
 ## Try the hosted app
 
-1. Open the [registration page](https://relayhub-chi.vercel.app/register). Enter your name, email address, and a single-use invitation code from the operator.
+1. Open the [registration page](https://relayhub-webhooks.vercel.app/register). Enter your name, email address, and a single-use invitation code from the operator.
 2. Create an organization, then add a source and a destination. The **Destinations** page shows the built-in HTTPS verification receiver.
 3. Link the source to the destination and send a signed event. Open **Events** or **Deliveries** to follow the recorded attempt through to HTTP 204.
 
@@ -59,6 +59,6 @@ The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`,
 ## Contributors
 
 - [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
-- [OpenAI Codex](https://github.com/openai/codex) — Assisted with implementation, design, testing, and documentation.
+- [Codex](https://github.com/openai/codex) — Assisted with implementation, design, testing, and documentation.
 
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.

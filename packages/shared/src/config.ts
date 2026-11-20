@@ -7,6 +7,10 @@ function integer(defaultValue: number, min: number, max: number) {
 const schema = z.object({
   RELAYHUB_MODE: z.enum(["demo", "production"]).default("production"),
   RELAYHUB_BASE_URL: z.url(),
+  RELAYHUB_PREVIOUS_ORIGIN: z
+    .string()
+    .optional()
+    .transform((value) => value || undefined),
   DATABASE_URL: z.url().regex(/^postgres(?:ql)?:\/\//),
   REDIS_URL: z.url().regex(/^rediss?:\/\//),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -53,6 +57,20 @@ export function parseConfig(environment: Record<string, string | undefined>) {
   }
   if (isDemo && !["localhost", "127.0.0.1"].includes(origin.hostname)) {
     throw new Error("Demo mode requires a loopback RELAYHUB_BASE_URL");
+  }
+  if (config.RELAYHUB_PREVIOUS_ORIGIN) {
+    const previousOrigin = new URL(config.RELAYHUB_PREVIOUS_ORIGIN);
+    if (
+      isDemo ||
+      previousOrigin.protocol !== "https:" ||
+      previousOrigin.port ||
+      previousOrigin.origin !== config.RELAYHUB_PREVIOUS_ORIGIN ||
+      previousOrigin.origin === origin.origin
+    ) {
+      throw new Error(
+        "RELAYHUB_PREVIOUS_ORIGIN must be a separate HTTPS origin",
+      );
+    }
   }
   const keys = new Map<string, Buffer>();
   for (const entry of config.ENCRYPTION_KEYS.split(",")) {

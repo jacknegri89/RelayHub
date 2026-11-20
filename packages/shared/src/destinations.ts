@@ -4,14 +4,17 @@ import { settings } from "./config";
 
 export class DestinationBlocked extends Error {}
 
-export function destinationUrl(raw: string) {
+export function destinationUrl(
+  raw: string,
+  configuration?: ReturnType<typeof settings>,
+) {
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
     throw new DestinationBlocked("Invalid destination URL");
   }
-  const config = settings();
+  const config = configuration ?? settings();
   const domain = url.hostname;
   if (url.username || url.password || url.hash || url.search) {
     throw new DestinationBlocked(
@@ -29,10 +32,12 @@ export function destinationUrl(raw: string) {
     return { url, isDemo: true, isVerificationReceiver: false };
   }
   const ownOrigin = url.origin === config.RELAYHUB_BASE_URL;
+  const ownReceiverOrigin =
+    ownOrigin || url.origin === config.RELAYHUB_PREVIOUS_ORIGIN;
   const isVerificationReceiver = Boolean(
     config.VERIFICATION_RECEIVER_SECRET &&
     !config.isDemo &&
-    ownOrigin &&
+    ownReceiverOrigin &&
     url.pathname === "/api/receiver/verify",
   );
   if (
@@ -43,7 +48,8 @@ export function destinationUrl(raw: string) {
     !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
       domain,
     ) ||
-    (!isVerificationReceiver && (ownOrigin || !config.hosts.has(domain)))
+    (!isVerificationReceiver &&
+      (ownReceiverOrigin || !config.hosts.has(domain)))
   ) {
     throw new DestinationBlocked(
       "Destination must use an approved HTTPS hostname",

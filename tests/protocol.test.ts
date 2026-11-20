@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { can } from "@relayhub/shared/access";
 import { parseConfig } from "@relayhub/shared/config";
-import { publicAddress } from "@relayhub/shared/destinations";
+import { destinationUrl, publicAddress } from "@relayhub/shared/destinations";
 import { canTransition } from "@relayhub/shared/delivery-states";
 import {
   eventSchema,
@@ -97,6 +97,8 @@ describe("routing policy", () => {
       ACTIVE_KEY_ID: "v1",
       ENCRYPTION_KEYS: "v1:" + "ab".repeat(32),
       DESTINATION_HOSTS: "Receiver.Example, api.example ",
+      RELAYHUB_PREVIOUS_ORIGIN: "https://previous.example",
+      VERIFICATION_RECEIVER_SECRET: "e".repeat(32),
     };
     expect([...parseConfig(env).hosts]).toEqual([
       "receiver.example",
@@ -104,6 +106,20 @@ describe("routing policy", () => {
     ]);
     expect(() =>
       parseConfig({ ...env, DEMO_RECEIVER_URL: "http://127.0.0.1:3001" }),
+    ).toThrow();
+    const config = parseConfig(env);
+    expect(
+      destinationUrl("https://previous.example/api/receiver/verify", config)
+        .isVerificationReceiver,
+    ).toBe(true);
+    expect(() =>
+      destinationUrl("https://previous.example/api/health/ready", config),
+    ).toThrow();
+    expect(() =>
+      parseConfig({
+        ...env,
+        RELAYHUB_PREVIOUS_ORIGIN: "https://previous.example/path",
+      }),
     ).toThrow();
   });
 });
