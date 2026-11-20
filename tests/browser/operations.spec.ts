@@ -6,15 +6,17 @@ import { sampleEvent, submitSigned } from "../../scripts/demo-fixtures";
 
 const { DEMO_RECEIVER_URL } = settings();
 
-test("the public animation reacts to the pointer and respects reduced motion", async ({
+test("the spacetime diagram reacts to visitors and respects reduced motion", async ({
   page,
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: /webhooks.*under control/i }),
+    page.getByRole("heading", {
+      name: /every webhook,\s*from signature to delivery/i,
+    }),
   ).toBeVisible();
   const art = page.getByRole("figure", {
-    name: "Animated diagram of webhook routing",
+    name: "Spacetime diagram of webhook deliveries",
   });
   const canvas = art.locator("canvas");
   const frame = () =>
@@ -26,19 +28,35 @@ test("the public animation reacts to the pointer and respects reduced motion", a
     });
   const first = await frame();
   await expect.poll(frame).not.toBe(first);
-  await page.waitForTimeout(4700);
-  const idle = await frame();
+
+  await page.getByRole("button", { name: "Pause time" }).click();
+  const paused = await frame();
+  await page.waitForTimeout(400);
+  expect(await frame()).toBe(paused);
   const pointerPosition = await canvas.evaluate((surface) => ({
     x: surface.clientWidth * 0.75,
-    y: surface.clientHeight * 0.5,
+    y: surface.clientHeight * 0.4,
   }));
   await canvas.hover({ position: pointerPosition });
-  await expect.poll(async () => (await frame()) !== idle).toBe(true);
-  await expect(art.getByRole("button")).toHaveCount(0);
+  await expect.poll(async () => (await frame()) !== paused).toBe(true);
+  await page.getByRole("button", { name: "Resume time" }).click();
+
+  const endpointB = page.getByRole("switch", { name: "Endpoint B" });
+  await endpointB.click();
+  await expect(endpointB).toHaveAttribute("aria-checked", "false");
+  const log = page.getByRole("list", { name: "Your events" });
+  await page.getByRole("button", { name: "Send a signed event" }).click();
+  await expect(log).toContainText("Endpoint B: 503", { timeout: 10_000 });
+  await page.getByRole("button", { name: "Tamper with the signature" }).click();
+  await expect(log).toContainText("signature mismatch", { timeout: 10_000 });
+
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.reload();
-  await expect(art.getByRole("button")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Pause time" })).toHaveCount(0);
+  const still = await frame();
+  await page.waitForTimeout(500);
+  expect(await frame()).toBe(still);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     375,
   );
@@ -126,7 +144,10 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
       { timeout: 15_000 },
     )
     .toBe(true);
-  await expect(page.getByText("HTTP 400")).toBeVisible();
+  await expect(page.locator(".timeline").getByText("HTTP 400")).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: /attempt 1: HTTP 400/ }),
+  ).toBeVisible();
 
   await page.goto(orgPath + "/destinations");
   await page.getByText("Edit destination", { exact: true }).click();
@@ -155,7 +176,7 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
       { timeout: 15_000 },
     )
     .toBe(true);
-  await expect(page.getByText("HTTP 200")).toBeVisible();
+  await expect(page.locator(".timeline").getByText("HTTP 200")).toBeVisible();
   const timeline = await page.locator(".timeline > li").allTextContents();
   expect(timeline[1]).toContain("Attempt 1");
   expect(timeline[2]).toContain("Most recently queued");
