@@ -150,9 +150,15 @@ test("destination health follows a single outage and recovery across workspace v
   ).toBeVisible();
   await expect(page.getByText("No alerts yet.", { exact: true })).toBeVisible();
   await page.goto(workspace + "/destinations");
-  const destinationLink = page.locator('a[href="' + detailPath + '"]').first();
-  await destinationLink.focus();
-  await page.keyboard.press("Enter");
+  const destinationLink = page.getByRole("link", {
+    name: "View seven-day history and alerts",
+    exact: true,
+  });
+  await expect(destinationLink).toHaveAttribute("href", detailPath);
+  await destinationLink.press("Enter");
+  await expect(page).toHaveURL(
+    new URL(detailPath, config.RELAYHUB_BASE_URL).href,
+  );
   const chart = page.getByRole("region", { name: "Attempt history" });
   await expect(
     page.getByRole("heading", { name, exact: true, level: 1 }),

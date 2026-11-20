@@ -11,6 +11,8 @@ import { processDelivery, type JobData } from "./delivery";
 import { dispatch, QUEUE_NAME, recover, retainRecent } from "./dispatch";
 
 const config = settings();
+const BUSY_POLL_MS = 500;
+const HOSTED_IDLE_POLL_MS = 5000;
 const publisher = new Redis(config.REDIS_URL, {
   maxRetriesPerRequest: 1,
   enableOfflineQueue: false,
@@ -68,6 +70,10 @@ health.listen(config.WORKER_HEALTH_PORT, "127.0.0.1");
 async function run() {
   let retainAt = 0;
   while (!stopping) {
+    let interval = BUSY_POLL_MS;
+    if (!config.isDemo) {
+      interval = HOSTED_IDLE_POLL_MS;
+    }
     try {
       await recover();
       const now = Date.now();
@@ -76,13 +82,16 @@ async function run() {
         retainAt = now + 60_000;
       }
       if (publisher.status === "ready") {
-        await dispatch(queue);
+        const due = await dispatch(queue);
+        if (due > 0) {
+          interval = BUSY_POLL_MS;
+        }
         lastTick = Date.now();
       }
     } catch {
       log("error", "dispatch_iteration_failed");
     }
-    await delay(500);
+    await delay(interval);
   }
 }
 

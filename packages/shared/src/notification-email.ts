@@ -12,7 +12,4 @@ export function mailboxCode(subscriptionId: string, email: string) {
   return (digest.readUInt32BE() % 100_000_000).toString().padStart(8, "0");
 }
 
-export function destinationEmailConfigured() {
-  const config = settings();
-  return Boolean(config.RESEND_API_KEY && config.RELAYHUB_EMAIL_FROM);
-}
+export { mailConfigured as destinationEmailConfigured } from "./mail";

@@ -104,6 +104,7 @@ export default async function OrganizationPage({
         id={section[1]}
         initialDay={initialDay}
         userId={access.session.user.id}
+        email={access.session.user.email}
       />
     );
   }

@@ -10,12 +10,25 @@ import { PageHeading } from "../../components/page-heading";
 import { issueFormProof } from "../../server/form-proof";
 import { PolicyLinks } from "../../components/policy-links";
 import { SectionGuide } from "../../components/section-guide";
+import {
+  AccountMailPage,
+  accountMailTitle,
+} from "../../components/account-mail-page";
+import { accountEmailConfigured } from "@relayhub/shared/mail";
 
 type AuthParams = { params: Promise<{ authPage: string }> };
+const mailPages = new Set([
+  "forgot-password",
+  "reset-password",
+  "confirm-email",
+]);
 
 export async function generateMetadata({ params }: AuthParams) {
   const { authPage } = await params;
   const { t } = await getLocale();
+  if (mailPages.has(authPage) && accountEmailConfigured()) {
+    return { title: accountMailTitle(authPage, t), robots: { index: false } };
+  }
   if (authPage === "verify") {
     return {
       title: t("Verify your sign-in", "Verifica il tuo accesso"),
@@ -49,6 +62,10 @@ export async function generateMetadata({ params }: AuthParams) {
 export default async function AuthPage({ params }: AuthParams) {
   const { t } = await getLocale();
   const { authPage } = await params;
+  const mailEnabled = accountEmailConfigured();
+  if (mailEnabled && mailPages.has(authPage)) {
+    return <AccountMailPage page={authPage} />;
+  }
   if (!["login", "register", "verify"].includes(authPage)) {
     notFound();
   }
@@ -59,11 +76,15 @@ export default async function AuthPage({ params }: AuthParams) {
   let endpoint = "/api/auth/sign-in/email";
   let passwordAutocomplete = "current-password";
   let passwordHint = t("Your account password", "La password del tuo account");
+  let nextPath = "/workspace";
   if (registering) {
     title = t("Create an account", "Crea un account");
     endpoint = "/api/auth/sign-up/email";
     passwordAutocomplete = "new-password";
     passwordHint = t("At least 12 characters", "Almeno 12 caratteri");
+    if (mailEnabled) {
+      nextPath = "/login";
+    }
   }
   let step: "login" | "register" | "verify" = "login";
   if (registering) {
@@ -94,7 +115,7 @@ export default async function AuthPage({ params }: AuthParams) {
           <PageHeading title={title} />
           {verifying && <VerifySignIn />}
           {!verifying && (
-            <ActionForm endpoint={endpoint} label={title} nextPath="/workspace">
+            <ActionForm endpoint={endpoint} label={title} nextPath={nextPath}>
               <input
                 type="hidden"
                 name="formProof"
@@ -142,6 +163,21 @@ export default async function AuthPage({ params }: AuthParams) {
                 />
               </label>
             </ActionForm>
+          )}
+          {registering && mailEnabled && (
+            <p>
+              {t(
+                "After registration, sign in and confirm your address using the link in your inbox.",
+                "Dopo la registrazione, accedi e conferma l’indirizzo tramite il link ricevuto via email.",
+              )}
+            </p>
+          )}
+          {!registering && !verifying && mailEnabled && (
+            <p>
+              <Link href="/forgot-password">
+                {t("Forgot your password?", "Password dimenticata?")}
+              </Link>
+            </p>
           )}
           {registering && (
             <p>

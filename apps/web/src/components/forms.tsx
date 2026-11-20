@@ -29,6 +29,22 @@ const messages: Record<string, [string, string]> = {
     "The email sender is unavailable.",
     "Il mittente email non è disponibile.",
   ],
+  account_email_limit: [
+    "You can request three verification emails per hour. Try again later.",
+    "Puoi richiedere tre email di verifica all’ora. Riprova più tardi.",
+  ],
+  account_link_invalid: [
+    "This link is invalid, expired or already used. Request a new one.",
+    "Questo link non è valido, è scaduto o è già stato usato. Richiedine uno nuovo.",
+  ],
+  reset_requested: [
+    "If this address belongs to a verified account, check its inbox for a password reset link.",
+    "Se questo indirizzo appartiene a un account verificato, controlla la posta per il link di recupero.",
+  ],
+  verification_requested: [
+    "Check your inbox and open the latest confirmation link while signed in.",
+    "Controlla la posta e apri l’ultimo link di conferma dopo aver effettuato l’accesso.",
+  ],
   permission_denied: [
     "Your role does not allow this action.",
     "Il tuo ruolo non consente questa azione.",
@@ -127,6 +143,8 @@ export function ActionForm({
   className,
   disabled = false,
   secretLabel,
+  successMessage = "saved",
+  onSuccess,
 }: {
   endpoint: string;
   label: string;
@@ -138,6 +156,8 @@ export function ActionForm({
   nextPath?: string;
   onId?: string;
   className?: string;
+  successMessage?: "saved" | "reset_requested" | "verification_requested";
+  onSuccess?: () => void;
 }) {
   const { t } = useLocale();
   const router = useRouter();
@@ -190,9 +210,13 @@ export function ActionForm({
       } else if (onId && result.id) {
         router.push(onId + result.id);
       } else {
-        setMessage("saved");
+        setMessage(successMessage);
       }
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.refresh();
+      }
     } catch {
       setFailed(true);
       setMessage("network_failed");

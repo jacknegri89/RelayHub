@@ -9,6 +9,9 @@ packages/db/generated/
 test-results/
 playwright-report/
 *.log
+*.dump
+*.dump.gpg
+*.dump.gpg.*.partial
 
 # Local assistant instructions and session state
 /.claude/

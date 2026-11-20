@@ -42,6 +42,7 @@ export async function dispatch(queue: Queue<JobData>) {
       },
     );
   }
+  return entries.length;
 }
 
 async function reserve(

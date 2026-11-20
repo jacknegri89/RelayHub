@@ -178,7 +178,7 @@ export async function changeDestinationEmail(
       await tx.destinationEmailSubscription.deleteMany({ where: scope });
       return;
     }
-    if (!destinationEmailConfigured()) {
+    if (!destinationEmailConfigured(member.email)) {
       throw new HttpError(503, "mail_unavailable");
     }
     const current = await readSubscription(tx, scope);
