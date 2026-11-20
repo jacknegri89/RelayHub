@@ -1,5 +1,9 @@
 # Architecture
 
+RelayHub runs a Next.js service for incoming requests and an independent Node.js worker for outbound delivery. PostgreSQL owns durable state. Redis carries scheduled job identifiers.
+
+## Request flow
+
 ```mermaid
 flowchart LR
   Sender -->|signed POST| Web[Next.js web]
@@ -13,7 +17,9 @@ flowchart LR
 
 The web process authorizes configuration changes and verifies the literal bytes of an incoming webhook. An event, its distinct destinations and a scheduling row per delivery commit together. A successful ingress response confirms durable acceptance. It can precede dispatch and delivery.
 
-Overview uses a rolling 24-hour window for events received, delivered, failed and mean successful attempt duration. The success rate is delivered divided by delivered plus failed. The in-progress count shows current active deliveries across all ages.
+The **Overview** page uses a rolling 24-hour window for events received, delivery outcomes, and mean successful attempt duration. The success rate is delivered divided by delivered plus failed. The in-progress count includes active deliveries of any age.
+
+## Dispatch and recovery
 
 The worker periodically reserves due scheduling rows by moving their publication time forward. BullMQ job IDs combine delivery ID and generation. The scheduling row stays in PostgreSQL until the attempt is finalized or a retry replaces its generation. An unsuccessful Redis publication or lost Redis job is repaired when the row becomes due again.
 
@@ -29,4 +35,6 @@ A conditional PostgreSQL update claims a pending, queued or retry-scheduled deli
 
 The normal lease exceeds the outbound deadline. Process suspension or a network side effect after a disconnect can still overlap failures and retries. In this case at-least-once delivery requires receiver deduplication paired with its business write.
 
-An admin can retry failed deliveries. Each manual retry starts a new bounded budget, preserves history, and increments the generation. Failed retries use the destination configuration current at claim time. Disabled sources and destinations cause queued work to be cancelled when claimed. The dashboard is rendered from PostgreSQL and reflects state on navigation or refresh.
+## Manual retry
+
+An admin can retry failed deliveries. Each manual retry starts a new bounded budget, preserves history, and increments the generation. The worker uses the destination configuration in effect when it claims the retry. If the source or destination is disabled at claim time, the worker cancels the queued delivery. The dashboard reads PostgreSQL on navigation or refresh.

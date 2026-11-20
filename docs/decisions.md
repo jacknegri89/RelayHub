@@ -8,9 +8,9 @@ A single web process owns the UI and request boundary. A separate Node worker ru
 
 Direct enqueue after the database transaction can lose work between commit and publish. Publishing before commit can expose rows that roll back. Durable PostgreSQL schedule rows, BullMQ job deduplication and fenced claims preserve recoverability while accepting duplicate HTTP effects after ambiguous failures. Keep the receipt store on the receiver's side of the transaction boundary.
 
-## 3. Tenant access and runtime compatibility
+## 3. Tenant access and runtime
 
-Better Auth 1.7.26 handles credentials and sessions. Organization membership is a small application model with explicit permission checks and database-level tenant constraints. Prisma 7.10.1 is supported by the Better Auth adapter. Prisma 8 was a prerelease and used a different adapter contract. Next.js 16.4.6 and React 19.3.1 are pinned. TypeScript 5.9.3 fits the ESLint TypeScript parser and Next tooling. BullMQ 6.7.8 uses ioredis 6.0.0. The lockfile records resolved transitive dependencies. The scoped Effect 3.22.1 override addresses GHSA-7589-6fvf-x4pw in Prisma tooling.
+Better Auth handles credentials and sessions. The application owns organization membership with explicit server permissions and database-level tenant constraints. The web and worker share a generated Prisma Client. Workspace manifests and the lockfile record the tested runtime versions. Upgrading the database adapter requires a fresh migration and authentication test.
 
 ## 4. Controlled outbound networking
 

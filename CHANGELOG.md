@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-- Added multi-organization session authentication and scoped routing management.
-- Added signed JSON ingress, encrypted payload retention and a PostgreSQL outbox.
-- Added a separate BullMQ worker with destination verification, attempts and retries.
-- Added operational views, demo receiver, versioned database migrations and automated test definitions.
+### Added
+
+- Organization workspaces with scoped owner, admin, and viewer access.
+- Signed JSON ingress, persistent duplicate detection, and encrypted event storage.
+- Durable outbox dispatch and a separate BullMQ worker with destination verification, delivery history, and retries.
+- Hosted, invitation-only registration and a built-in HTTPS verification receiver.
+- Local demo fixtures for successful deliveries, failures, and retries.
+
+### Changed
+
+- Updated the homepage motion, RelayHub monogram, favicon, and self-hosted typography.
+- Connected the public GitHub repository to Vercel production and enabled automated verification on Linux.

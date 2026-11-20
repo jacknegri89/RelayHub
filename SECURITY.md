@@ -1,3 +1,7 @@
-# Reporting security issues
+# Reporting a security issue
 
-Report security issues privately to the repository maintainer, using GitHub private vulnerability reporting if available when published. Include the affected version, impact, relevant logs with secrets removed and expected behavior. Allow the maintainer time to investigate before sharing details publicly. Use an isolated instance and fictional data for investigation.
+Report vulnerabilities privately to the repository maintainer. Use GitHub private vulnerability reporting if the repository offers it. Keep exploit details and affected data out of public issues.
+
+Include the affected commit or version, the component involved, the observed impact, and any relevant logs with credentials and personal data removed. Use an isolated instance and fictional test data when checking a report.
+
+For an overview of RelayHub's trust boundaries and controls, see the [Security model](docs/security.md).

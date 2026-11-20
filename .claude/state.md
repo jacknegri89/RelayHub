@@ -24,5 +24,6 @@
 - [x] Production registration uses hashed, single-use 48-hour invites. RegistrationInvite migration applied locally and on Neon. Same-origin HTTPS receiver /api/receiver/verify uses VERIFICATION_RECEIVER_SECRET. External destination allowlist remains configurable. Local 29 unit, 9 integration and 3 Playwright tests passed.
 - [ ] Vercel Hobby daemon provisioned-memory and Upstash Redis command quotas apply. Continuous processing after quota exhaustion is unavailable on these plans.
 - [ ] Password reset and verified email enrollment require a trusted mail transport. Membership uses the account UUID from the member's login, shared through a trusted channel.
-- [x] Public source and main branch at https://github.com/jacknegri89/relayhub. Vercel project relayhub is connected to the repository via vercel git connect.
-- [/] Pushes to main trigger Vercel production and GitHub Actions. Clean checkout needs next typegen before root tsc for the Next image import. Await deployment and CI results for the identity release.
+- [x] Public source and main branch at https://github.com/jacknegri89/RelayHub. Vercel project relayhub is connected to the repository via vercel git connect.
+- [x] GitHub Actions verified the clean checkout after adding next typegen to typecheck. The Git-triggered branding build went live and passed public signup, sign-in, signed delivery HTTP 204 and visual checks from 320 to 1440 px.
+- [x] GitHub repository is named RelayHub. English README, live homepage screenshot, contributor guide, runbooks and OpenAPI reference are current. Local link, anchor, formatting and API checks passed.

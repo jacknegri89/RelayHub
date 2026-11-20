@@ -17,6 +17,22 @@ Proxy mode trusts X-Real-IP only when the app is behind a network-restricted pro
 
 A lost encryption key makes existing envelopes unreadable. Application-level encryption assumes the DB and runtime credentials are separately protected. Use deployment network policy to block internal routes, private address space and metadata access at egress. Production TLS and reverse proxy configuration require environment-specific validation.
 
-The CSP permits inline hydration scripts and inline styles. Deploying a nonce CSP requires integration work. Registration uses email as a sign-in identifier. Organization owners grant membership using the account UUID copied from the member's authenticated Organizations page. Exchange it over a channel where the owner's relationship to the recipient is already established. Public signup should remain behind operator access controls until email ownership can be verified through a trusted transport.
+## Account enrollment
+
+Production enrollment requires a single-use invitation. Registration stores the supplied email as a sign-in identifier. The hosted app does not verify ownership or send password-reset messages. Deliver invitations through a trusted channel.
+
+Organization owners grant membership using the account UUID shown on the member's authenticated **Organizations** page. Exchange it over an established channel.
+
+| Organization role | Read activity | Configure routes and retry deliveries | Manage members |
+| ----------------- | ------------- | ------------------------------------- | -------------- |
+| Owner             | Yes           | Yes                                   | Yes            |
+| Admin             | Yes           | Yes                                   |                |
+| Viewer            | Yes           |                                       |                |
+
+Manage members in **Workspace → Settings**. Roles apply to one organization at a time. Platform operators issue registration invitations from a trusted terminal, as described in [Operations](operations.md#vercel-deployment).
+
+## Browser policy
+
+The content security policy permits inline hydration scripts and styles. A nonce-based policy requires framework integration.
 
 References: [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/) and [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html).

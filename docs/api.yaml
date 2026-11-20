@@ -49,6 +49,9 @@ paths:
                     maxLength: 100,
                   }
               additionalProperties: true
+            example:
+              type: verification.ping
+              id: event-123
       responses:
         "200":
           description: Matching duplicate, original ID returned
@@ -71,18 +74,11 @@ paths:
                   eventId: { type: string, format: uuid }
                   deliveries: { type: integer, minimum: 0 }
         "400":
-          {
-            description: A trusted reverse proxy did not supply a valid client address,
-          }
+          description: A trusted reverse proxy did not supply a valid client address
         "401":
-          {
-            description: Source unavailable,
-            expired timestamp or invalid signature,
-          }
+          description: Source unavailable, timestamp expired, or signature invalid
         "409":
-          {
-            description: External ID payload conflict or signature replay with a changed ID,
-          }
+          description: External ID payload conflict or signature replay with a changed ID
         "413": { description: Payload exceeds the configured size }
         "415": { description: Content type is not application/json }
         "422": { description: Invalid JSON, event ID or event type }
@@ -103,6 +99,30 @@ paths:
       responses:
         "200": { description: Web process can use PostgreSQL }
         "503": { description: Web process cannot accept events }
+  /api/receiver/verify:
+    post:
+      operationId: verifyDelivery
+      summary: Verify an outbound signature using the built-in HTTPS receiver
+      description: Available in production when VERIFICATION_RECEIVER_SECRET is configured.
+      parameters:
+        - name: X-RelayHub-Timestamp
+          in: header
+          required: true
+          schema: { type: string, pattern: "^[0-9]{10}$" }
+        - name: X-RelayHub-Signature
+          in: header
+          required: true
+          schema: { type: string, pattern: "^v1=[a-f0-9]{64}$" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "204": { description: Signature verified }
+        "401": { description: Signature or request headers rejected }
+        "404": { description: Verification receiver disabled }
+        "413": { description: Payload exceeds the configured size }
 x-outbound-signing:
   headers:
     [
