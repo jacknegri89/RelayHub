@@ -193,11 +193,13 @@ export async function DestinationDetail({
   organizationId,
   id,
   userId,
+  email,
   initialDay,
 }: {
   organizationId: string;
   id: string;
   userId: string;
+  email: string;
   initialDay?: string;
 }) {
   const { locale, t } = await getLocale();
@@ -272,6 +274,7 @@ export async function DestinationDetail({
         )}
       </section>
       <DestinationEmailSettings
+        email={email}
         organizationId={organizationId}
         destinationId={id}
         userId={userId}

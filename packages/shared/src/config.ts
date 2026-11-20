@@ -29,6 +29,10 @@ const schema = z.object({
   VERIFICATION_RECEIVER_SECRET: z.string().min(32).optional(),
   RESEND_API_KEY: z.string().optional(),
   RELAYHUB_EMAIL_FROM: z.union([z.email(), z.literal("")]).optional(),
+  RELAYHUB_RESEND_TEST_TO: z.union([z.email(), z.literal("")]).optional(),
+  RELAYHUB_MAILPIT_URL: z.string().optional(),
+  RELAYHUB_ACCOUNT_EMAIL: z.enum(["0", "1"]).default("0"),
+  RELAYHUB_ACCOUNT_LINK_MINUTES: integer(20, 5, 60),
   PAYLOAD_LIMIT_BYTES: integer(262144, 1024, 1048576),
   WEBHOOK_WINDOW_SECONDS: integer(300, 30, 900),
   DELIVERY_TIMEOUT_MS: integer(5000, 500, 30000),
@@ -45,13 +49,24 @@ export function parseConfig(environment: Record<string, string | undefined>) {
     throw new Error("Invalid configuration: " + fields.join(", "));
   }
   const config = parsed.data;
-  if (Boolean(config.RESEND_API_KEY) !== Boolean(config.RELAYHUB_EMAIL_FROM)) {
-    throw new Error(
-      "Configure RESEND_API_KEY and RELAYHUB_EMAIL_FROM together",
-    );
-  }
   const origin = new URL(config.RELAYHUB_BASE_URL);
   const isDemo = config.RELAYHUB_MODE === "demo";
+  if (config.RELAYHUB_MAILPIT_URL) {
+    const mailpit = new URL(config.RELAYHUB_MAILPIT_URL);
+    if (
+      !isDemo ||
+      mailpit.protocol !== "http:" ||
+      !["127.0.0.1", "mailpit"].includes(mailpit.hostname) ||
+      mailpit.origin !== config.RELAYHUB_MAILPIT_URL ||
+      !mailpit.port ||
+      config.RESEND_API_KEY ||
+      config.RELAYHUB_EMAIL_FROM
+    ) {
+      throw new Error(
+        "Mailpit requires a local demo origin and no Resend credentials",
+      );
+    }
+  }
   if (
     config.RELAYHUB_BASE_URL !== origin.origin ||
     origin.username ||

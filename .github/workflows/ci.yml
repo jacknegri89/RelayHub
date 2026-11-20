@@ -26,6 +26,9 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 3s --health-timeout 3s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.33.0
+        ports: ["127.0.0.1:8025:8025"]
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       RELAYHUB_MODE: demo
@@ -53,6 +56,18 @@ jobs:
           echo "ENCRYPTION_KEYS=v1:$(openssl rand -hex 32)" >> "$GITHUB_ENV"
           echo "DEMO_RECEIVER_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
       - run: pnpm migrate
+      - name: Rehearse encrypted PostgreSQL backup and isolated restore
+        env:
+          PGPORT: "55432"
+          PGUSER: relayhub
+          PGPASSWORD: ci-ephemeral-only
+          RELAYHUB_DRILL_REDIS_PORT: "56379"
+        run: |
+          if [[ ! -x /usr/lib/postgresql/17/bin/pg_dump ]]; then
+            sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+            sudo apt-get install -y postgresql-client-17
+          fi
+          PATH="/usr/lib/postgresql/17/bin:$PATH" node scripts/restore-drill.mjs
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - name: Test running application
@@ -63,8 +78,20 @@ jobs:
           curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://localhost:3000/api/health/ready
           curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:3001/health
           curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:3002/ready
-          pnpm test:integration
+          RELAYHUB_TEST_MAILPIT_URL=http://127.0.0.1:8025 pnpm test:integration
           pnpm test:e2e
+      - name: Verify account mail in an isolated local mailbox
+        env:
+          RELAYHUB_BASE_URL: http://localhost:3081
+          RELAYHUB_ACCOUNT_EMAIL: "1"
+          RELAYHUB_MAILPIT_URL: http://127.0.0.1:8025
+          RELAYHUB_TEST_MAILPIT_URL: http://127.0.0.1:8025
+        run: |
+          node apps/web/node_modules/next/dist/bin/next start apps/web --hostname 127.0.0.1 --port 3081 > account-web.log 2>&1 &
+          account_web_pid=$!
+          trap 'kill "$account_web_pid" 2>/dev/null || true' EXIT
+          curl --fail --retry 20 --retry-all-errors --retry-delay 1 http://localhost:3081/api/health/ready
+          pnpm exec playwright test -c tests/account-browser/playwright.config.ts
   compose:
     runs-on: ubuntu-latest
     timeout-minutes: 20

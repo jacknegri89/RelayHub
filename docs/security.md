@@ -21,7 +21,9 @@ A lost encryption key makes existing envelopes unreadable. Application-level enc
 
 ## Account enrollment
 
-Public registration stores the supplied email as a sign-in identifier. The hosted app does not verify ownership or send password-reset messages. Form proof, the honeypot, and server-side limits protect enrollment.
+Registration initially stores an unverified email. With account mail enabled, the signup response is uniform and the user signs in separately. A verification link must be confirmed from a session belonging to the same account and address. The link expires, is stored as a digest and is consumed atomically. A resend replaces the previous link. Existing users keep their current verification state and can request a link under **Workspace → Security**.
+
+Password reset is available only for a verified account. The public request responds uniformly to valid submissions, including unknown or unverified addresses. IP and mailbox limits bound requests, and the public form uses a signed form timestamp and honeypot. The token travels in the link fragment; the browser removes the fragment from the address bar and submits the token by same-origin POST. Better Auth hashes the new password and revokes existing sessions. Changing the password also invalidates earlier reset links and pending second-factor challenges. MFA enrollment and unused recovery codes continue to apply on the next sign-in. A mailbox alone cannot take over an unverified legacy account.
 
 Users can enable MFA with a time-based authenticator app. The first code confirms enrollment. A short-lived challenge cookie then gates subsequent sign-ins. The server encrypts authenticator secrets and recovery codes. Recovery codes can each be used once.
 

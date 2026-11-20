@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/client";
+import { runtimeDatabaseUrl } from "./connection";
 
 export { Prisma } from "../generated/client";
 export type { DeliveryStatus, Role } from "../generated/client";
@@ -14,7 +15,7 @@ export function database() {
     }
     client = new PrismaClient({
       adapter: new PrismaPg({
-        connectionString,
+        connectionString: runtimeDatabaseUrl(connectionString),
         connectionTimeoutMillis: 3000,
       }),
     });

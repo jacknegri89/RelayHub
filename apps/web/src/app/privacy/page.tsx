@@ -113,6 +113,12 @@ export default async function PrivacyPage() {
           "Quando attivi gli avvisi email per una destinazione, Resend tratta il tuo indirizzo email e il messaggio per recapitarlo. Gli avvisi riportano il nome della destinazione, il suo stato e un link all’area di lavoro. Puoi disattivarli dalla pagina della destinazione.",
         )}
       </p>
+      <p>
+        {t(
+          "When account email is enabled, Resend also receives your address and a time-limited link to confirm your email or reset your password. These account messages are separate from destination subscriptions.",
+          "Quando i messaggi per l’account sono attivi, Resend riceve anche il tuo indirizzo e un link a scadenza per confermare l’email o reimpostare la password. Puoi ricevere questi messaggi anche senza iscriverti agli avvisi di una destinazione.",
+        )}
+      </p>
       <h2 id="retention">{t("Retention", "Tempi di conservazione")}</h2>
       <p>
         {t(
