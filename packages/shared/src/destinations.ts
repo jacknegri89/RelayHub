@@ -24,7 +24,7 @@ export function destinationUrl(
   if (
     config.isDemo &&
     url.origin === config.DEMO_RECEIVER_URL &&
-    /^\/hooks\/(success|transient|busy|timeout|slow|permanent)$/.test(
+    /^\/hooks\/(success|transient|busy|timeout|lost-response|slow|permanent)$/.test(
       url.pathname,
     ) &&
     !url.search

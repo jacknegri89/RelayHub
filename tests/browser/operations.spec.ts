@@ -166,10 +166,10 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
   ).toEqual([]);
   const orgPath = new URL(page.url()).pathname;
   await expect(
-    page.getByRole("region", { name: "Read the last 24 hours" }),
+    page.getByRole("region", { name: "Check delivery health" }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Sources" }).click();
+  await page.getByRole("link", { name: "Sources", exact: true }).click();
   await expect(
     page.getByRole("region", { name: "Identify the sender" }),
   ).toContainText("Save the signing secret");
@@ -181,7 +181,7 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
     .textContent();
   const sourceId = endpoint?.split("/").at(-1) ?? "";
 
-  await page.getByRole("link", { name: "Destinations" }).click();
+  await page.getByRole("link", { name: "Destinations", exact: true }).click();
   await page.getByLabel("Destination name").fill("Browser receiver");
   await page
     .getByLabel("Destination URL")

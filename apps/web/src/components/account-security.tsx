@@ -162,6 +162,7 @@ function PasswordInput() {
         name="password"
         type="password"
         autoComplete="current-password"
+        placeholder={t("Your account password", "La password del tuo account")}
         minLength={12}
         maxLength={128}
         required
@@ -235,6 +236,7 @@ function AuthenticatorSetup({
           inputMode="numeric"
           autoComplete="one-time-code"
           pattern="[0-9]{6}"
+          placeholder="123456"
           maxLength={6}
           required
         />

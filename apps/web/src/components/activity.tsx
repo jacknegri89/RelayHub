@@ -9,8 +9,10 @@ import { DeliveryActivity } from "./delivery-activity";
 import { DeliveryTrace, EventCone } from "./delivery-trace";
 import { PageHeading } from "./page-heading";
 import { Motion } from "./motion";
+import { readOverview } from "../server/overview";
+import { OverviewTrend } from "./overview-trend";
+import styles from "./overview.module.css";
 
-const HOUR_MS = 60 * 60 * 1000;
 const PAGE_SIZE = 20;
 const statuses: DeliveryStatus[] = [
   "pending",
@@ -24,62 +26,51 @@ const statuses: DeliveryStatus[] = [
 const active = statuses.slice(0, 4);
 
 export async function Overview({ organizationId }: { organizationId: string }) {
-  const { t } = await getLocale();
-  const db = database();
-  const since = new Date(Date.now() - 24 * HOUR_MS);
-  const [received, delivered, failed, inflight, latest] = await Promise.all([
-    db.webhookEvent.count({
-      where: { organizationId, receivedAt: { gte: since } },
-    }),
-    db.delivery.aggregate({
-      where: {
-        organizationId,
-        status: "delivered",
-        finishedAt: { gte: since },
-      },
-      _count: { _all: true },
-      _avg: { durationMs: true },
-    }),
-    db.delivery.count({
-      where: { organizationId, status: "failed", finishedAt: { gte: since } },
-    }),
-    db.delivery.count({ where: { organizationId, status: { in: active } } }),
-    db.webhookEvent.findMany({
-      where: { organizationId },
-      orderBy: [{ receivedAt: "desc" }, { id: "desc" }],
-      take: 8,
-      select: {
-        id: true,
-        eventType: true,
-        externalId: true,
-        receivedAt: true,
-        source: { select: { name: true } },
-        deliveries: { select: { status: true } },
-      },
-    }),
-  ]);
-  const completed = delivered._count._all;
-  let latency = "—";
-  if (delivered._avg.durationMs !== null) {
-    latency = Math.round(delivered._avg.durationMs) + " ms";
-  }
+  const { locale, t } = await getLocale();
+  const report = await readOverview(organizationId);
+  const workspace = base(organizationId);
   return (
     <>
       <PageHeading title={t("Overview", "Panoramica")} />
-      <DeliveryActivity
-        received={received}
-        delivered={completed}
-        failed={failed}
-        inflight={inflight}
-        latency={latency}
-      />
-      <div className="section-head">
-        <h2>{t("Recent events", "Eventi recenti")}</h2>
-        <Link href={base(organizationId) + "/events"}>
-          {t("All events →", "Tutti gli eventi →")}
-        </Link>
+      <DeliveryActivity report={report} workspace={workspace} locale={locale} />
+      <div className={styles.lower}>
+        <OverviewTrend days={report.days} locale={locale} />
+        <section
+          className={styles.recent}
+          aria-label={t("Recent events", "Eventi recenti")}
+        >
+          <header>
+            <h2>{t("Recent events", "Eventi recenti")}</h2>
+            <Link href={workspace + "/events"}>
+              {t("All events →", "Tutti gli eventi →")}
+            </Link>
+          </header>
+          {!report.latest.length && (
+            <p className="muted">
+              {t(
+                "Incoming events will appear here when a source sends its first webhook.",
+                "Qui vedrai gli eventi quando una sorgente invierà il primo webhook.",
+              )}
+            </p>
+          )}
+          <ul className={styles.feed}>
+            {report.latest.map((event) => (
+              <li key={event.id}>
+                <div>
+                  <Link href={workspace + "/events/" + event.id}>
+                    {event.eventType}
+                  </Link>
+                  <Status value={eventStatus(event)} />
+                </div>
+                <span>
+                  {event.source.name} · <Time value={event.receivedAt} />
+                </span>
+                <code title={event.externalId}>{event.externalId}</code>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
-      <EventTable rows={latest} organizationId={organizationId} />
     </>
   );
 }
@@ -138,7 +129,15 @@ export async function Events({
       <form className="filters" method="get">
         <label>
           {t("Search", "Cerca")}{" "}
-          <input name="q" defaultValue={q} maxLength={100} />
+          <input
+            name="q"
+            defaultValue={q}
+            maxLength={100}
+            placeholder={t(
+              "e.g. order.created or evt_123",
+              "Es. order.created o evt_123",
+            )}
+          />
         </label>
         <label>
           {t("Source", "Sorgente")}{" "}
@@ -305,7 +304,15 @@ export async function Deliveries({
       <form className="filters" method="get">
         <label>
           {t("Search", "Cerca")}{" "}
-          <input name="q" defaultValue={q} maxLength={100} />
+          <input
+            name="q"
+            defaultValue={q}
+            maxLength={100}
+            placeholder={t(
+              "e.g. Warehouse or evt_123",
+              "Es. Magazzino o evt_123",
+            )}
+          />
         </label>
         <label>
           {t("Status", "Stato")}{" "}

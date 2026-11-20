@@ -10,6 +10,7 @@ import {
 } from "../server/destination-monitoring";
 import { getLocale } from "../server/locale";
 import { DestinationHistory } from "./destination-history";
+import { DestinationEmailSettings } from "./destination-email-settings";
 import { PageHeading } from "./page-heading";
 import { Time } from "./display";
 import styles from "./destination-alerts.module.css";
@@ -31,6 +32,11 @@ async function AlertList({
       aria-label={t("Alert history", "Registro avvisi")}
     >
       {alerts.map((alert) => {
+        const destinationPath =
+          "/workspace/" +
+          organizationId +
+          "/destinations/" +
+          alert.destinationId;
         let label = t("Outage detected", "Guasto rilevato");
         if (alert.kind === "recovery") {
           label = t("Recovered", "Ripristino");
@@ -38,16 +44,20 @@ async function AlertList({
         return (
           <li key={alert.id + alert.kind} data-kind={alert.kind}>
             <span className={styles.transition}>{label}</span>
-            <Link
-              href={
-                "/workspace/" +
-                organizationId +
-                "/destinations/" +
-                alert.destinationId
-              }
-            >
-              {alert.name}
-            </Link>
+            <div className={styles.alertDestination}>
+              <Link href={destinationPath}>{alert.name}</Link>
+              {alert.kind === "recovery" && (
+                <Link
+                  className={styles.recoveryLink}
+                  href={destinationPath + "/recovery?incident=" + alert.id}
+                >
+                  {t(
+                    "Review failed deliveries",
+                    "Esamina le consegne rimaste fallite",
+                  )}
+                </Link>
+              )}
+            </div>
             <Time value={new Date(alert.at)} />
           </li>
         );
@@ -182,9 +192,13 @@ export async function DestinationAlertPage({
 export async function DestinationDetail({
   organizationId,
   id,
+  userId,
+  initialDay,
 }: {
   organizationId: string;
   id: string;
+  userId: string;
+  initialDay?: string;
 }) {
   const { locale, t } = await getLocale();
   if (!z.uuid().safeParse(id).success) {
@@ -196,6 +210,7 @@ export async function DestinationDetail({
   }
   const { destination, days, alerts } = report;
   const base = "/workspace/" + organizationId;
+  const destinationPath = base + "/destinations/" + id;
   let state = t("Awaiting the first attempt", "In attesa del primo tentativo");
   let tone = "quiet";
   if (destination.lastHealthObservationAt) {
@@ -231,7 +246,12 @@ export async function DestinationDetail({
         )}
       </div>
       <div className={"panel " + styles.historyPanel}>
-        <DestinationHistory days={days} locale={locale} />
+        <DestinationHistory
+          days={days}
+          locale={locale}
+          attemptsPath={destinationPath + "/attempts"}
+          initialDay={initialDay}
+        />
       </div>
       <section className="panel">
         <div className="section-head">
@@ -251,6 +271,11 @@ export async function DestinationDetail({
           </p>
         )}
       </section>
+      <DestinationEmailSettings
+        organizationId={organizationId}
+        destinationId={id}
+        userId={userId}
+      />
     </>
   );
 }

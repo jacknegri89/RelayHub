@@ -9,6 +9,7 @@ const supported = new Set([
   "transient",
   "busy",
   "timeout",
+  "lost-response",
   "slow",
   "permanent",
   "duplicate",

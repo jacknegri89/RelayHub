@@ -236,6 +236,7 @@ test("destination health follows a single outage and recovery across workspace v
   // Sum the seven UTC dates so a run crossing midnight verifies the same completed samples.
   let successes = 0;
   let failures = 0;
+  let failedDay = "";
   const readout = chart.getByRole("status");
   for (const day of await days.all()) {
     await day.check();
@@ -245,6 +246,9 @@ test("destination health follows a single outage and recovery across workspace v
     const totals = await readout.locator("dd").allTextContents();
     successes += Number(totals[0]);
     failures += Number(totals[1]);
+    if (Number(totals[1]) > 0) {
+      failedDay = await day.inputValue();
+    }
     if (Number(totals[0]) + Number(totals[1]) > 0) {
       expect(totals[2]).toMatch(/\d[\d.,]* ms/);
     }
@@ -282,6 +286,54 @@ test("destination health follows a single outage and recovery across workspace v
     path: testInfo.outputPath("destination-history-mobile.png"),
   });
   await page.getByRole("button", { name: "Switch to English" }).click();
+  await expect(chart).toBeVisible();
+  await chart.locator('input[value="' + failedDay + '"]').check();
+  const attemptsPath = detailPath + "/attempts?day=" + failedDay;
+  await chart.locator('a[href="' + attemptsPath + '"]').click();
+  await expect(page.getByRole("main")).toContainText("400");
+  const recoveryPath = detailPath + "/recovery?incident=" + recovery.latest?.id;
+  await page
+    .getByRole("main")
+    .locator('a[href="' + recoveryPath + '"]')
+    .first()
+    .click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Retry after recovery" }),
+  ).toBeVisible();
+  const eligible = page.getByRole("listitem").getByRole("checkbox");
+  const submit = page.getByRole("button", {
+    name: "Retry selected deliveries",
+  });
+  await expect(submit).toBeDisabled();
+  await eligible.nth(0).check();
+  await eligible.nth(1).check();
+  await submit.click();
+  await expect
+    .poll(
+      () =>
+        database().delivery.count({
+          where: {
+            organizationId,
+            destinationId,
+            status: "delivered",
+            attemptCount: 2,
+          },
+        }),
+      { timeout: 20_000 },
+    )
+    .toBe(2);
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Retry selected deliveries" }),
+  ).toBeDisabled();
+  expect(
+    await database().delivery.count({
+      where: { organizationId, destinationId, status: "failed" },
+    }),
+  ).toBe(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    375,
+  );
   await page.getByRole("button", { name: "Sign out" }).click();
 
   // This operator can open their own workspace but cannot borrow the other tenant's destination ID.
@@ -301,4 +353,15 @@ test("destination health follows a single outage and recovery across workspace v
     page.getByRole("heading", { name: "Page unavailable" }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name, exact: true })).toHaveCount(0);
+  for (const suffix of [
+    "/attempts?day=" + failedDay,
+    "/recovery?incident=" + recovery.latest?.id,
+  ]) {
+    await page.goto(
+      "/workspace/" + otherId + "/destinations/" + destinationId + suffix,
+    );
+    await expect(
+      page.getByRole("heading", { name: "Page unavailable" }),
+    ).toBeVisible();
+  }
 });

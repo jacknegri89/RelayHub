@@ -5,6 +5,8 @@ import Redis from "ioredis";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { log } from "@relayhub/shared/log";
+import { destinationEmailConfigured } from "@relayhub/shared/notification-email";
+import { dispatchDestinationEmail } from "./destination-email";
 import { processDelivery, type JobData } from "./delivery";
 import { dispatch, QUEUE_NAME, recover, retainRecent } from "./dispatch";
 
@@ -85,6 +87,22 @@ async function run() {
 }
 
 const running = run();
+async function runEmail() {
+  while (!stopping && destinationEmailConfigured()) {
+    let idle = true;
+    try {
+      idle = !(await dispatchDestinationEmail());
+    } catch {
+      log("error", "destination_email_dispatch_failed");
+    }
+    let interval = 600;
+    if (idle) {
+      interval = 5000;
+    }
+    await delay(interval);
+  }
+}
+const emailRunning = runEmail();
 async function shutdown() {
   if (stopping) {
     return;
@@ -92,7 +110,7 @@ async function shutdown() {
   stopping = true;
   health.close();
   try {
-    await running;
+    await Promise.all([running, emailRunning]);
     await worker.close();
     await queue.close();
     await database().$disconnect();

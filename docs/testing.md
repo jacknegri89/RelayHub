@@ -27,11 +27,15 @@ The delivery chart unit tests cover empty activity, attempts in progress, locall
 
 Destination monitoring tests cover the third consecutive failure, a recovery, a second outage, equal timestamps, concurrent completions, replay, rollback, tenant scope and retention. The browser test sends failed and successful deliveries to the demo receiver, opens the alerts feed, follows a destination and reads daily values using the keyboard. The chart tests cover empty days, a measured zero, missing HTTP latency and different orders of magnitude.
 
+The destination email integration tests exercise mailbox confirmation, unsubscribe, queued outage/recovery order and provider retries with a simulated transport. The failed-attempts and recovery tests cover UTC boundaries, expired details, overlapping selections and excluded deliveries. The browser follows the chart into a recovery, selects two deliveries and waits for their second attempts to succeed. The language check also verifies registration placeholders after switching languages.
+
+In GitHub Actions, the Compose job builds and starts the entire demo from empty volumes. It pauses the worker, sends six identical signed requests, restarts the worker and checks PostgreSQL for exactly one event, one delivery, one attempt and one HTTP 200. The receiver tests also exercise loss of the acknowledgement after the order commits. See the [receiver example](receiver-idempotency.md).
+
 The public simulator test takes billing offline, switches from Route to Timeline, restores billing and advances its retry in reduced-motion mode. It checks that the same order reaches all three services and that a new order with a bad signature creates no deliveries.
 
 ## Run the development processes
 
-After installing the workspace dependencies and running `pnpm setup`, start PostgreSQL and Redis:
+After installing the workspace dependencies with pnpm 11.25.0 and running `pnpm run setup`, start PostgreSQL and Redis:
 
 ```sh
 docker compose -p relayhub-demo up -d postgres redis --wait
@@ -66,15 +70,16 @@ docker compose -p relayhub-demo exec -e DEMO_USER_PASSWORD web pnpm seed
 
 Sign in as `demo-owner@relayhub.example`. The seed preserves an existing demo account and its password. To replay the scenarios from the host, generate the Prisma Client with `pnpm generate` first.
 
-| Command               | Expected result                                               |
-| --------------------- | ------------------------------------------------------------- |
-| `pnpm demo success`   | One delivery with HTTP 200                                    |
-| `pnpm demo transient` | Two HTTP 500 attempts followed by HTTP 200                    |
-| `pnpm demo busy`      | HTTP 429 followed by HTTP 200 after `Retry-After`             |
-| `pnpm demo duplicate` | Six concurrent submissions produce one event and one delivery |
-| `pnpm demo permanent` | HTTP 400, then a failed delivery                              |
-| `pnpm demo slow`      | HTTP 200 with measurable latency                              |
-| `pnpm demo timeout`   | Connection timeouts until the attempt budget is exhausted     |
+| Command                   | Expected result                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| `pnpm demo success`       | One delivery with HTTP 200                                                             |
+| `pnpm demo transient`     | Two HTTP 500 attempts followed by HTTP 200                                             |
+| `pnpm demo busy`          | HTTP 429 followed by HTTP 200 after `Retry-After`                                      |
+| `pnpm demo duplicate`     | Six concurrent submissions produce one event and one delivery                          |
+| `pnpm demo permanent`     | HTTP 400, then a failed delivery                                                       |
+| `pnpm demo slow`          | HTTP 200 with measurable latency                                                       |
+| `pnpm demo timeout`       | Connection timeouts until the attempt budget is exhausted                              |
+| `pnpm demo lost-response` | The receiver commits once, the first acknowledgement times out, and the retry succeeds |
 
 For a manual retry, change the failed destination to the demo `/hooks/success` endpoint and select **Retry delivery**. For a recovery drill, stop Redis in the isolated Compose project, submit `pnpm demo success`, and restart Redis. The accepted event stays in PostgreSQL and is dispatched when Redis returns. The same procedure can be used to exercise worker downtime.
 

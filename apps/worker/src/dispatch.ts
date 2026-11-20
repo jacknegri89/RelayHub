@@ -116,6 +116,12 @@ export async function retainRecent(now = Date.now()) {
   const cutoff = new Date(
     now - settings().RETENTION_DAYS * 24 * 60 * 60 * 1000,
   );
+  await db.destinationEmailSubscription.deleteMany({
+    where: { challengeExpiresAt: { lt: new Date(now) }, verifiedAt: null },
+  });
+  await db.destinationEmailMessage.deleteMany({
+    where: { finishedAt: { lt: cutoff } },
+  });
   // An active outage remains visible for as long as it lasts.
   await db.destinationIncident.deleteMany({
     where: { resolvedAt: { lt: cutoff } },

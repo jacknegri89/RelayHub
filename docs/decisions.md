@@ -18,4 +18,4 @@ The production worker accepts exact HTTPS hostnames from an operator-managed all
 
 ## 5. Privacy and operational trade-offs
 
-Encrypt payloads for retry and retain only technical metadata in views and logs. Attempt response bodies are discarded. Expire the event tree after terminal processing. Demo receipts are intentionally process-local. A durable receiver-side deduplication example and automated cross-key re-encryption are potential follow-up work.
+Encrypt payloads for retry and retain only technical metadata in views and logs. Attempt response bodies are discarded. Expire the event tree after terminal processing. The demo receiver keeps its deduplication record and business effect in its own durable transaction. This models an independent application that may restart between accepting an order and acknowledging the delivery.

@@ -65,3 +65,45 @@ jobs:
           curl --fail --retry 30 --retry-all-errors --retry-delay 1 http://127.0.0.1:3002/ready
           pnpm test:integration
           pnpm test:e2e
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: relayhub-ci
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.16.0"
+      - name: Start the complete stack with fresh volumes
+        run: |
+          node scripts/setup.mjs
+          docker compose up --build -d --wait --wait-timeout 180
+      - name: Accept duplicate submissions while the worker is stopped
+        run: |
+          export DEMO_USER_PASSWORD="$(openssl rand -hex 24)"
+          docker compose exec -T -e DEMO_USER_PASSWORD web pnpm seed
+          docker compose stop worker
+          docker compose exec -T web pnpm demo duplicate
+          docker compose start worker
+      - name: Verify one committed event, one delivery and one acknowledgement
+        run: |
+          counts() {
+            docker compose exec -T postgres psql -U relayhub -d relayhub -At -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT count(DISTINCT e.id), count(DISTINCT d.id), count(a.id),
+                 count(a.id) FILTER (WHERE d.status = 'delivered' AND a."httpStatus" = 200)
+          FROM "WebhookEvent" e
+          LEFT JOIN "Delivery" d ON d."eventId" = e.id
+          LEFT JOIN "DeliveryAttempt" a ON a."deliveryId" = d.id
+          WHERE e."eventType" = 'demo.success';
+          SQL
+          }
+          for attempt in {1..30}; do
+            observed="$(counts)"
+            if [[ "$observed" == '1|1|1|1' ]]; then exit 0; fi
+            sleep 2
+          done
+          echo "Unexpected event, delivery, attempt and HTTP 200 counts: $observed"
+          exit 1
+      - if: always()
+        run: docker compose down --volumes

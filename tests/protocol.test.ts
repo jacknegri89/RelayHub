@@ -4,6 +4,8 @@ import { parseConfig } from "@relayhub/shared/config";
 import { destinationUrl, publicAddress } from "@relayhub/shared/destinations";
 import { canTransition } from "@relayhub/shared/delivery-states";
 import {
+  deliverySignature,
+  deliverySignatureMatches,
   eventSchema,
   parseJson,
   PayloadTooLarge,
@@ -41,6 +43,44 @@ describe("webhook protocol", () => {
     expect(validTimestamp(timestamp, 300, 1700000300000)).toBe(true);
     expect(validTimestamp(timestamp, 300, 1700000301000)).toBe(false);
     expect(validTimestamp(timestamp, 300, 1699999699000)).toBe(false);
+  });
+  it("binds the destination delivery and sender event IDs to the outbound body", () => {
+    const id = "00000000-0000-4000-8000-000000000001";
+    const event = "order.42";
+    const expected =
+      "v2=6249fa16ef67d181c54ce3d5e33f1e094d0353b312fd5f5efb5d163e76b1e0f9";
+    expect(deliverySignature("secret", timestamp, id, event, body)).toBe(
+      expected,
+    );
+    expect(
+      deliverySignatureMatches("secret", timestamp, id, event, body, expected),
+    ).toBe(true);
+    for (const [deliveryId, eventId, bytes] of [
+      [id.replace(/1$/, "2"), event, body],
+      [id, "order.43", body],
+      [id, event, Buffer.from("{}")],
+    ] as const) {
+      expect(
+        deliverySignatureMatches(
+          "secret",
+          timestamp,
+          deliveryId,
+          eventId,
+          bytes,
+          expected,
+        ),
+      ).toBe(false);
+    }
+    expect(
+      deliverySignatureMatches(
+        "secret",
+        timestamp,
+        id,
+        event,
+        body,
+        signature("secret", timestamp, body),
+      ),
+    ).toBe(false);
   });
   it("bounds streamed bodies even without Content-Length", async () => {
     const request = new Request("https://relayhub.example", {

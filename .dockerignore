@@ -3,6 +3,7 @@
 **/generated
 .env*
 .git
+.claude
 test-results
 playwright-report
 *.log

@@ -20,6 +20,31 @@ function week(start: string): DestinationDay[] {
 }
 
 describe("destination attempt history", () => {
+  it("opens the selected failed UTC day and omits the link on a day without failures", () => {
+    const days = week("2026-06-29");
+    days[1].failures = 2;
+    days[2].successes = 1;
+    const attemptsPath = "/workspace/org/destinations/dest/attempts";
+    const selected = renderToStaticMarkup(
+      <DestinationHistory
+        days={days}
+        locale="it"
+        initialDay={days[1].date}
+        attemptsPath={attemptsPath}
+      />,
+    );
+    expect(selected).toContain('href="' + attemptsPath + '?day=2026-06-30"');
+    expect(selected).toContain("Vedi tentativi falliti");
+    const successful = renderToStaticMarkup(
+      <DestinationHistory
+        days={days}
+        locale="en"
+        initialDay={days[2].date}
+        attemptsPath={attemptsPath}
+      />,
+    );
+    expect(successful).not.toContain("View failed attempts");
+  });
   it("explains an idle UTC week without drawing zero latency", () => {
     const html = renderToStaticMarkup(
       <DestinationHistory days={week("2026-01-01")} locale="en" />,

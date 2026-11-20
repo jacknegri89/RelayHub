@@ -3,7 +3,7 @@ x-app: &app
   build: .
   env_file: .env
   environment:
-    DATABASE_URL: postgresql://relayhub:${POSTGRES_PASSWORD:?Run pnpm setup before Compose}@postgres:5432/relayhub
+    DATABASE_URL: postgresql://relayhub:${POSTGRES_PASSWORD:?Run node scripts/setup.mjs before Compose}@postgres:5432/relayhub
     REDIS_URL: redis://redis:6379
     DEMO_RECEIVER_URL: http://mock-receiver:3001
   init: true
@@ -15,7 +15,7 @@ services:
     environment:
       POSTGRES_DB: relayhub
       POSTGRES_USER: relayhub
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run pnpm setup before Compose}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run node scripts/setup.mjs before Compose}
     ports:
       - "127.0.0.1:55432:5432"
     volumes:
@@ -89,6 +89,9 @@ services:
     command: ["node", "scripts/run.mjs", "receiver"]
     environment:
       RECEIVER_BIND: 0.0.0.0
+      RECEIVER_DB_PATH: /var/lib/relayhub-receiver/receipts.sqlite
+    volumes:
+      - receiver:/var/lib/relayhub-receiver
     ports:
       - "127.0.0.1:3001:3001"
     healthcheck:
@@ -105,3 +108,4 @@ services:
 volumes:
   postgres:
   redis:
+  receiver:

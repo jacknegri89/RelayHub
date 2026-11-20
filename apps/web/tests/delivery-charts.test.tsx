@@ -69,18 +69,32 @@ describe("delivery charts", () => {
     expect(html).not.toContain("Replay");
   });
 
-  it("does not animate a delivery on an idle overview", async () => {
+  it("keeps success rate and unmeasured latency empty on an idle overview", () => {
     const html = renderToStaticMarkup(
-      await DeliveryActivity({
-        received: 0,
-        delivered: 0,
-        failed: 0,
-        inflight: 0,
-        latency: "—",
+      DeliveryActivity({
+        report: {
+          counts: {
+            delivered: 0,
+            failed: 0,
+            previousDelivered: 0,
+            previousFailed: 0,
+            meanSuccessfulMs: null,
+          },
+          received: 0,
+          comparisonRetained: true,
+          inflight: 0,
+          sources: 0,
+          destinations: 0,
+          timings: { samples: 0, percentiles: null },
+        },
+        workspace: "/workspace/example",
+        locale: "en",
       }),
     );
     expect(html).not.toContain("data-packet");
-    expect(html).toContain("No successes or failures");
+    expect(html).toContain("No completed deliveries");
+    expect(html).toContain("—");
+    expect(html).not.toContain("0 ms");
   });
 
   it("preserves the real attempt numbers in a long history", async () => {
