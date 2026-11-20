@@ -2,11 +2,15 @@ import { database, Prisma } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { log } from "@relayhub/shared/log";
 import {
+  sendMail,
+  type NoticeMail,
+  type MailResult,
+} from "@relayhub/shared/mail";
+import {
   CONFIRMATION_MINUTES,
   mailboxCode,
 } from "@relayhub/shared/notification-email";
 
-const HTTP_TIMEOUT_MS = 5_000;
 const LEASE_MS = 30_000;
 // Resend retains request keys for 24 hours. Keep all ambiguous retries inside that window.
 const IDEMPOTENCY_WINDOW_MS = 23 * 60 * 60_000;
@@ -23,14 +27,7 @@ type Envelope = {
   destinationName: string;
   occurredAt: Date;
 };
-export type NoticeMail = {
-  to: string;
-  subject: string;
-  text: string;
-  key: string;
-};
-type SendResult = { status: number; retryAfterMs?: number };
-type Transport = (mail: NoticeMail) => Promise<SendResult>;
+type Transport = (mail: NoticeMail) => Promise<MailResult>;
 
 function buildMail(row: Envelope): NoticeMail {
   const it = row.locale === "it";
@@ -101,32 +98,6 @@ function buildMail(row: Envelope): NoticeMail {
   };
 }
 
-async function sendWithResend(mail: NoticeMail): Promise<SendResult> {
-  const config = settings();
-  const result = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    redirect: "error",
-    signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
-    headers: {
-      authorization: "Bearer " + config.RESEND_API_KEY,
-      "content-type": "application/json",
-      "idempotency-key": mail.key,
-    },
-    body: JSON.stringify({
-      from: config.RELAYHUB_EMAIL_FROM,
-      to: [mail.to],
-      subject: mail.subject,
-      text: mail.text,
-    }),
-  });
-  const after = result.headers.get("retry-after");
-  await result.body?.cancel();
-  if (after && /^\d+$/.test(after)) {
-    return { status: result.status, retryAfterMs: Number(after) * 1000 };
-  }
-  return { status: result.status };
-}
-
 type Claim = { id: bigint; attempts: number; firstAttemptAt: Date };
 async function claimEmail(now: Date, organizationId?: string) {
   const leaseEnd = new Date(now.getTime() + LEASE_MS);
@@ -150,7 +121,7 @@ async function claimEmail(now: Date, organizationId?: string) {
 }
 
 export async function dispatchDestinationEmail(
-  send: Transport = sendWithResend,
+  send: Transport = sendMail,
   now = new Date(),
   organizationId?: string,
 ) {
@@ -172,8 +143,10 @@ export async function dispatchDestinationEmail(
     return true;
   }
   const sub = message.subscription;
-  const expired =
-    now.getTime() - claim.firstAttemptAt.getTime() >= IDEMPOTENCY_WINDOW_MS;
+  const deadline =
+    Math.min(claim.firstAttemptAt.getTime(), message.occurredAt.getTime()) +
+    IDEMPOTENCY_WINDOW_MS;
+  const expired = now.getTime() >= deadline;
   if (
     expired ||
     sub.email !== sub.member.user.email ||
@@ -188,7 +161,7 @@ export async function dispatchDestinationEmail(
     });
     return true;
   }
-  let result: SendResult = { status: 0 };
+  let result: MailResult = { status: 0 };
   try {
     result = await send(
       buildMail({ ...message, ...sub, subscriptionId: sub.id }),
@@ -200,7 +173,8 @@ export async function dispatchDestinationEmail(
   const transient =
     result.status === 0 ||
     result.status >= 500 ||
-    [408, 409, 429].includes(result.status);
+    (result.status === 409 && !result.permanentConflict) ||
+    [408, 429].includes(result.status);
   if (accepted || !transient) {
     await db.destinationEmailMessage.updateMany({
       where: marker,
@@ -216,7 +190,6 @@ export async function dispatchDestinationEmail(
     30_000 * 2 ** Math.min(claim.attempts - 1, 8),
   );
   const next = now.getTime() + Math.max(backoff, result.retryAfterMs ?? 0);
-  const deadline = claim.firstAttemptAt.getTime() + IDEMPOTENCY_WINDOW_MS;
   const nextAttemptAt = new Date(Math.min(next, deadline));
   await db.destinationEmailMessage.updateMany({
     where: marker,

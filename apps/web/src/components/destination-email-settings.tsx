@@ -3,9 +3,12 @@ import { emailPreference, type EmailScope } from "../server/destination-email";
 import { getLocale } from "../server/locale";
 import { ActionForm } from "./forms";
 
-export async function DestinationEmailSettings(scope: EmailScope) {
+export async function DestinationEmailSettings({
+  email,
+  ...scope
+}: EmailScope & { email: string }) {
   const { t } = await getLocale();
-  const configured = destinationEmailConfigured();
+  const configured = destinationEmailConfigured(email);
   const state = await emailPreference(scope);
   const active = state === "active" || state === "activeWithFailure";
   const endpoint =

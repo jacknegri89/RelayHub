@@ -9,18 +9,22 @@ import {
   vi,
 } from "vitest";
 import { database } from "@relayhub/db";
-import { settings } from "@relayhub/shared/config";
+import { parseConfig, settings } from "@relayhub/shared/config";
 import {
   changeDestinationEmail,
   emailPreference,
 } from "../apps/web/src/server/destination-email";
+import { dispatchDestinationEmail as dispatchQueuedEmail } from "../apps/worker/src/destination-email";
 import {
-  dispatchDestinationEmail as dispatchQueuedEmail,
+  accountEmailConfigured,
+  mailConfigured,
+  sendMail,
   type NoticeMail,
-} from "../apps/worker/src/destination-email";
+} from "@relayhub/shared/mail";
 
 // The test provider below records messages locally. A demo guard protects real subscriptions.
 vi.hoisted(() => {
+  vi.stubEnv("RELAYHUB_MAILPIT_URL", "");
   vi.stubEnv("RESEND_API_KEY", "integration-only");
   vi.stubEnv("RELAYHUB_EMAIL_FROM", "sender@relayhub.example");
 });
@@ -33,9 +37,13 @@ const destination = randomUUID();
 const user = randomUUID();
 const email = user + "@relayhub.example";
 const scope = { organizationId: org, destinationId: destination, userId: user };
+// Run a deterministic worker tick after PostgreSQL has rounded its defaults to milliseconds.
+function nextTick() {
+  return new Date(Date.now() + 100);
+}
 function dispatchDestinationEmail(
   send?: Parameters<typeof dispatchQueuedEmail>[0],
-  now = new Date(),
+  now = nextTick(),
 ) {
   return dispatchQueuedEmail(send, now, org);
 }
@@ -147,7 +155,7 @@ it("confirms mailbox ownership before monitoring, retries the same message and s
       data: { resolvedAt },
     });
   }
-  const claimTime = new Date();
+  const claimTime = nextTick();
   const first = vi.fn(async (mail: NoticeMail) => {
     messages.push(mail);
     return { status: 429, retryAfterMs: 40_000 };
@@ -186,9 +194,9 @@ it("calls the fixed provider with plain text and stops uncertain retries before 
   const provider = vi
     .fn<typeof fetch>()
     .mockRejectedValueOnce(new Error("timeout"))
-    .mockResolvedValue(new Response(null, { status: 200 }));
+    .mockResolvedValue(Response.json({ id: randomUUID() }));
   vi.stubGlobal("fetch", provider);
-  const now = new Date();
+  const now = nextTick();
   await dispatchDestinationEmail(undefined, now);
   await dispatchDestinationEmail(undefined, new Date(now.getTime() + 31_000));
   expect(provider).toHaveBeenCalledTimes(2);
@@ -210,7 +218,7 @@ it("calls the fixed provider with plain text and stops uncertain retries before 
     data: { resolvedAt: new Date() },
   });
   provider.mockRejectedValue(new Error("uncertain response"));
-  const start = new Date();
+  const start = nextTick();
   await dispatchDestinationEmail(undefined, start);
   await dispatchDestinationEmail(
     undefined,
@@ -254,3 +262,180 @@ it("scopes opt-in to its member, removes work on address change, unsubscribe or 
   expect(await dispatchDestinationEmail(send)).toBe(false);
   expect(send).not.toHaveBeenCalled();
 });
+
+it("retries a provider failure and a lost receipt with one logical message", async () => {
+  await db.user.update({ where: { id: user }, data: { emailVerified: true } });
+  await changeDestinationEmail(scope, { action: "enable" }, "en");
+  await openIncident();
+  const accepted = new Map<string, string>();
+  const provider = vi.fn<typeof fetch>();
+  provider.mockResolvedValueOnce(new Response(null, { status: 500 }));
+  provider.mockImplementation(async (_url, request) => {
+    const key = new Headers(request?.headers).get("idempotency-key")!;
+    if (!accepted.has(key)) {
+      accepted.set(key, randomUUID());
+      return new Response("{"); // Provider stored the message before the connection broke.
+    }
+    return Response.json({ id: accepted.get(key) });
+  });
+  vi.stubGlobal("fetch", provider);
+  const start = nextTick().getTime();
+  for (const elapsed of [0, 31_000, 92_000]) {
+    expect(
+      await dispatchDestinationEmail(undefined, new Date(start + elapsed)),
+    ).toBe(true);
+  }
+  expect(provider).toHaveBeenCalledTimes(3);
+  expect(accepted.size).toBe(1);
+  expect(
+    await dispatchDestinationEmail(undefined, new Date(start + 180_000)),
+  ).toBe(false);
+  expect(await emailPreference(scope)).toBe("active");
+});
+
+it.each([
+  [403, "validation_error"],
+  [409, "invalid_idempotent_request"],
+])(
+  "finishes a permanent provider rejection (%s) and releases later alerts",
+  async (status, name) => {
+    await db.user.update({
+      where: { id: user },
+      data: { emailVerified: true },
+    });
+    await changeDestinationEmail(scope, { action: "enable" }, "en");
+    const incident = await openIncident();
+    const provider = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ name }, { status }))
+      .mockResolvedValueOnce(Response.json({ id: randomUUID() }));
+    vi.stubGlobal("fetch", provider);
+    await dispatchDestinationEmail();
+    expect(await emailPreference(scope)).toBe("activeWithFailure");
+    await db.destinationIncident.update({
+      where: { id: incident.id },
+      data: { resolvedAt: new Date() },
+    });
+    await dispatchDestinationEmail();
+    expect(provider).toHaveBeenCalledTimes(2);
+    expect(String(provider.mock.calls[1][1]?.body)).toContain(
+      "Destination recovered",
+    );
+    expect(await dispatchDestinationEmail()).toBe(false);
+  },
+);
+
+it("expires a stale outage even when the worker never attempted it", async () => {
+  await db.user.update({ where: { id: user }, data: { emailVerified: true } });
+  await changeDestinationEmail(scope, { action: "enable" }, "en");
+  await openIncident();
+  const later = new Date(Date.now() + 24 * 60 * 60_000);
+  const send = vi.fn();
+  expect(await dispatchDestinationEmail(send, later)).toBe(true);
+  expect(send).not.toHaveBeenCalled();
+  expect(await emailPreference(scope)).toBe("activeWithFailure");
+});
+
+it("reserves Resend's test domain for one operator and rejects unsafe capture configurations", () => {
+  const config = parseConfig({
+    ...process.env,
+    RELAYHUB_EMAIL_FROM: "onboarding@resend.dev",
+    RELAYHUB_RESEND_TEST_TO: email,
+    RELAYHUB_ACCOUNT_EMAIL: "1",
+  });
+  expect(mailConfigured(email, config)).toBe(true);
+  expect(mailConfigured("other@example.test", config)).toBe(false);
+  expect(accountEmailConfigured(config)).toBe(false);
+  const partial = parseConfig({
+    ...process.env,
+    RELAYHUB_EMAIL_FROM: "",
+    RELAYHUB_ACCOUNT_EMAIL: "1",
+  });
+  expect(mailConfigured(email, partial)).toBe(false);
+  expect(accountEmailConfigured(partial)).toBe(false);
+  expect(
+    mailConfigured(email, { ...config, RELAYHUB_RESEND_TEST_TO: "" }),
+  ).toBe(false);
+  expect(
+    accountEmailConfigured({
+      ...config,
+      RELAYHUB_EMAIL_FROM: "notify@relayhub.example",
+    }),
+  ).toBe(true);
+  for (const url of [
+    "https://example.com",
+    "http://127.0.0.1:8025/elsewhere",
+    "http://u:p@127.0.0.1:8025",
+  ]) {
+    expect(() =>
+      parseConfig({
+        ...process.env,
+        RESEND_API_KEY: "",
+        RELAYHUB_EMAIL_FROM: "",
+        RELAYHUB_MAILPIT_URL: url,
+      }),
+    ).toThrow();
+  }
+  expect(() =>
+    parseConfig({
+      ...process.env,
+      RELAYHUB_MODE: "production",
+      RELAYHUB_BASE_URL: "https://example.test",
+      RESEND_API_KEY: "",
+      RELAYHUB_EMAIL_FROM: "",
+      RELAYHUB_MAILPIT_URL: "http://127.0.0.1:8025",
+    }),
+  ).toThrow();
+});
+
+it.skipIf(!process.env.RELAYHUB_TEST_MAILPIT_URL)(
+  "delivers confirmation, outage and recovery into an actual local Mailpit inbox",
+  async () => {
+    const config = parseConfig({
+      ...process.env,
+      RESEND_API_KEY: "",
+      RELAYHUB_EMAIL_FROM: "",
+      RELAYHUB_MAILPIT_URL: process.env.RELAYHUB_TEST_MAILPIT_URL,
+    });
+    const origin = config.RELAYHUB_MAILPIT_URL;
+    const send = (mail: NoticeMail) => sendMail(mail, config);
+    async function inbox() {
+      const response = await fetch(
+        origin +
+          "/api/v1/search?" +
+          new URLSearchParams({ query: "to:" + email }),
+        { redirect: "error" },
+      );
+      expect(response.ok).toBe(true);
+      const result = (await response.json()) as {
+        messages: { ID: string; Subject: string }[];
+      };
+      return result.messages;
+    }
+    await changeDestinationEmail(scope, { action: "enable" }, "en");
+    await dispatchDestinationEmail(send);
+    const [confirmation] = await inbox();
+    expect(confirmation.Subject).toBe("RelayHub email confirmation");
+    const detail = await fetch(
+      origin + "/api/v1/message/" + encodeURIComponent(confirmation.ID),
+    );
+    const { Text } = (await detail.json()) as { Text: string };
+    const code = Text.match(/\b\d{8}\b/)?.[0] ?? "";
+    await changeDestinationEmail(scope, { action: "confirm", code }, "en");
+    const incident = await openIncident();
+    await db.destinationIncident.update({
+      where: { id: incident.id },
+      data: { resolvedAt: new Date() },
+    });
+    await dispatchDestinationEmail(send);
+    await dispatchDestinationEmail(send);
+    const subjects = (await inbox()).map((message) => message.Subject).sort();
+    expect(subjects).toEqual(
+      [
+        "RelayHub email confirmation",
+        "RelayHub · Destination outage · Billing",
+        "RelayHub · Destination recovered · Billing",
+      ].sort(),
+    );
+  },
+);
