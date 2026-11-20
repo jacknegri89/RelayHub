@@ -65,7 +65,7 @@
   display: grid;
   justify-items: end;
   gap: 0.6rem;
-  max-width: min(46rem, 60vw);
+  max-width: min(54rem, 70vw);
 }
 .hint {
   margin: 0;
@@ -169,6 +169,17 @@
 .controls .pause[aria-pressed="true"] {
   border-color: var(--retry);
   color: var(--retry);
+}
+/* Pause and resume labels overlap in one cell: the button keeps its width. */
+.controls .pause {
+  display: inline-grid;
+}
+.pause > span {
+  grid-area: 1 / 1;
+  text-align: center;
+}
+.pause > span[data-visible="false"] {
+  visibility: hidden;
 }
 
 .log {

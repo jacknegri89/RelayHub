@@ -4,6 +4,10 @@
   padding-block: clamp(4rem, 10vw, 9rem) clamp(3rem, 6vw, 6rem);
   border-top: 1px solid var(--rule);
 }
+/* The section receives focus after the "Follow one event" glide. */
+.story:focus {
+  outline: none;
+}
 .heading {
   max-width: 44rem;
   margin-bottom: clamp(2rem, 5vw, 4.5rem);
