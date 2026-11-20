@@ -6,13 +6,16 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useLocale } from "./locale";
 import {
-  ENDPOINTS,
   MAX_ATTEMPTS,
   SpacetimeModel,
+  orderInProgress,
+  snapshotOrder,
   type Endpoint,
   type Journey,
   type JourneyNotice,
+  type OrderSnapshot,
 } from "./spacetime-model";
+import { SimulatorRoutes, OutcomeLabel } from "./simulator-routes";
 import { SpacetimeRenderer, type SpacetimeLabels } from "./spacetime-renderer";
 import styles from "./spacetime-hero.module.css";
 
@@ -24,44 +27,23 @@ const STATIC_FEATURED_SECONDS = 6.8;
 const STATIC_VISITOR_SECONDS = 4;
 const INTRO_REVEAL_SECONDS = 1.9;
 const FEATURED_EVENT_DELAY_SECONDS = 0.55;
-const WIDE_LAYOUT_QUERY = "(min-width: 700px)";
 const MOTION_QUERY = "(prefers-reduced-motion: no-preference)";
 const STATIC_QUERY = "(prefers-reduced-motion: reduce)";
-const LOG_LENGTH = 3;
 
 type Engine = { model: SpacetimeModel; renderer: SpacetimeRenderer };
-type Tooltip = { x: number; y: number; journey: JourneySnapshot };
-type JourneySnapshot = {
-  code: string;
-  type: string;
-  rejected: boolean;
-  deliveries: {
-    endpoint: Endpoint;
-    attempts: number;
-    status: number | null;
-    outcome: string;
-  }[];
+type Tooltip = {
+  x: number;
+  y: number;
+  leftOfPointer: boolean;
+  journey: OrderSnapshot;
 };
 type LoggedNotice = JourneyNotice & { key: number };
 
-function snapshot(journey: Journey): JourneySnapshot {
-  const deliveries = [];
-  for (const delivery of journey.deliveries) {
-    const last = delivery.attempts[delivery.attempts.length - 1];
-    deliveries.push({
-      endpoint: delivery.endpoint,
-      attempts: delivery.attempts.length,
-      status: last?.status ?? null,
-      outcome: delivery.outcome,
-    });
-  }
-  return {
-    code: journey.code,
-    type: journey.type,
-    rejected: journey.accepted === false,
-    deliveries,
-  };
-}
+const destinationNames: Record<Endpoint, [string, string]> = {
+  a: ["Warehouse", "Magazzino"],
+  b: ["Billing", "Fatturazione"],
+  c: ["Email", "Email"],
+};
 
 export function SpacetimeHero() {
   const { locale, t } = useLocale();
@@ -71,6 +53,9 @@ export function SpacetimeHero() {
   const animated = useRef(false);
   const paused = useRef(false);
   const noticeKey = useRef(0);
+  const selected = useRef<Journey | null>(null);
+  const [order, setOrder] = useState<OrderSnapshot | null>(null);
+  const [timeline, setTimeline] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [canPause, setCanPause] = useState(false);
   const [online, setOnline] = useState<Record<Endpoint, boolean>>({
@@ -82,11 +67,15 @@ export function SpacetimeHero() {
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
 
   const labels: SpacetimeLabels = {
-    sender: t("Sender", "Mittente"),
-    relay: "RelayHub",
-    endpoint: "Endpoint",
-    offline: "offline",
-    now: t("now", "ora"),
+    sender: t("Shop", "Negozio"),
+    destinations: {
+      a: t(...destinationNames.a),
+      b: t(...destinationNames.b),
+      c: t(...destinationNames.c),
+    },
+    now: t("Now", "Ora"),
+    end: t("End", "Fine"),
+    time: t("Time", "Tempo"),
     verified: t("verified", "verificata"),
     rejected: t("signature mismatch", "firma non valida"),
     delivered: t("delivered", "consegnato"),
@@ -112,8 +101,7 @@ export function SpacetimeHero() {
       if (!surface) {
         return;
       }
-      // The stage uses display: contents, so the hero section drives scrolling.
-      const container = surface.closest("section") ?? surface;
+      const container = stage.current ?? surface;
       const model = new SpacetimeModel(RANDOM_SEED);
       model.fastForward(PREWARM_SECONDS);
       const renderer = new SpacetimeRenderer(
@@ -122,27 +110,35 @@ export function SpacetimeHero() {
         latestLabels.current,
       );
       engine.current = { model, renderer };
-      model.onNotice = (notice) => {
+      model.onNotice = (notice, journey) => {
+        if (journey !== selected.current) {
+          return;
+        }
+        setOrder(snapshotOrder(journey));
         if (notice.origin !== "visitor") {
           return;
         }
         noticeKey.current += 1;
         const logged = { ...notice, key: noticeKey.current };
-        setNotices((previous) => [logged, ...previous].slice(0, LOG_LENGTH));
+        setNotices((previous) => [logged, ...previous]);
       };
 
-      const wide = window.matchMedia(WIDE_LAYOUT_QUERY);
+      function startExample() {
+        if (!selected.current) {
+          selected.current = model.emitFeaturedEvent();
+          setOrder(snapshotOrder(selected.current));
+        }
+      }
+
       function fitCanvas() {
         if (!surface) {
           return;
         }
-        renderer.horizontal = wide.matches;
         renderer.resize(surface.clientWidth, surface.clientHeight);
         renderer.draw();
       }
       const observer = new ResizeObserver(fitCanvas);
       observer.observe(surface);
-      wide.addEventListener("change", fitCanvas);
       fitCanvas();
       void document.fonts.ready.then(() => renderer.draw());
 
@@ -175,13 +171,7 @@ export function SpacetimeHero() {
             duration: INTRO_REVEAL_SECONDS,
             ease: "power2.inOut",
           })
-          .call(
-            () => {
-              model.emitFeaturedEvent();
-            },
-            [],
-            FEATURED_EVENT_DELAY_SECONDS,
-          );
+          .call(startExample, [], FEATURED_EVENT_DELAY_SECONDS);
 
         // Time itself slows down as the visitor scrolls past the diagram.
         ScrollTrigger.create({
@@ -201,10 +191,15 @@ export function SpacetimeHero() {
         };
       });
       media.add(STATIC_QUERY, () => {
+        setCanPause(false);
+        setIsPaused(false);
+        paused.current = false;
         renderer.reveal = 1;
         renderer.holdAnnotations = true;
-        model.emitFeaturedEvent();
-        model.fastForward(STATIC_FEATURED_SECONDS);
+        if (!selected.current || selected.current.origin === "featured") {
+          startExample();
+          model.fastForward(STATIC_FEATURED_SECONDS);
+        }
         renderer.draw();
         return () => {
           renderer.holdAnnotations = false;
@@ -213,9 +208,9 @@ export function SpacetimeHero() {
 
       return () => {
         observer.disconnect();
-        wide.removeEventListener("change", fitCanvas);
         media.revert();
         model.onNotice = undefined;
+        selected.current = null;
         engine.current = null;
       };
     },
@@ -236,7 +231,11 @@ export function SpacetimeHero() {
     if (!current) {
       return;
     }
-    current.model.emitVisitorEvent(tampered);
+    selected.current = current.model.emitVisitorEvent(tampered);
+    current.renderer.trackedOrder = selected.current;
+    setOrder(snapshotOrder(selected.current));
+    setNotices([]);
+    leave();
     refreshStaticFrame(STATIC_VISITOR_SECONDS);
   }
 
@@ -256,6 +255,18 @@ export function SpacetimeHero() {
     setIsPaused(paused.current);
   }
 
+  function nextStep() {
+    if (engine.current && selected.current) {
+      engine.current.model.advanceOrder(selected.current);
+      engine.current.renderer.draw();
+      if (!orderInProgress(selected.current)) {
+        stage.current
+          ?.querySelector<HTMLElement>('[role="status"]')
+          ?.focus({ preventScroll: true });
+      }
+    }
+  }
+
   function inspect(event: PointerEvent<HTMLCanvasElement>) {
     const current = engine.current;
     if (!current) {
@@ -273,7 +284,12 @@ export function SpacetimeHero() {
       setTooltip(null);
     } else {
       current.renderer.highlightId = journey.id;
-      setTooltip({ x: point.x, y: point.y, journey: snapshot(journey) });
+      setTooltip({
+        x: point.x,
+        y: Math.max(65, Math.min(point.y, bounds.height - 65)),
+        leftOfPointer: point.x > bounds.width / 2,
+        journey: snapshotOrder(journey),
+      });
     }
     if (!animated.current || paused.current) {
       current.renderer.draw();
@@ -291,103 +307,152 @@ export function SpacetimeHero() {
     current.renderer.draw();
   }
 
+  const canStep = (!canPause || isPaused) && orderInProgress(order);
+
   return (
-    <div ref={stage} className={styles.stage}>
+    <div
+      id="simulator"
+      ref={stage}
+      className={styles.stage}
+      role="region"
+      aria-labelledby="simulator-title"
+    >
+      <div className={styles.instrumentHead}>
+        <h2 id="simulator-title">
+          {t("Delivery simulator", "Simulatore di consegna")}
+        </h2>
+        <div
+          className={styles.views}
+          role="group"
+          aria-label={t("Diagram view", "Vista del diagramma")}
+        >
+          <button
+            type="button"
+            aria-pressed={!timeline}
+            onClick={() => setTimeline(false)}
+          >
+            {t("Route", "Percorso")}
+          </button>
+          <button
+            type="button"
+            aria-pressed={timeline}
+            onClick={() => setTimeline(true)}
+          >
+            {t("Timeline", "Cronologia")}
+          </button>
+        </div>
+      </div>
+      <div
+        className={styles.controls}
+        role="group"
+        aria-label={t("Diagram controls", "Comandi del diagramma")}
+      >
+        <button
+          type="button"
+          className={styles.fire}
+          onClick={() => sendEvent(false)}
+        >
+          <span aria-hidden="true" className={styles.playIcon} />
+          {t("Send a test order", "Invia un ordine di prova")}
+        </button>
+        <button
+          type="button"
+          className={styles.ghost}
+          onClick={() => sendEvent(true)}
+        >
+          {t("Tamper with the signature", "Altera la firma")}
+        </button>
+        {canPause && (
+          <button
+            type="button"
+            className={styles.pause}
+            aria-pressed={isPaused}
+            onClick={togglePause}
+          >
+            <span data-visible={!isPaused}>
+              {t("Pause time", "Ferma il tempo")}
+            </span>
+            <span data-visible={isPaused}>
+              {t("Resume time", "Riprendi il tempo")}
+            </span>
+          </button>
+        )}
+        {canStep && (
+          <button type="button" className={styles.ghost} onClick={nextStep}>
+            {t("Next step", "Passo successivo")}
+          </button>
+        )}
+      </div>
       <figure
+        hidden={!timeline}
         className={styles.figure}
         aria-label={t(
           "Spacetime diagram of webhook deliveries",
           "Diagramma spazio-tempo delle consegne dei webhook",
         )}
       >
-        <canvas
-          ref={canvas}
-          className={styles.canvas}
-          aria-hidden="true"
-          onPointerMove={inspect}
-          onPointerDown={inspect}
-          onPointerLeave={leave}
-        />
-        <figcaption className="sr-only">
-          {t(
-            "Each signed event travels from the sender to RelayHub. Valid signatures cross the relay and fan out to the endpoints; failed deliveries bounce back and are retried after a growing pause.",
-            "Ogni evento firmato viaggia dal mittente a RelayHub. Le firme valide superano il relay e si diramano verso gli endpoint; le consegne fallite rimbalzano e vengono ritentate dopo una pausa crescente.",
-          )}
+        <div className={styles.plot}>
+          <canvas
+            ref={canvas}
+            className={styles.canvas}
+            aria-hidden="true"
+            onPointerMove={inspect}
+            onPointerDown={inspect}
+            onPointerLeave={leave}
+          />
+          {tooltip && <TooltipCard tooltip={tooltip} />}
+        </div>
+        <figcaption className={styles.legend}>
+          <span className="sr-only">
+            {t(
+              "Simulated time runs left to right. Follow the order from the shop through RelayHub to the warehouse, billing and email. Each lane labels the latest result for the highlighted order.",
+              "Il tempo simulato scorre da sinistra a destra. Segui l’ordine dal negozio, attraverso RelayHub, fino a magazzino, fatturazione ed email. Ogni riga indica l’ultimo esito visibile dell’ordine evidenziato.",
+            )}
+          </span>
+          <span className={styles.keySend}>{t("Sending", "Invio")}</span>
+          <span className={styles.keyReceived}>
+            {t("Delivered", "Consegnato")}
+          </span>
+          <span className={styles.keyError}>{t("Error", "Errore")}</span>
+          <span className={styles.keyWait}>
+            {t("Retry delay", "Attesa tra i tentativi")}
+          </span>
         </figcaption>
-        {tooltip && <TooltipCard tooltip={tooltip} />}
       </figure>
 
-      <div className={styles.console} data-intro="console">
+      <SimulatorRoutes
+        order={order}
+        names={labels.destinations}
+        online={online}
+        toggle={toggleEndpoint}
+        timeline={timeline}
+        paused={!canPause || isPaused}
+      />
+      <div className={styles.console}>
         <p className={styles.hint}>
           {t(
-            "Try it: send an event, then switch endpoint B off.",
-            "Prova: invia un evento, poi spegni l’endpoint B.",
+            "Switch a service offline to get a 503. Bring it back online before the next attempt to deliver the same order.",
+            "Spegni un servizio per simulare un errore 503. Riaccendilo prima del prossimo tentativo per consegnare lo stesso ordine.",
           )}
         </p>
-        <div
-          className={styles.controls}
-          role="group"
-          aria-label={t("Diagram controls", "Comandi del diagramma")}
-        >
-          <button
-            type="button"
-            className={styles.fire}
-            onClick={() => sendEvent(false)}
-          >
-            <span aria-hidden="true" className={styles.fireDot} />
-            {t("Send a signed event", "Invia un evento firmato")}
-          </button>
-          <button
-            type="button"
-            className={styles.ghost}
-            onClick={() => sendEvent(true)}
-          >
-            {t("Tamper with the signature", "Altera la firma")}
-          </button>
-          <div className={styles.switches}>
-            {ENDPOINTS.map((endpoint) => (
-              <button
-                key={endpoint}
-                type="button"
-                role="switch"
-                aria-checked={online[endpoint]}
-                className={styles.switch}
-                onClick={() => toggleEndpoint(endpoint)}
-              >
-                <span className="sr-only">Endpoint </span>
-                {endpoint.toUpperCase()}
-                <span aria-hidden="true" className={styles.switchState} />
-              </button>
-            ))}
-          </div>
-          {canPause && (
-            <button
-              type="button"
-              className={styles.pause}
-              aria-pressed={isPaused}
-              onClick={togglePause}
+        {order?.origin === "visitor" && (
+          <details className={styles.history}>
+            <summary>
+              {t("Order history", "Cronologia dell’ordine")}{" "}
+              <code>{order.code}</code>
+            </summary>
+            <ol
+              className={styles.log}
+              aria-label={t("Your events", "I tuoi eventi")}
             >
-              {/* Both labels share one grid cell, so the width never changes. */}
-              <span data-visible={!isPaused}>
-                {t("Pause time", "Ferma il tempo")}
-              </span>
-              <span data-visible={isPaused}>
-                {t("Resume time", "Riprendi il tempo")}
-              </span>
-            </button>
-          )}
-        </div>
-        <ol
-          className={styles.log}
-          aria-live="polite"
-          aria-label={t("Your events", "I tuoi eventi")}
-        >
-          {notices.map((notice) => (
-            <li key={notice.key} data-kind={notice.kind}>
-              <NoticeText notice={notice} />
-            </li>
-          ))}
-        </ol>
+              {notices.map((notice) => (
+                <li key={notice.key} data-kind={notice.kind}>
+                  <NoticeText notice={notice} />
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
       </div>
     </div>
   );
@@ -396,19 +461,20 @@ export function SpacetimeHero() {
 function TooltipCard({ tooltip }: { tooltip: Tooltip }) {
   const { t } = useLocale();
   const { journey } = tooltip;
-  let side = styles.tooltipRight;
-  if (typeof window !== "undefined" && tooltip.x > window.innerWidth * 0.6) {
-    side = styles.tooltipLeft;
+  let offset = "0.7rem";
+  if (tooltip.leftOfPointer) {
+    offset = "calc(0px - var(--tip-width) - 0.7rem)";
   }
+  const left = `clamp(0.4rem, calc(${tooltip.x}px + ${offset}), calc(100% - var(--tip-width) - 0.4rem))`;
   return (
     <div
-      className={styles.tooltip + " " + side}
-      style={{ left: tooltip.x, top: tooltip.y }}
+      className={styles.tooltip}
+      style={{ left, top: tooltip.y }}
       aria-hidden="true"
     >
       <strong>{journey.type}</strong>
       <code>{journey.code}</code>
-      {journey.rejected && (
+      {journey.accepted === false && (
         <span data-tone="failed">
           401 ·{" "}
           {t("signature mismatch, rejected", "firma non valida, rifiutato")}
@@ -416,8 +482,8 @@ function TooltipCard({ tooltip }: { tooltip: Tooltip }) {
       )}
       {journey.deliveries.map((delivery) => (
         <span key={delivery.endpoint} data-tone={delivery.outcome}>
-          {delivery.endpoint.toUpperCase()} · {t("attempt", "tentativo")}{" "}
-          {delivery.attempts}
+          {t(...destinationNames[delivery.endpoint])} ·{" "}
+          {t("attempt", "tentativo")} {delivery.attempts}
           {delivery.status !== null && " · " + delivery.status}
           {" · "}
           <OutcomeLabel outcome={delivery.outcome} />
@@ -427,24 +493,20 @@ function TooltipCard({ tooltip }: { tooltip: Tooltip }) {
   );
 }
 
-function OutcomeLabel({ outcome }: { outcome: string }) {
-  const { t } = useLocale();
-  if (outcome === "delivered") {
-    return t("delivered", "consegnato");
-  }
-  if (outcome === "retrying") {
-    return t("retry scheduled", "nuovo tentativo in coda");
-  }
-  if (outcome === "failed") {
-    return t("failed", "fallito");
-  }
-  return t("in flight", "in viaggio");
-}
-
 function NoticeText({ notice }: { notice: JourneyNotice }) {
   const { t } = useLocale();
-  const name = "Endpoint " + (notice.endpoint ?? "").toUpperCase();
+  let name = "";
+  if (notice.endpoint) {
+    name = t(...destinationNames[notice.endpoint]);
+  }
   const attempt = notice.attempt ?? 1;
+  if (notice.kind === "resending") {
+    return (
+      <>
+        {name} · {t("sending attempt", "invio del tentativo")} {attempt}
+      </>
+    );
+  }
   if (notice.kind === "rejected") {
     return (
       <>
@@ -488,11 +550,7 @@ function NoticeText({ notice }: { notice: JourneyNotice }) {
   return (
     <>
       <code>{notice.code}</code> → {name}: {t("failed after", "fallito dopo")}{" "}
-      {attempt}{" "}
-      {t(
-        "attempts. Retry it from the delivery log.",
-        "tentativi. Puoi riprovarlo dal registro consegne.",
-      )}
+      {attempt} {t("attempts.", "tentativi.")}
     </>
   );
 }

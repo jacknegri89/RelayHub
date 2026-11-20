@@ -1,0 +1,321 @@
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.25fr);
+  align-items: start;
+  gap: clamp(2.5rem, 8vw, 8rem);
+  width: min(calc(100% - var(--gutter) * 2), 84rem);
+  margin-inline: auto;
+  padding-block: clamp(3.2rem, 7vw, 7rem);
+  border-top: 1px solid var(--rule);
+}
+.guide h2 {
+  margin-bottom: 1.2rem;
+  font-size: clamp(2rem, 3.3vw, 3.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+.guide p,
+.outcome p {
+  max-width: 52ch;
+  margin: 0.85rem 0 0;
+  color: var(--dust);
+  line-height: 1.65;
+}
+.guide .instruction {
+  margin-top: 1.8rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--photon);
+  color: var(--bone);
+}
+.board {
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.75rem;
+  background: var(--void-1);
+  overflow: clip;
+}
+.selector,
+.tools {
+  display: flex;
+  align-items: center;
+  padding-inline: clamp(0.9rem, 2.6vw, 2.2rem);
+}
+.selector {
+  gap: clamp(0.65rem, 3vw, 2.4rem);
+  border-bottom: 1px solid var(--rule);
+}
+.selector button,
+.replay {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--dust);
+  font: 550 0.92rem var(--font-sans);
+}
+.selector button {
+  min-height: 3.35rem;
+  padding: 0 0.25rem;
+}
+.selector button[aria-pressed="true"],
+.selector button:hover,
+.replay:hover {
+  background: transparent;
+  color: var(--bone);
+}
+.selector button::after {
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--photon);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.selector button[aria-pressed="true"]::after {
+  transform: scaleX(1);
+}
+.paper {
+  padding: clamp(1.1rem, 2.6vw, 2.2rem);
+  background: var(--lattice);
+}
+.trigger {
+  margin: 0 0 1.15rem;
+  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+  line-height: 1.3;
+}
+.endpoints {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.endpoints div {
+  display: grid;
+  gap: 0.2rem;
+}
+.endpoints div:last-child {
+  text-align: right;
+}
+.endpoints span {
+  color: var(--dust);
+  font: 500 0.72rem var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.endpoints strong {
+  font: 550 clamp(1rem, 1.5vw, 1.35rem) var(--font-sans);
+}
+.plot {
+  padding-block: 0.75rem;
+}
+.exchange {
+  display: block;
+  width: 100%;
+}
+.lanes path,
+.track,
+.exchange circle {
+  vector-effect: non-scaling-stroke;
+}
+.lanes,
+.track,
+.request,
+.response,
+.packet,
+.pulse {
+  fill: none;
+}
+.lanes {
+  stroke: var(--rule-strong);
+}
+.track {
+  stroke: var(--rule);
+  stroke-width: 2;
+}
+.request,
+.response {
+  stroke-width: 2;
+  stroke-dasharray: 1;
+}
+.request {
+  stroke: var(--photon);
+}
+.response {
+  stroke: var(--delivered);
+}
+.packet {
+  opacity: 0;
+  stroke: var(--bone);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0.035 1;
+}
+.node {
+  fill: var(--photon);
+}
+.received {
+  fill: var(--delivered);
+}
+.pulse {
+  stroke: var(--delivered);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.requestLabel,
+.replyLabel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.8rem;
+  padding-inline: 3.75%;
+  font: 550 0.78rem/1.5 var(--font-mono);
+}
+.requestLabel {
+  color: var(--photon);
+}
+.replyLabel {
+  color: var(--delivered);
+}
+.plot code {
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+.outboundTip,
+.returnTip {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.outboundTip {
+  stroke: var(--photon);
+}
+.returnTip {
+  stroke: var(--delivered);
+}
+.outcome {
+  margin-top: 0.55rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid var(--rule-strong);
+}
+.outcome p {
+  margin: 0;
+}
+.tools {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  padding-block: 0.35rem;
+  border-top: 1px solid var(--rule);
+}
+.tools a,
+.replay {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0;
+  font-size: 0.86rem;
+}
+.tools a {
+  text-decoration: none;
+}
+.tools a:hover {
+  text-decoration: underline;
+}
+.replay span {
+  font-size: 1.3rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .selector button::after {
+    transition: transform 230ms var(--ease-out);
+  }
+  .exchange[data-active="true"] .request {
+    animation: draw 850ms ease-in-out both;
+  }
+  .exchange[data-active="true"] .packet {
+    animation: transit 850ms ease-in-out both;
+  }
+  .exchange[data-active="true"] .response {
+    animation: draw 720ms 900ms ease-in-out both;
+  }
+  .exchange[data-active="true"] .pulse {
+    animation: receive 650ms 720ms ease-out both;
+  }
+  .exchange[data-active="true"] .outboundTip {
+    animation: showTip 150ms 680ms both;
+  }
+  .exchange[data-active="true"] .returnTip {
+    animation: showTip 150ms 1450ms both;
+  }
+  .outcome {
+    animation: settle 300ms var(--ease-out);
+  }
+}
+@keyframes showTip {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes transit {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 0.035;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: -1;
+  }
+}
+@keyframes receive {
+  from {
+    opacity: 1;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+@keyframes settle {
+  from {
+    transform: translateY(5px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .replay {
+    display: none;
+  }
+  .tools {
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 760px) {
+  .section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.65rem;
+  }
+  .guide .instruction {
+    margin-top: 1.1rem;
+  }
+}

@@ -101,7 +101,9 @@ test("public registration, authenticator challenge, one-use recovery and disabli
   }
   await page.getByLabel("Authenticator code").fill(wrongCode);
   await page.getByRole("button", { name: "Verify code", exact: true }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    "The code did not match. Try again.",
+  );
   await page.getByLabel("Authenticator code").fill(authenticatorCode(secret));
   await page.getByRole("button", { name: "Verify code", exact: true }).click();
   await expect(
@@ -124,7 +126,9 @@ test("public registration, authenticator challenge, one-use recovery and disabli
   await page.getByText("Use a recovery code", { exact: true }).click();
   await page.getByLabel("Recovery code", { exact: true }).fill(recoveryCode);
   await page.getByRole("button", { name: "Verify recovery code" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    "The recovery code did not match or was already used.",
+  );
   await page.getByLabel("Authenticator code").fill(authenticatorCode(secret));
   await page.getByRole("button", { name: "Verify code", exact: true }).click();
   await expect(

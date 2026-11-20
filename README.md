@@ -6,9 +6,13 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 [Open RelayHub](https://relayhub-webhooks.vercel.app) · [Start locally](#run-locally) · [API reference](docs/api.yaml) · [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml)
 
-![RelayHub homepage: a live spacetime diagram where signed events cross RelayHub, fan out to endpoints, and a 503 bounces back before its retry](docs/images/relayhub-home.webp)
+![RelayHub's public simulator showing an order delivered to the warehouse and email service while billing waits for a retry](docs/images/relayhub-home.webp)
 
-The homepage diagram is interactive: send a signed event, tamper with its signature, or switch an endpoint off to watch the 503, the backoff and the retry. In the workspace, every delivery shows the same trace for its real attempts.
+The homepage simulator follows a shop order to the warehouse, billing and email services. Switch billing offline, send an order, then bring it back online to watch just that delivery retry. **Route** shows the signature check, response code and attempt count for each service. **Timeline** follows the same order over time. When paused or using reduced motion, **Next step** advances to its next delivery or retry. In the workspace, every delivery shows the trace for its real attempts.
+
+Before signing in, explore how Stripe, GitHub and Shopify use webhooks. Each example follows a notification to the receiving app and links to the provider’s documentation. To forward a provider event through RelayHub, verify it in your app and sign a new request with the RelayHub source secret. Inside the workspace, each view has a short guide to the actions available to your role.
+
+In **Destinations**, open a receiver’s seven-day history to compare successful attempts, failed attempts and mean HTTP response time. Choose a day to read its values. **Alerts** records one outage when three consecutive attempts fail and one recovery when the destination next returns a 2xx response.
 
 ## Try the hosted app
 

@@ -1,0 +1,2 @@
+# Keep source files compatible with the formatter on every checkout.
+* text=auto eol=lf

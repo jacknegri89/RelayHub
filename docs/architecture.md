@@ -19,6 +19,14 @@ The web process authorizes configuration changes and verifies the literal bytes 
 
 The **Overview** page uses a rolling 24-hour window for events received, delivery outcomes, and mean successful attempt duration. The success rate is delivered divided by delivered plus failed. The in-progress count includes active deliveries of any age.
 
+## Destination health
+
+PostgreSQL observes the first completion of each outbound attempt in the worker’s fenced transaction. It serializes health updates on the destination row. Three consecutive failures open one incident across deliveries and retries. A 2xx response resets the streak and closes an open incident. Later failures start a new streak. Openings and recoveries share a sequence so two transitions in the same millisecond appear in order.
+
+Every recorded HTTP response counts toward the daily success or failure total. An outbound transport failure with a measured duration also counts as a failure. Local policy blocks, disabled routes, expired leases and other attempts that never entered the transport leave the streak unchanged. Only timed HTTP responses contribute to mean response time. The workspace separates missing measurements from measured zeroes.
+
+While a workspace tab is visible, it checks its organization’s alert summary every 30 seconds and checks again when the tab becomes visible. A change refreshes the workspace and its notification link. The summary endpoint checks session and membership and returns only the open count and latest transition. Notification delivery takes place inside the workspace.
+
 ## Dispatch and recovery
 
 The worker periodically reserves due scheduling rows by moving their publication time forward. BullMQ job IDs combine delivery ID and generation. The scheduling row stays in PostgreSQL until the attempt is finalized or a retry replaces its generation. An unsuccessful Redis publication or lost Redis job is repaired when the row becomes due again.

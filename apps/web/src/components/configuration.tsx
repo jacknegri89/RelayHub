@@ -1,4 +1,5 @@
 import { getLocale } from "../server/locale";
+import Link from "next/link";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { ActionForm } from "./forms";
@@ -199,6 +200,16 @@ export async function Destinations({
           </div>
           <p>
             <code className="break">{item.url}</code>
+          </p>
+          <p>
+            <Link
+              href={"/workspace/" + organizationId + "/destinations/" + item.id}
+            >
+              {t(
+                "View seven-day history and alerts",
+                "Vedi storico di 7 giorni e avvisi",
+              )}
+            </Link>
           </p>
           <h3>{t("Routes", "Regole di inoltro")}</h3>
           {!item.subscriptions.length && (

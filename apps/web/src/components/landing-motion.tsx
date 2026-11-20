@@ -74,12 +74,6 @@ export function LandingMotion({
             0,
           )
           .fromTo(
-            "[data-intro=kicker]",
-            { y: 10, autoAlpha: 0 },
-            { ...settled, duration: 0.6 },
-            0.15,
-          )
-          .fromTo(
             "[data-intro=line]",
             { yPercent: 115 },
             { ...settled, duration: 1.15, stagger: 0.11, ease: "power4.out" },
@@ -92,16 +86,21 @@ export function LandingMotion({
             0.75,
           )
           .fromTo(
+            "[data-intro=case]",
+            { x: -10, autoAlpha: 0 },
+            {
+              x: 0,
+              autoAlpha: 1,
+              duration: 0.5,
+              clearProps: "transform,opacity,visibility",
+            },
+            0.65,
+          )
+          .fromTo(
             "[data-intro=actions] > *",
             { y: 16, autoAlpha: 0 },
             { ...settled, duration: 0.7, stagger: 0.08 },
             0.9,
-          )
-          .fromTo(
-            "[data-intro=console]",
-            { y: 22, autoAlpha: 0 },
-            { ...settled, duration: 0.9 },
-            1.35,
           );
         document.documentElement.classList.remove(PENDING_CLASS);
 

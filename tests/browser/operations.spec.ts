@@ -12,9 +12,10 @@ test("the spacetime diagram reacts to visitors and respects reduced motion", asy
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: /every webhook,\s*from signature to delivery/i,
+      name: /one webhook\.\s*many destinations/i,
     }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Timeline", exact: true }).click();
   const art = page.getByRole("figure", {
     name: "Spacetime diagram of webhook deliveries",
   });
@@ -39,21 +40,39 @@ test("the spacetime diagram reacts to visitors and respects reduced motion", asy
   }));
   await canvas.hover({ position: pointerPosition });
   await expect.poll(async () => (await frame()) !== paused).toBe(true);
+  await page.getByRole("button", { name: "Send a test order" }).click();
+  const route = page.getByRole("region", { name: "Order route" });
+  await expect(
+    route.getByText("Awaiting signature", { exact: true }),
+  ).toHaveCount(3);
+  await page.getByRole("button", { name: "Next step" }).click();
+  await expect(route.getByText("Sending", { exact: false })).toHaveCount(3);
   await page.getByRole("button", { name: "Resume time" }).click();
 
-  const endpointB = page.getByRole("switch", { name: "Endpoint B" });
+  const endpointB = page.getByRole("switch", { name: /Billing/ });
   await endpointB.click();
   await expect(endpointB).toHaveAttribute("aria-checked", "false");
   const log = page.getByRole("list", { name: "Your events" });
-  await page.getByRole("button", { name: "Send a signed event" }).click();
-  await expect(log).toContainText("Endpoint B: 503", { timeout: 10_000 });
+  await page.getByRole("button", { name: "Send a test order" }).click();
+  await page.getByText("Order history", { exact: false }).first().click();
+  await expect(log).toContainText("order.created", { timeout: 10_000 });
+  await expect(log).toContainText("Billing: 503", { timeout: 10_000 });
   await page.getByRole("button", { name: "Tamper with the signature" }).click();
   await expect(log).toContainText("signature mismatch", { timeout: 10_000 });
+  // The rejected order stays on screen even as the previous order keeps retrying.
+  await expect(async () => {
+    const rejected = await frame();
+    await page.waitForTimeout(250);
+    expect(await frame()).toBe(rejected);
+  }).toPass({ timeout: 8_000 });
 
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.getByRole("button", { name: "Pause time" })).toHaveCount(0);
   await page.setViewportSize({ width: 375, height: 812 });
   await page.reload();
+  await page.getByRole("button", { name: "Timeline", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause time" })).toHaveCount(0);
+  await expect(art.getByText("Retry delay", { exact: true })).toBeVisible();
   const still = await frame();
   await page.waitForTimeout(500);
   expect(await frame()).toBe(still);
@@ -67,6 +86,50 @@ test("the spacetime diagram reacts to visitors and respects reduced motion", asy
         .analyze()
     ).violations,
   ).toEqual([]);
+});
+
+test("a visitor restores one service and finishes the same order step by step", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const board = page.getByRole("region", { name: "Order route" });
+  const billing = board
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("switch", { name: "Billing" }) });
+  await billing.getByRole("switch").click();
+  await page.getByRole("button", { name: "Send a test order" }).click();
+  await expect(board.getByRole("status")).toHaveText("2 of 3 delivered");
+  await expect(billing).toContainText("HTTP 503");
+  const resultText = billing.getByText("Retry scheduled", { exact: false });
+  const resultBox = await resultText.boundingBox();
+  const switchBox = await billing.getByRole("switch").boundingBox();
+  expect(
+    resultBox && switchBox && resultBox.y >= switchBox.y + switchBox.height,
+  ).toBe(true);
+  const history = page.locator("summary").filter({ hasText: "Order history" });
+  const orderCode = await history.locator("code").innerText();
+  await page.getByRole("button", { name: "Timeline", exact: true }).click();
+  await billing.getByRole("switch").click();
+  const step = page.getByRole("button", { name: "Next step" });
+  await step.click();
+  await expect(billing).toContainText("Sending");
+  await step.click();
+  await expect(board.getByRole("status")).toBeFocused();
+  await page.getByRole("button", { name: "Route", exact: true }).click();
+  await expect(billing).toContainText("HTTP 204");
+  await expect(billing).toContainText("attempt 2");
+  await expect(board.getByRole("status")).toHaveText("3 of 3 delivered");
+  await expect(history.locator("code")).toHaveText(orderCode);
+  await expect(step).toHaveCount(0);
+  await page.getByRole("button", { name: "Tamper with the signature" }).click();
+  await expect(board).toContainText("401 · Invalid signature");
+  await expect(board.getByRole("status")).toHaveText("No deliveries created");
+  await expect(board.getByText("Not sent", { exact: true })).toHaveCount(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    320,
+  );
 });
 
 test("operator signs in, routes a webhook, and retries a failed delivery", async ({
@@ -102,8 +165,14 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
     ).violations,
   ).toEqual([]);
   const orgPath = new URL(page.url()).pathname;
+  await expect(
+    page.getByRole("region", { name: "Read the last 24 hours" }),
+  ).toBeVisible();
 
   await page.getByRole("link", { name: "Sources" }).click();
+  await expect(
+    page.getByRole("region", { name: "Identify the sender" }),
+  ).toContainText("Save the signing secret");
   await page.getByLabel("Source name").fill("Shop");
   await page.getByRole("button", { name: "Create source" }).click();
   const secret = await page.getByLabel("Signing secret").inputValue();
@@ -132,8 +201,14 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
   ).toBe(202);
   await page.getByRole("link", { name: "Events", exact: true }).click();
   await page.getByRole("link", { name: "order.created" }).click();
+  await expect(
+    page.getByRole("region", { name: "Follow this event" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Browser receiver" }).click();
   await page.waitForURL("**/deliveries/*");
+  await expect(
+    page.getByRole("region", { name: "Read the attempts" }),
+  ).toBeVisible();
   const deliveryUrl = page.url();
   await expect
     .poll(

@@ -103,7 +103,7 @@ paths:
     post:
       operationId: verifyDelivery
       summary: Verify an outbound signature using the built-in HTTPS receiver
-      description: Available in production when VERIFICATION_RECEIVER_SECRET is configured.
+      description: Available in production when VERIFICATION_RECEIVER_SECRET is configured. The dedicated relayhub.verify.reject workspace test exercises a failed delivery after signature verification.
       parameters:
         - name: X-RelayHub-Timestamp
           in: header
@@ -123,6 +123,10 @@ paths:
         "401": { description: Signature or request headers rejected }
         "404": { description: Verification receiver disabled }
         "413": { description: Payload exceeds the configured size }
+        "422":
+          {
+            description: Intentional rejection of a signed workspace verification test,
+          }
 x-outbound-signing:
   headers:
     [

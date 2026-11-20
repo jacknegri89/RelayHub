@@ -1,7 +1,7 @@
 // Simulation behind the homepage spacetime diagram.
 // Space is a 0..1 axis (sender → RelayHub → endpoints), time is in seconds.
 // Signals travel at one "speed of light": crossing the whole axis takes
-// CROSS_SECONDS, so every signal is drawn at 45° on the diagram.
+// CROSS_SECONDS, independently of the size of the canvas.
 
 export type Endpoint = "a" | "b" | "c";
 export type JourneyOrigin = "ambient" | "featured" | "visitor";
@@ -73,11 +73,43 @@ export type Journey = {
   lastActivity: number;
 };
 
+export function snapshotOrder(journey: Journey) {
+  const deliveries = journey.deliveries.map((delivery) => ({
+    endpoint: delivery.endpoint,
+    attempts: delivery.attempts.length,
+    status: delivery.attempts.at(-1)?.status ?? null,
+    outcome: delivery.outcome,
+  }));
+  return {
+    code: journey.code,
+    type: journey.type,
+    origin: journey.origin,
+    accepted: journey.accepted,
+    deliveries,
+  };
+}
+
+export type OrderSnapshot = ReturnType<typeof snapshotOrder>;
+
+export function orderInProgress(order: OrderSnapshot | Journey | null) {
+  if (!order) {
+    return false;
+  }
+  return (
+    order.accepted === null ||
+    order.deliveries.some(
+      (delivery) =>
+        delivery.outcome === "retrying" || delivery.outcome === "in_flight",
+    )
+  );
+}
+
 export type JourneyNotice = {
   code: string;
   type: string;
   origin: JourneyOrigin;
-  kind: "rejected" | "accepted" | "delivered" | "retrying" | "failed";
+  kind:
+    "rejected" | "accepted" | "delivered" | "retrying" | "resending" | "failed";
   endpoint?: Endpoint;
   status?: number;
   attempt?: number;
@@ -106,7 +138,7 @@ export class SpacetimeModel {
   now = 0;
   journeys: Journey[] = [];
   online: Record<Endpoint, boolean> = { a: true, b: true, c: true };
-  onNotice: ((notice: JourneyNotice) => void) | undefined;
+  onNotice: ((notice: JourneyNotice, journey: Journey) => void) | undefined;
 
   private random: () => number;
   private sequence = 0;
@@ -133,6 +165,26 @@ export class SpacetimeModel {
     }
   }
 
+  // A manual step stops at the next change to this order, ignoring background traffic.
+  advanceOrder(journey: Journey) {
+    let next = Infinity;
+    if (journey.accepted === null) {
+      next = journey.arrivesAt;
+    }
+    for (const delivery of journey.deliveries) {
+      const latest = delivery.attempts.at(-1);
+      if (latest && delivery.outcome === "in_flight") {
+        next = Math.min(next, latest.arrivesAt);
+      }
+      if (latest?.retryAt != null && delivery.outcome === "retrying") {
+        next = Math.min(next, latest.retryAt);
+      }
+    }
+    if (Number.isFinite(next)) {
+      this.fastForward(Math.max(0, next - this.now) + STEP_SECONDS);
+    }
+  }
+
   emitVisitorEvent(tampered: boolean) {
     return this.emit({
       origin: "visitor",
@@ -147,7 +199,7 @@ export class SpacetimeModel {
     return this.emit({
       origin: "featured",
       tampered: false,
-      endpoints: ["a", "b"],
+      endpoints: [...ENDPOINTS],
       forcedFailures: { b: 1 },
     });
   }
@@ -197,13 +249,17 @@ export class SpacetimeModel {
   }) {
     this.sequence += 1;
     const typeIndex = Math.floor(this.random() * EVENT_TYPES.length);
+    let eventType = "order.created";
+    if (options.origin === "ambient") {
+      eventType = EVENT_TYPES[typeIndex];
+    }
     const codeNumber = Math.floor(this.random() * 0xffff);
     const arrivesAt =
       this.now + flightSeconds(LANE_POSITION.sender, LANE_POSITION.relay);
     const journey: Journey = {
       id: this.sequence,
       code: "evt_" + codeNumber.toString(16).padStart(4, "0"),
-      type: EVENT_TYPES[typeIndex],
+      type: eventType,
       origin: options.origin,
       emittedAt: this.now,
       arrivesAt,
@@ -280,6 +336,11 @@ export class SpacetimeModel {
       this.now >= attempt.retryAt;
     if (retryIsDue && attempt.retryAt !== null) {
       this.sendAttempt(journey, delivery, attempt.retryAt);
+      this.notify(journey, {
+        kind: "resending",
+        endpoint: delivery.endpoint,
+        attempt: delivery.attempts.length,
+      });
     }
   }
 
@@ -352,31 +413,25 @@ export class SpacetimeModel {
     if (!this.onNotice) {
       return;
     }
-    this.onNotice({
-      code: journey.code,
-      type: journey.type,
-      origin: journey.origin,
-      ...notice,
-    });
+    this.onNotice(
+      {
+        code: journey.code,
+        type: journey.type,
+        origin: journey.origin,
+        ...notice,
+      },
+      journey,
+    );
   }
 
   private forgetOldJourneys() {
     const settledBefore = this.now - FORGET_AFTER_SECONDS;
     const kept: Journey[] = [];
     for (const journey of this.journeys) {
-      if (journey.lastActivity >= settledBefore || this.isBusy(journey)) {
+      if (journey.lastActivity >= settledBefore || orderInProgress(journey)) {
         kept.push(journey);
       }
     }
     this.journeys = kept;
-  }
-
-  private isBusy(journey: Journey) {
-    for (const delivery of journey.deliveries) {
-      if (delivery.outcome === "in_flight" || delivery.outcome === "retrying") {
-        return true;
-      }
-    }
-    return false;
   }
 }

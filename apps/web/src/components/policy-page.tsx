@@ -3,13 +3,18 @@ import { getLocale } from "../server/locale";
 import Link from "next/link";
 import { Brand } from "./brand";
 import { PolicyLinks } from "./policy-links";
+import { SectionGuide } from "./section-guide";
 import type { ReactNode } from "react";
 
 export async function PolicyPage({
   title,
+  guideTitle,
+  guide,
   children,
 }: {
   title: string;
+  guideTitle: string;
+  guide: ReactNode;
   children: ReactNode;
 }) {
   const { t } = await getLocale();
@@ -25,10 +30,13 @@ export async function PolicyPage({
         <PolicyLinks />
         <LanguageSwitch />
       </header>
-      <article>
-        <h1>{title}</h1>
-        {children}
-      </article>
+      <div className="guided-page">
+        <SectionGuide title={guideTitle}>{guide}</SectionGuide>
+        <article>
+          <h1>{title}</h1>
+          {children}
+        </article>
+      </div>
     </main>
   );
 }

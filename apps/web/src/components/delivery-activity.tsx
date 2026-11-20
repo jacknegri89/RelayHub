@@ -26,7 +26,7 @@ export async function DeliveryActivity({
       maximumFractionDigits: 1,
     }).format(delivered / total);
   }
-  // One pulsing dot per delivery in flight, so activity is visible at a glance.
+  // Bound the decorative dots; the number always shows the full count.
   const dots: number[] = [];
   for (let index = 0; index < Math.min(inflight, MAX_INFLIGHT_DOTS); index++) {
     dots.push(index);
@@ -51,19 +51,23 @@ export async function DeliveryActivity({
           <dd data-count={received}>{received.toLocaleString(locale)}</dd>
         </dl>
         <div className="route-trace" aria-hidden="true">
-          <span data-trace />
-          <span className="signal-packet" data-packet />
+          {inflight > 0 && (
+            <>
+              <span data-trace />
+              <span className="signal-packet" data-packet />
+            </>
+          )}
         </div>
         <div className="activity-outbound">
           <dl>
             <div>
-              <dt>{t("Delivered", "Consegnati")}</dt>
+              <dt>{t("Delivered", "Consegne riuscite")}</dt>
               <dd className="delivered-count" data-count={delivered}>
                 {delivered.toLocaleString(locale)}
               </dd>
             </div>
             <div>
-              <dt>{t("Failed", "Falliti")}</dt>
+              <dt>{t("Failed", "Consegne fallite")}</dt>
               <dd className="failed-count" data-count={failed}>
                 {failed.toLocaleString(locale)}
               </dd>
@@ -74,6 +78,14 @@ export async function DeliveryActivity({
               <span data-trace style={{ flexGrow: delivered }} />
               <span data-trace style={{ flexGrow: failed }} />
             </div>
+          )}
+          {total === 0 && (
+            <p className="outcome-empty">
+              {t(
+                "No successes or failures recorded in this period.",
+                "Nessuna consegna riuscita o fallita in questo periodo.",
+              )}
+            </p>
           )}
         </div>
       </Motion>

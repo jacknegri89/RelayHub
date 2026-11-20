@@ -305,26 +305,19 @@ button.language-switch:hover {
   width: min(100%, 32rem);
   padding-block: 2rem;
 }
-.auth-caption {
-  max-width: 12ch;
-  margin-bottom: 1.6rem;
-  font: 600 clamp(1.8rem, 2.8vw, 2.4rem)/1.15 var(--font-sans);
-  letter-spacing: -0.035em;
+.auth-context .section-guide h2 {
+  max-width: 18ch;
+  font-size: clamp(1.55rem, 3vw, 2.4rem);
 }
-.auth-caption em {
-  font-style: normal;
-  color: var(--dust);
-}
-.auth-context > p:last-child {
-  max-width: 34ch;
-  margin-bottom: 0;
-  color: var(--dust);
+.auth-context .section-guide p {
+  font-size: 1rem;
+  max-width: 42ch;
 }
 .auth-trace {
   display: block;
   width: min(100%, 26rem);
   height: auto;
-  margin-block: 0.5rem 1.6rem;
+  margin-block: 1.7rem 0;
   overflow: visible;
 }
 .auth-trace .lane {
@@ -471,6 +464,56 @@ button.language-switch:hover {
   border-right: 1px solid var(--rule);
   background: var(--void-1);
 }
+.sidebar .section-guide {
+  margin: 2rem 0.2rem 0;
+}
+.section-guide {
+  position: relative;
+  align-self: start;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule-strong);
+}
+.section-guide::before {
+  content: "";
+  position: absolute;
+  inset: -2px auto auto 0;
+  width: 2.4rem;
+  height: 3px;
+  background: var(--photon);
+  transform-origin: left;
+}
+.section-guide h2 {
+  margin-bottom: 0.45rem;
+  font-size: 1.05rem;
+  line-height: 1.24;
+  letter-spacing: -0.025em;
+}
+.section-guide p {
+  margin: 0;
+  color: var(--dust);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .section-guide::before {
+    animation: guide-line 420ms var(--ease-out) both;
+  }
+  .section-guide p {
+    animation: guide-in 400ms 60ms var(--ease-out) both;
+  }
+}
+@keyframes guide-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+}
 .org-switch {
   display: inline-block;
   padding-inline: 0.2rem;
@@ -555,6 +598,15 @@ button.language-switch:hover {
 .workspace-alone {
   width: min(100%, 58rem);
   margin: 0 auto;
+}
+.guided-page {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  align-items: start;
+  width: min(100% - 2rem, 74rem);
+  margin-inline: auto;
+  padding-block: clamp(2rem, 5vw, 4rem);
+  gap: clamp(2rem, 7vw, 6rem);
 }
 .content > a {
   display: block;
@@ -744,6 +796,13 @@ time {
 }
 .outcome-track span:last-child {
   background: var(--failed);
+}
+.outcome-empty {
+  margin: 0.85rem 0 0;
+  border-top: 1px solid var(--rule);
+  padding-top: 0.65rem;
+  color: var(--dust);
+  font-size: 0.82rem;
 }
 .activity-measures {
   display: grid;
@@ -1137,10 +1196,79 @@ details form {
   max-width: none;
   height: auto;
 }
-.trace-svg:not([width]) {
+.trace-caption {
+  margin: 0;
+  padding: 0.75rem clamp(1rem, 2.6vw, 1.6rem);
+  color: var(--dust);
+  font-size: 0.875rem;
+}
+.trace-caption strong {
+  color: var(--bone);
+}
+.trace-caption span {
+  display: block;
+}
+.cone-diagram {
+  display: grid;
+  grid-template-columns: minmax(3rem, 0.65fr) minmax(0, 1fr);
+  padding: 0.65rem clamp(1rem, 2.6vw, 1.6rem);
+  background: var(--lattice), var(--void);
+}
+.cone-plot {
+  position: relative;
+}
+.cone-map {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  min-width: 34rem;
-  max-width: 52rem;
+  height: 100%;
+}
+.cone-map path {
+  vector-effect: non-scaling-stroke;
+}
+.cone-nodes {
+  display: grid;
+  grid-auto-rows: 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cone-nodes li {
+  position: relative;
+  align-content: center;
+  min-height: 3.4rem;
+  padding: 0.5rem 0 0.5rem 0.9rem;
+  overflow-wrap: anywhere;
+}
+.cone-nodes strong,
+.cone-nodes li > span:last-child {
+  display: block;
+}
+.cone-nodes li > span:last-child {
+  color: var(--dust);
+  font-size: 0.8rem;
+}
+.cone-marker {
+  position: absolute;
+  top: calc(50% - 0.25rem);
+  left: -0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--photon);
+}
+.cone-nodes [data-tone="delivered"] .cone-marker {
+  background: var(--delivered);
+}
+.cone-nodes [data-tone="retry"] .cone-marker {
+  background: var(--retry);
+}
+.cone-nodes [data-tone="failed"] .cone-marker {
+  background: var(--failed);
+  border-radius: 0;
+}
+.cone-nodes [data-tone="incoming"] .cone-marker {
+  background: var(--dust);
 }
 .trace-svg .lane {
   stroke: rgb(230 232 235 / 0.18);
@@ -1154,7 +1282,7 @@ details form {
   letter-spacing: 0.06em;
 }
 .trace-svg .note {
-  font: 500 10.5px var(--font-mono);
+  font: 500 12px var(--font-mono);
   fill: var(--bone);
 }
 .trace-svg [data-segment] {
@@ -1211,8 +1339,13 @@ details form {
   fill: var(--retry);
   animation: pulse 1.4s ease-in-out infinite;
 }
-.trace-svg .cone {
-  fill: rgb(88 166 255 / 0.06);
+.trace-svg .mark-local {
+  fill: var(--void);
+  stroke: var(--photon);
+  stroke-width: 2;
+}
+.trace-svg .mark-local[data-tone="failed"] {
+  stroke: var(--failed);
 }
 .photon-head {
   fill: #fff;
@@ -1369,8 +1502,10 @@ details form {
 }
 .policy-page article {
   max-width: 68ch;
-  margin: clamp(2.5rem, 7vw, 6rem) auto 0;
   line-height: 1.75;
+}
+.policy-page .guided-page {
+  width: 100%;
 }
 .policy-page article > p:first-of-type {
   color: var(--dust);
@@ -1414,11 +1549,6 @@ details form {
 .cookie-list dd {
   margin: 0.25rem 0 0;
   color: var(--dust);
-}
-.security-page {
-  width: min(100% - 2rem, 72rem);
-  margin-inline: auto;
-  padding: 2.4rem 0 3rem;
 }
 .security-panel {
   max-width: 40rem;
@@ -1563,6 +1693,14 @@ details form {
     border-right: 0;
     border-bottom: 1px solid var(--rule);
   }
+  .guided-page {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.6rem;
+    padding-top: 1.3rem;
+  }
+  .sidebar .section-guide {
+    margin: 1rem 0.2rem 0.45rem;
+  }
   .org-name {
     margin-bottom: 0.7rem;
   }
@@ -1594,11 +1732,21 @@ details form {
     border-bottom: 1px solid var(--rule);
   }
   .auth-context {
+    padding-block: 0.15rem 0.25rem;
+  }
+  .auth-context .section-guide h2 {
+    max-width: none;
+    font-size: 1.05rem;
+  }
+  .auth-context .section-guide p {
+    max-width: none;
+    font-size: 0.9rem;
+  }
+  .auth-context .auth-trace {
     display: none;
   }
   .auth-content {
     align-content: start;
-    min-height: calc(100svh - 4.5rem);
   }
   .topbar {
     flex-wrap: wrap;

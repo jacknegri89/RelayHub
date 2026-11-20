@@ -54,3 +54,7 @@ Back up PostgreSQL, including organization and auth data, and keep encrypted bac
 Rotate encryption by adding a new key ID, distributing the full keyring to all processes, and switching ACTIVE_KEY_ID. Existing envelopes continue reading through the old key ID. Retain the old key until existing source/destination secrets have been replaced and retained payloads and backups have expired or been re-encrypted. Keep session secret rotation and source/destination signing secret rotation separate. Coordinate new signing secrets with external clients before enabling traffic.
 
 Database retention runs in bounded batches for event trees. It retains active deliveries until they finish. Failed work can be retried from the UI. Test restore, backlog replay, clock synchronization and key recovery in a staging environment.
+
+## Destination monitoring upgrade
+
+Apply the destination health and incident ordering migrations before starting the updated web and worker processes. The first migration rebuilds health from the completed attempts still in PostgreSQL. Days whose source records expired before the upgrade cannot be reconstructed. The backfill holds a write lock on the destination table until commit. For a large retained history, measure the migration on a restored copy and schedule the upgrade accordingly. Older workers can complete attempts through the same database trigger after the migration commits.

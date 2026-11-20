@@ -1,0 +1,122 @@
+.count {
+  display: inline-block;
+  margin-inline-start: 0.55rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  color: var(--failed);
+  font: 500 0.72rem/1.4 var(--font-mono);
+}
+.latest {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--dust);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.filters,
+.scope,
+.observation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+.filters {
+  margin-block: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+.filters a {
+  padding: 0.65rem 0;
+  border-bottom: 2px solid transparent;
+  color: var(--dust);
+  text-decoration: none;
+}
+.filters a[aria-current] {
+  border-color: var(--photon);
+  color: var(--bone);
+}
+.feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.feed li {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.7fr) minmax(0, 1.3fr) auto;
+  gap: 0.5rem 1.2rem;
+  align-items: baseline;
+  padding-block: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+.feed a,
+.scope {
+  overflow-wrap: anywhere;
+}
+.feed time,
+.observation time {
+  color: var(--dust);
+  font: 0.78rem/1.5 var(--font-mono);
+}
+.transition {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 550;
+}
+.transition::before {
+  content: "";
+  flex: none;
+  width: 0.52rem;
+  height: 0.52rem;
+  background: var(--failed);
+  transform: rotate(45deg);
+}
+[data-kind="recovery"] > .transition::before {
+  border: 2px solid var(--delivered);
+  background: transparent;
+  border-radius: 50%;
+}
+.observation {
+  margin: 0 0 1.5rem;
+  padding: 0.6rem 0 0.6rem 0.8rem;
+  border-inline-start: 3px solid var(--rule-strong);
+}
+.observation[data-tone="success"] {
+  border-color: var(--delivered);
+}
+.observation[data-tone="warning"] {
+  border-color: var(--retry);
+}
+.observation[data-tone="outage"] {
+  border-color: var(--failed);
+}
+.historyPanel {
+  min-width: 0;
+}
+@media (max-width: 520px) {
+  .historyPanel {
+    margin-inline: -0.6rem;
+    padding-inline: 0.65rem;
+  }
+}
+@media (max-width: 700px) {
+  .feed li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .feed a {
+    grid-row: 2;
+    grid-column: 1/-1;
+  }
+  .feed time {
+    font-size: 0.7rem;
+  }
+}
+@media (max-width: 400px) {
+  .feed li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}

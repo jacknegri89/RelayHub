@@ -14,8 +14,11 @@ const TRAVEL = DESTINATION_Y - RELAY_Y;
 const GAP = 34;
 const HOLD = 76;
 const TRACE_HEIGHT = 206;
-const TAIL = 190;
+const TAIL = 258;
 const NAME_LIMIT = 22;
+const MAX_DRAWN_ATTEMPTS = 5;
+// Room for one glyph of the 12px monospace SVG labels, including spacing.
+const NOTE_CHARACTER_WIDTH = 8;
 
 type TraceAttempt = {
   id: string;
@@ -81,9 +84,9 @@ function shorten(name: string) {
   return name.slice(0, NAME_LIMIT - 1) + "…";
 }
 
-function seconds(from: Date, to: Date) {
+function seconds(from: Date, to: Date, locale: string) {
   const value = Math.max(0, to.getTime() - from.getTime()) / 1000;
-  return value.toFixed(1) + " s";
+  return value.toLocaleString(locale, { maximumFractionDigits: 1 }) + " s";
 }
 
 export async function DeliveryTrace({
@@ -97,10 +100,30 @@ export async function DeliveryTrace({
   };
 }) {
   const { locale, t } = await getLocale();
+  const heading = t("Delivery trace", "Traccia della consegna");
+  const attemptCount = delivery.attempts.length;
+  if (attemptCount === 0) {
+    return (
+      <section className="panel trace-panel">
+        <header className="trace-head">
+          <h2>{heading}</h2>
+        </header>
+        <p className="trace-caption">
+          {t("No attempts yet", "Nessun tentativo registrato")} ·{" "}
+          {stateLabel(delivery.status, t)}
+        </p>
+      </section>
+    );
+  }
+  const visibleAttempts = delivery.attempts.slice(-MAX_DRAWN_ATTEMPTS);
+  const hasUnconfirmedAttempt = visibleAttempts.some(
+    (attempt) => attempt.httpStatus === null,
+  );
   const parts: ReactNode[] = [];
   const summary: string[] = [];
   let step = 1;
   let cursor = LEFT;
+  let lastLabelEdge = 0;
 
   parts.push(
     <circle
@@ -111,22 +134,13 @@ export async function DeliveryTrace({
       cy={RELAY_Y}
       r="5"
     />,
-    note(
-      "received-note",
-      { x: cursor - 12, y: RELAY_Y - 14 },
-      t("queued", "in coda"),
-      "incoming",
-      step,
-    ),
   );
   step += 1;
 
-  delivery.attempts.forEach((attempt, index) => {
-    const isLast = index === delivery.attempts.length - 1;
+  visibleAttempts.forEach((attempt, index) => {
+    const isLast = index === visibleAttempts.length - 1;
     const sendAt = { x: cursor + GAP, y: RELAY_Y };
     const hitAt = { x: sendAt.x + TRAVEL, y: DESTINATION_Y };
-    parts.push(segment("send-" + attempt.id, sendAt, hitAt, "photon", step));
-    step += 1;
 
     let result = stateLabel(attempt.outcome, t);
     if (attempt.httpStatus) {
@@ -139,6 +153,12 @@ export async function DeliveryTrace({
     summary.push(
       t("attempt", "tentativo") + " " + attempt.number + ": " + result,
     );
+    // Only an HTTP response confirms that the request reached the receiver.
+    const reachedReceiver = attempt.httpStatus !== null;
+    if (reachedReceiver) {
+      parts.push(segment("send-" + attempt.id, sendAt, hitAt, "photon", step));
+      step += 1;
+    }
 
     if (attempt.outcome === "success") {
       parts.push(
@@ -172,39 +192,72 @@ export async function DeliveryTrace({
       return;
     }
 
-    parts.push(
-      <rect
-        key={"hit-" + attempt.id}
-        className="mark-failed"
-        data-step={step}
-        x={hitAt.x - 4.5}
-        y={hitAt.y - 4.5}
-        width="9"
-        height="9"
-      />,
-      <circle
-        key={"flash-" + attempt.id}
-        className="mark-delivered"
-        data-flash
-        data-step={step}
-        cx={hitAt.x}
-        cy={hitAt.y}
-        r="7"
-        style={{ stroke: "var(--failed)", fill: "none" }}
-      />,
-      note(
-        "note-" + attempt.id,
-        { x: hitAt.x - 30, y: hitAt.y + 26 },
-        label,
-        "failed",
-        step,
-      ),
-    );
-    step += 1;
-    const backAt = { x: hitAt.x + TRAVEL, y: RELAY_Y };
-    parts.push(segment("bounce-" + attempt.id, hitAt, backAt, "failed", step));
-    step += 1;
-    cursor = backAt.x;
+    if (reachedReceiver) {
+      parts.push(
+        <rect
+          key={"hit-" + attempt.id}
+          className="mark-failed"
+          data-step={step}
+          x={hitAt.x - 4.5}
+          y={hitAt.y - 4.5}
+          width="9"
+          height="9"
+        />,
+        <circle
+          key={"flash-" + attempt.id}
+          className="mark-delivered"
+          data-flash
+          data-step={step}
+          cx={hitAt.x}
+          cy={hitAt.y}
+          r="7"
+          style={{ stroke: "var(--failed)", fill: "none" }}
+        />,
+        note(
+          "note-" + attempt.id,
+          { x: hitAt.x - 30, y: hitAt.y + 26 },
+          label,
+          "failed",
+          step,
+        ),
+      );
+      step += 1;
+      const backAt = { x: hitAt.x + TRAVEL, y: RELAY_Y };
+      parts.push(
+        segment("bounce-" + attempt.id, hitAt, backAt, "failed", step),
+      );
+      step += 1;
+      cursor = backAt.x;
+    } else {
+      let tone: Tone = "failed";
+      if (attempt.outcome === "in_progress") {
+        tone = "photon";
+      }
+      parts.push(
+        <circle
+          key={"local-" + attempt.id}
+          className="mark-local"
+          data-tone={tone}
+          data-step={step}
+          cx={sendAt.x}
+          cy={sendAt.y}
+          r="5"
+        />,
+        note(
+          "note-" + attempt.id,
+          { x: sendAt.x, y: sendAt.y + 26 },
+          label,
+          tone,
+          step,
+        ),
+      );
+      step += 1;
+      cursor = sendAt.x;
+      lastLabelEdge = sendAt.x + label.length * NOTE_CHARACTER_WIDTH + GAP;
+      if (!isLast) {
+        cursor = lastLabelEdge;
+      }
+    }
 
     const hasNext = !isLast;
     const waiting = isLast && delivery.status === "retry_scheduled";
@@ -224,7 +277,8 @@ export async function DeliveryTrace({
     let holdLabel = t("requeued", "rimessa in coda");
     if (attempt.retryAt && attempt.finishedAt) {
       holdLabel =
-        t("backoff ", "attesa ") + seconds(attempt.finishedAt, attempt.retryAt);
+        t("backoff ", "attesa ") +
+        seconds(attempt.finishedAt, attempt.retryAt, locale);
     }
     parts.push(
       note(
@@ -239,7 +293,6 @@ export async function DeliveryTrace({
     cursor = holdEnd.x;
   });
 
-  const lastAttempt = delivery.attempts[delivery.attempts.length - 1];
   if (delivery.status === "delivered") {
     summary.push(t("Final outcome: delivered.", "Esito finale: consegnato."));
   } else if (delivery.status === "failed") {
@@ -255,7 +308,7 @@ export async function DeliveryTrace({
       note(
         "final-note",
         { x: cursor + 30, y: RELAY_Y + 4 },
-        t("failed · retry available", "fallita · puoi riprovarla"),
+        t("delivery failed", "consegna fallita"),
         "failed",
         step,
       ),
@@ -289,32 +342,13 @@ export async function DeliveryTrace({
       ),
     );
     summary.push(nextLabel + ".");
-  } else if (!lastAttempt || lastAttempt.outcome !== "success") {
-    parts.push(
-      <circle
-        key="pending"
-        className="mark-waiting"
-        data-step={step}
-        cx={cursor + GAP}
-        cy={RELAY_Y}
-        r="4.5"
-        style={{ fill: "var(--photon)" }}
-      />,
-      note(
-        "pending-note",
-        { x: cursor + GAP + 12, y: RELAY_Y + 18 },
-        stateLabel(delivery.status, t),
-        "photon",
-        step,
-      ),
-    );
+  } else {
     summary.push(stateLabel(delivery.status, t) + ".");
   }
 
-  const width = cursor + TAIL;
-  let attemptsText =
-    delivery.attempts.length + " " + t("attempts", "tentativi");
-  if (delivery.attempts.length === 1) {
+  const width = Math.max(cursor + TAIL, lastLabelEdge);
+  let attemptsText = attemptCount + " " + t("attempts", "tentativi");
+  if (attemptCount === 1) {
     attemptsText = t("1 attempt", "1 tentativo");
   }
   const description = attemptsText + ". " + summary.join(". ");
@@ -322,9 +356,28 @@ export async function DeliveryTrace({
   return (
     <TracePlayer
       className="panel trace-panel"
-      heading={<h2>{t("Delivery trace", "Traccia della consegna")}</h2>}
+      heading={<h2>{heading}</h2>}
       replayLabel={t("Replay", "Rivedi")}
     >
+      <p className="trace-caption">
+        <strong>{attemptsText}</strong> · {stateLabel(delivery.status, t)}
+        {hasUnconfirmedAttempt && (
+          <span>
+            {t(
+              "A marker on the RelayHub line means no HTTP response was recorded for that attempt.",
+              "Un punto sulla linea di RelayHub indica un tentativo per cui non è stata registrata una risposta HTTP.",
+            )}
+          </span>
+        )}
+        {attemptCount > MAX_DRAWN_ATTEMPTS && (
+          <span>
+            {t(
+              "Showing the latest five. The full history is below.",
+              "Sono mostrati gli ultimi cinque. La cronologia completa è sotto.",
+            )}
+          </span>
+        )}
+      </p>
       <div
         className="trace-scroll"
         tabIndex={0}
@@ -372,7 +425,7 @@ export async function DeliveryTrace({
       </div>
       <ul className="trace-legend" aria-hidden="true">
         <li data-tone="photon">{t("attempt", "tentativo")}</li>
-        <li data-tone="failed">{t("bounced", "respinta")}</li>
+        <li data-tone="failed">{t("error", "errore")}</li>
         <li data-tone="retry">{t("backoff", "attesa")}</li>
         <li data-tone="delivered">{t("delivered", "consegnata")}</li>
       </ul>
@@ -380,10 +433,10 @@ export async function DeliveryTrace({
   );
 }
 
-const CONE_WIDTH = 680;
-const APEX_X = 150;
-const END_X = 420;
-const ROW_HEIGHT = 46;
+const MAX_DRAWN_DESTINATIONS = 6;
+const CONE_WIDTH = 220;
+const CONE_ORIGIN = 38;
+const ROW_HEIGHT = 54;
 
 type ConeDelivery = {
   id: string;
@@ -396,8 +449,11 @@ function toneFor(status: DeliveryStatus): Tone {
   if (status === "delivered") {
     return "delivered";
   }
-  if (status === "failed" || status === "cancelled") {
+  if (status === "failed") {
     return "failed";
+  }
+  if (status === "cancelled") {
+    return "incoming";
   }
   if (status === "retry_scheduled") {
     return "retry";
@@ -405,144 +461,106 @@ function toneFor(status: DeliveryStatus): Tone {
   return "photon";
 }
 
-// The event's light cone: one ray per delivery, coloured by its outcome.
+// HTML labels stay legible at phone widths; only the connecting rays scale.
 export async function EventCone({
   deliveries,
 }: {
   deliveries: ConeDelivery[];
 }) {
   const { t } = await getLocale();
-  if (!deliveries.length) {
-    return null;
+  const heading = t(
+    "Destinations for this event",
+    "Destinazioni di questo evento",
+  );
+  if (deliveries.length === 0) {
+    return (
+      <section className="panel trace-panel">
+        <header className="trace-head">
+          <h2>{heading}</h2>
+        </header>
+        <p className="trace-caption">
+          {t(
+            "No matching destination. RelayHub received the event without creating a delivery.",
+            "Nessuna destinazione corrispondente. RelayHub ha ricevuto l’evento senza creare consegne.",
+          )}
+        </p>
+      </section>
+    );
   }
-  const height = Math.max(150, deliveries.length * ROW_HEIGHT + 50);
-  const apex = { x: APEX_X, y: height / 2 };
-  const firstY = height / 2 - ((deliveries.length - 1) * ROW_HEIGHT) / 2;
-  const lastY = firstY + (deliveries.length - 1) * ROW_HEIGHT;
-  const summary: string[] = [];
-  const rays: ReactNode[] = [];
 
-  deliveries.forEach((delivery, index) => {
-    const end = { x: END_X, y: firstY + index * ROW_HEIGHT };
-    const tone = toneFor(delivery.status);
-    const status = stateLabel(delivery.status, t);
-    summary.push(delivery.destination.name + ": " + status);
-    rays.push(segment("ray-" + delivery.id, apex, end, tone, 3));
-    let marker: ReactNode = (
-      <circle
-        key={"end-" + delivery.id}
-        className="mark-delivered"
-        data-step={4}
-        cx={end.x}
-        cy={end.y}
-        r="6"
-      />
-    );
-    if (tone === "failed") {
-      marker = (
-        <rect
-          key={"end-" + delivery.id}
-          className="mark-failed"
-          data-step={4}
-          x={end.x - 4.5}
-          y={end.y - 4.5}
-          width="9"
-          height="9"
-        />
-      );
-    }
-    if (tone === "retry" || tone === "photon") {
-      marker = (
-        <circle
-          key={"end-" + delivery.id}
-          className="mark-waiting"
-          data-step={4}
-          cx={end.x}
-          cy={end.y}
-          r="4.5"
-          style={{ fill: "var(--" + tone + ")" }}
-        />
-      );
-    }
-    let attempts = delivery.attemptCount + " " + t("attempts", "tentativi");
-    if (delivery.attemptCount === 1) {
-      attempts = t("1 attempt", "1 tentativo");
-    }
-    rays.push(
-      marker,
-      note(
-        "name-" + delivery.id,
-        { x: end.x + 16, y: end.y - 3 },
-        shorten(delivery.destination.name),
-        "incoming",
-        4,
-      ),
-      note(
-        "state-" + delivery.id,
-        { x: end.x + 16, y: end.y + 12 },
-        status + " · " + attempts,
-        tone,
-        4,
-      ),
-    );
-  });
+  const visibleDestinations = deliveries.slice(0, MAX_DRAWN_DESTINATIONS);
+  const height = visibleDestinations.length * ROW_HEIGHT;
+  const apex = { x: CONE_ORIGIN, y: height / 2 };
+  let count = t("1 destination", "1 destinazione");
+  if (deliveries.length > 1) {
+    count = deliveries.length + t(" destinations", " destinazioni");
+  }
 
   return (
     <TracePlayer
       className="panel trace-panel"
-      heading={<h2>{t("Event cone", "Cono dell’evento")}</h2>}
+      heading={<h2>{heading}</h2>}
       replayLabel={t("Replay", "Rivedi")}
     >
-      <div
-        className="trace-scroll"
-        tabIndex={0}
-        role="region"
-        aria-label={t("Event cone diagram", "Diagramma del cono dell’evento")}
-      >
-        <svg
-          className="trace-svg"
-          viewBox={"0 0 " + CONE_WIDTH + " " + height}
-          role="img"
-          aria-label={
-            t("Deliveries of this event", "Consegne di questo evento") +
-            ": " +
-            summary.join("; ")
-          }
-        >
-          <line className="lane" x1="0" y1={apex.y} x2={APEX_X} y2={apex.y} />
-          <text className="lane-label" x="14" y={apex.y - 12}>
-            {t("RECEIVED", "RICEVUTO")}
-          </text>
-          {segment("ingress", { x: 14, y: apex.y }, apex, "incoming", 1)}
-          <path
-            className="cone"
-            data-step={2}
-            d={
-              "M" +
-              apex.x +
-              " " +
-              apex.y +
-              " L" +
-              END_X +
-              " " +
-              (firstY - 18) +
-              " L" +
-              END_X +
-              " " +
-              (lastY + 18) +
-              " Z"
+      <p className="trace-caption">
+        <strong>{count}</strong>
+        {deliveries.length > MAX_DRAWN_DESTINATIONS && (
+          <span>
+            {t(
+              "The diagram shows the first six. All destinations are listed below.",
+              "Il diagramma mostra le prime sei. L’elenco completo è sotto.",
+            )}
+          </span>
+        )}
+      </p>
+      <div className="cone-diagram">
+        <div className="cone-plot" aria-hidden="true">
+          <svg
+            className="trace-svg cone-map"
+            viewBox={"0 0 " + CONE_WIDTH + " " + height}
+            preserveAspectRatio="none"
+          >
+            {segment("ingress", { x: 0, y: apex.y }, apex, "incoming", 1)}
+            <circle
+              className="mark-event"
+              data-step="2"
+              cx={apex.x}
+              cy={apex.y}
+              r="4"
+            />
+            {visibleDestinations.map((delivery, index) => {
+              const end = { x: CONE_WIDTH, y: (index + 0.5) * ROW_HEIGHT };
+              return segment(
+                delivery.id,
+                apex,
+                end,
+                toneFor(delivery.status),
+                3,
+              );
+            })}
+          </svg>
+        </div>
+        <ul className="cone-nodes" aria-label={heading}>
+          {visibleDestinations.map((delivery) => {
+            let attempts = delivery.attemptCount + t(" attempts", " tentativi");
+            if (delivery.attemptCount === 1) {
+              attempts = t("1 attempt", "1 tentativo");
             }
-          />
-          <circle
-            className="mark-event"
-            data-step={2}
-            cx={apex.x}
-            cy={apex.y}
-            r="5.5"
-          />
-          {rays}
-          <circle className="photon-head" cx="0" cy="0" r="3.2" />
-        </svg>
+            return (
+              <li key={delivery.id} data-tone={toneFor(delivery.status)}>
+                <span
+                  className="cone-marker"
+                  aria-hidden="true"
+                  data-step="4"
+                />
+                <strong>{delivery.destination.name}</strong>
+                <span>
+                  {stateLabel(delivery.status, t)} · {attempts}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </TracePlayer>
   );

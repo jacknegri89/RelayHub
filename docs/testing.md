@@ -21,6 +21,14 @@ The [GitHub Actions workflow](../.github/workflows/ci.yml) provisions isolated s
 
 The language regression changes English to Italian with a partially filled registration form, follows a policy link, and reloads the page. The authenticator test also switches languages with a password already entered.
 
+The public examples test follows a notification with the keyboard, replays the exchange, changes language on a phone-sized viewport and checks reduced motion. It also selects the retry stage with the arrow keys and verifies that billing recovers with an HTTP 204. The operator test checks that the guide follows navigation from an event to its delivery history.
+
+The delivery chart unit tests cover empty activity, attempts in progress, locally blocked requests, events without matching routes, and long delivery histories.
+
+Destination monitoring tests cover the third consecutive failure, a recovery, a second outage, equal timestamps, concurrent completions, replay, rollback, tenant scope and retention. The browser test sends failed and successful deliveries to the demo receiver, opens the alerts feed, follows a destination and reads daily values using the keyboard. The chart tests cover empty days, a measured zero, missing HTTP latency and different orders of magnitude.
+
+The public simulator test takes billing offline, switches from Route to Timeline, restores billing and advances its retry in reduced-motion mode. It checks that the same order reaches all three services and that a new order with a bad signature creates no deliveries.
+
 ## Run the development processes
 
 After installing the workspace dependencies and running `pnpm setup`, start PostgreSQL and Redis:
@@ -77,7 +85,8 @@ For a manual retry, change the failed destination to the demo `/hooks/success` e
 3. Send a signed event to the source URL. Expect HTTP 202 from ingress and HTTP 204 in the delivery timeline. Re-submit the identical signed request within the timestamp window. Expect HTTP 200 and the original event ID.
 4. Sign in again and confirm that the workspace and delivery history are still present.
 5. Enable two-factor authentication using a disposable authenticator key. Sign in again and verify TOTP, a one-time recovery code, and normal sign-in after disabling MFA.
-6. Check the homepage on a phone-size viewport. Verify that the opening animation settles, reacts to the pointer on desktop, and respects the system's reduced-motion preference.
+6. Check both simulator views on a phone-sized viewport. Verify that the opening animation settles, that Timeline responds to the pointer on desktop, and that reduced motion enables manual stepping without animated signals.
+7. To verify destination monitoring, use a dedicated workspace and a route matching all event types to the built-in receiver. Send three workspace test deliveries with the event type `relayhub.verify.reject`. Each returns HTTP 422. **Alerts** should show one open outage. Send a regular `relayhub.test` delivery to the same destination. Its HTTP 204 should close the outage and add one recovery. Open the seven-day chart and compare the selected UTC day with the actual attempts on both a phone and a desktop.
 
 ### Send a signed event
 
