@@ -34,8 +34,10 @@ export async function storeEvent(input: EventInput) {
         }
       }
       // Serialize ingress against disabling or rotating the source.
-      const source = await tx.$queryRaw<{ secret: string; enabled: boolean }[]>`
-        SELECT "secret", "enabled" FROM "WebhookSource"
+      const source = await tx.$queryRaw<
+        { secret: string; enabled: boolean; provider: string }[]
+      >`
+        SELECT "secret", "enabled", "provider" FROM "WebhookSource"
         WHERE "id" = ${input.sourceId} AND "organizationId" = ${input.organizationId} FOR SHARE
       `;
       if (!source[0]?.enabled || source[0].secret !== input.sourceSecret) {
@@ -69,12 +71,19 @@ export async function storeEvent(input: EventInput) {
               externalId: input.externalId,
             },
           },
-          select: { id: true, payloadHash: true },
+          select: { id: true, payloadHash: true, eventType: true },
         });
-        if (existing?.payloadHash === payloadHash) {
-          return { kind: "duplicate", eventId: existing.id } as const;
+        if (!existing || existing.payloadHash !== payloadHash) {
+          return { kind: "event_conflict" } as const;
         }
-        return { kind: "event_conflict" } as const;
+        // GitHub supplies the routing type in a header, outside the body hash.
+        if (
+          source[0].provider === "github" &&
+          existing.eventType !== input.eventType
+        ) {
+          return { kind: "event_conflict" } as const;
+        }
+        return { kind: "duplicate", eventId: existing.id } as const;
       }
       const receivedAt = new Date();
       const subscriptions = await tx.subscription.findMany({

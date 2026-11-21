@@ -10,7 +10,16 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 The homepage simulator follows a shop order to the warehouse, billing and email services. Switch billing offline, send an order, then bring it back online to watch just that delivery retry. **Route** shows the signature check, response code and attempt count for each service. **Timeline** follows the same order over time. When paused or using reduced motion, **Next step** advances to its next delivery or retry. In the workspace, every delivery shows the trace for its real attempts.
 
-Before signing in, explore how Stripe, GitHub and Shopify use webhooks. Each example follows a notification to the receiving app and links to the provider’s documentation. To forward a provider event through RelayHub, verify it in your app and sign a new request with the RelayHub source secret. Inside the workspace, each view has a short guide to the actions available to your role.
+Before signing in, explore how Stripe, GitHub and Shopify use webhooks. GitHub repositories can send events directly to RelayHub. For Stripe and Shopify, verify the provider event in your own app and forward it using a RelayHub source.
+
+### Connect a GitHub repository
+
+1. In your RelayHub workspace, open **Sources**, create a **GitHub** source and copy its URL and one-time signing secret.
+2. In the repository's **Settings → Webhooks → Add webhook**, paste the URL and secret, choose **application/json**, keep SSL verification enabled and select **Just the push event**. RelayHub acknowledges GitHub's initial ping without adding a dashboard event.
+3. To forward pushes, link the source to a destination with event type `github.push`. Push a commit, open **Events** in RelayHub and match the external ID to the GUID in GitHub's **Recent deliveries**.
+4. Use **Redeliver** on that push. GitHub sends the same GUID. While the event is retained, RelayHub returns its original ID with `duplicate: true` and creates no additional deliveries. [GitHub webhook deliveries](https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/redelivering-webhooks)
+
+The default ingress limit is 256 KiB per request. Larger push payloads receive HTTP 413, visible in GitHub's delivery history.
 
 In **Destinations**, select a day on the seven-day chart to see which attempts failed and how the receiver responded. Open an attempt’s delivery to follow later retries. **Alerts** records an outage after three consecutive failures and a recovery on the next 2xx response. Open a recovery to review the deliveries still failed from that outage. Owners and admins can select a group to retry.
 

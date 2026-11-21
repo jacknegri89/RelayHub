@@ -33,8 +33,8 @@ const guides: Partial<Record<string, Guide>> = {
     action: {
       permission: "configure",
       instructions: [
-        "Name the sending app and create its source. Save the signing secret when it appears, then configure the sender with the secret and the source URL.",
-        "Dai un nome all’app mittente e crea la sorgente. Quando compare la chiave di firma, salvala e configura il mittente con la chiave e l’URL della sorgente.",
+        "Choose GitHub for a repository webhook or RelayHub for a sender using RelayHub signatures. Save the signing secret when it appears and use it with the source URL.",
+        "Scegli GitHub per il webhook di un repository o RelayHub se il mittente usa le firme RelayHub. Salva la chiave di firma quando compare e usala insieme all’URL della sorgente.",
       ],
     },
   },

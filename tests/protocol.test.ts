@@ -8,6 +8,7 @@ import {
   deliverySignature,
   deliverySignatureMatches,
   eventSchema,
+  githubSignatureMatches,
   parseJson,
   PayloadTooLarge,
   readBody,
@@ -56,6 +57,24 @@ describe("database transport", () => {
 });
 
 describe("webhook protocol", () => {
+  it("matches GitHub's published SHA-256 vector only for the original bytes", () => {
+    const secret = "It's a Secret to Everybody";
+    const payload = Buffer.from("Hello, World!");
+    const signature =
+      "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17";
+    expect(githubSignatureMatches(secret, payload, signature)).toBe(true);
+    expect(
+      githubSignatureMatches(secret, Buffer.from("Hello, World!\n"), signature),
+    ).toBe(false);
+    expect(githubSignatureMatches(secret, payload, "sha256=abcd")).toBe(false);
+    expect(
+      githubSignatureMatches(
+        secret,
+        payload,
+        signature.replace("sha256=", "v1="),
+      ),
+    ).toBe(false);
+  });
   it("matches the HMAC-SHA256 v1 reference vector", () => {
     const expected =
       "v1=b8826c10e08064a9c00dcc1cba34412807139df109fcfcd171bfc9cffc4a3c35";
