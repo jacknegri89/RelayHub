@@ -18,6 +18,8 @@ const since = new Date(asOf.getTime() - DAY_MS);
 async function createOrganization(organizationId: string) {
   const source = randomUUID();
   const dest = randomUUID();
+  const pausedSource = randomUUID();
+  const pausedDestination = randomUUID();
   await db.organization.create({
     data: {
       id: organizationId,
@@ -25,7 +27,12 @@ async function createOrganization(organizationId: string) {
       sources: {
         create: [
           { id: source, name: "Shop", secret: "unused" },
-          { name: "Paused shop", secret: "unused", enabled: false },
+          {
+            id: pausedSource,
+            name: "Paused shop",
+            secret: "unused",
+            enabled: false,
+          },
         ],
       },
       destinations: {
@@ -37,6 +44,7 @@ async function createOrganization(organizationId: string) {
             secret: "unused",
           },
           {
+            id: pausedDestination,
             name: "Old billing",
             url: "https://example.test",
             secret: "unused",
@@ -45,6 +53,14 @@ async function createOrganization(organizationId: string) {
         ],
       },
     },
+  });
+  // Only rules with both endpoints enabled can actually forward new events.
+  await db.subscription.createMany({
+    data: [
+      { organizationId, sourceId: source, destinationId: dest },
+      { organizationId, sourceId: pausedSource, destinationId: dest },
+      { organizationId, sourceId: source, destinationId: pausedDestination },
+    ],
   });
   return { organizationId, source, dest };
 }
@@ -135,6 +151,9 @@ it("scopes both rolling windows, active resources, measured HTTP percentiles and
     inflight: 0,
     sources: 1,
     destinations: 1,
+    hasConfiguredSources: true,
+    hasConfiguredDestinations: true,
+    activeRoutes: 1,
     timings: { samples: 2, percentiles: [50, 95, 99] },
   });
   expect(summary.days).toHaveLength(7);
@@ -147,8 +166,26 @@ it("scopes both rolling windows, active resources, measured HTTP percentiles and
   expect(summary.days[6]).toMatchObject({ succeeded: 0, failed: 2 });
   expect(summary.latest).toHaveLength(4);
   const empty = await readOverview(randomUUID(), asOf);
+  expect(empty.hasConfiguredSources).toBe(false);
+  expect(empty.hasConfiguredDestinations).toBe(false);
+  expect(empty.activeRoutes).toBe(0);
   expect(empty.timings).toEqual({ samples: 0, percentiles: null });
   expect(empty.days.every((d) => d.succeeded === 0 && d.failed === 0)).toBe(
     true,
   );
+});
+
+it("distinguishes configured but disabled destinations from a new inventory", async () => {
+  await db.webhookDestination.updateMany({
+    where: { organizationId: other },
+    data: { enabled: false },
+  });
+  const disabled = await readOverview(other, asOf);
+  expect(disabled).toMatchObject({
+    sources: 1,
+    destinations: 0,
+    activeRoutes: 0,
+    hasConfiguredSources: true,
+    hasConfiguredDestinations: true,
+  });
 });

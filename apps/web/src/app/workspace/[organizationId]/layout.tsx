@@ -6,6 +6,7 @@ import { settings } from "@relayhub/shared/config";
 import { requireOrganization } from "../../../server/authorization";
 import { HttpError } from "../../../server/http";
 import { Navigation } from "../../../components/navigation";
+import { InterfaceIcon } from "../../../components/interface-icon";
 import { readAlertSummary } from "../../../server/destination-monitoring";
 
 export default async function OrganizationLayout({
@@ -33,9 +34,15 @@ export default async function OrganizationLayout({
     <div className="workspace">
       <aside className="sidebar">
         <Link href="/workspace" className="org-switch">
-          {t("Organizations ↗", "Organizzazioni ↗")}
+          <span className="org-symbol">
+            <InterfaceIcon name="workspace" />
+          </span>
+          <span>
+            <small>{t("Organizations", "Organizzazioni")}</small>
+            <strong>{access.membership.organization.name}</strong>
+          </span>
+          <InterfaceIcon name="switcher" />
         </Link>
-        <p className="org-name">{access.membership.organization.name}</p>
         <Navigation
           organizationId={organizationId}
           alerts={await readAlertSummary(organizationId)}

@@ -22,22 +22,12 @@ export default async function CookiePage() {
         "Check what your browser stores",
         "Controlla cosa conserva il browser",
       )}
-      guide={
-        <>
-          {t("Look up ", "Consulta ")}
-          <a href="#session">
-            {t("the sign-in cookie", "il cookie di accesso")}
-          </a>
-          {t(" or ", " o ")}
-          <a href="#language">
-            {t("the language cookie", "il cookie della lingua")}
-          </a>
-          {t(
-            " to see what each remembers and for how long.",
-            " per capire cosa memorizzano e per quanto tempo.",
-          )}
-        </>
-      }
+      sections={[
+        ["session", t("Sign-in session", "Sessione di accesso")],
+        ["two-factor", t("Two-factor challenge", "Verifica a due fattori")],
+        ["persistence", t("Session persistence", "Durata della sessione")],
+        ["language", t("Language preference", "Preferenza di lingua")],
+      ]}
     >
       <p>
         {t(
@@ -56,7 +46,9 @@ export default async function CookiePage() {
           </dd>
         </div>
         <div>
-          <dt>{t("Two-factor challenge", "Verifica a due fattori")}</dt>
+          <dt id="two-factor">
+            {t("Two-factor challenge", "Verifica a due fattori")}
+          </dt>
           <dd>
             {t(
               "Connects a successful password check to the authenticator or recovery-code step. It expires after five minutes.",
@@ -65,7 +57,7 @@ export default async function CookiePage() {
           </dd>
         </div>
         <div>
-          <dt>
+          <dt id="persistence">
             {t(
               "Session persistence preference",
               "Preferenza di durata della sessione",

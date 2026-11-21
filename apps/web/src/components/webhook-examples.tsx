@@ -121,14 +121,8 @@ export function WebhookExamples() {
         </h2>
         <p>
           {t(
-            "A webhook is a message one app sends to another when something happens. You give the sender a web address and choose which events you want to hear about.",
-            "Un webhook è un messaggio che un’app invia a un’altra quando succede qualcosa. Indichi al mittente un indirizzo web e scegli gli eventi che ti interessano.",
-          )}
-        </p>
-        <p>
-          {t(
-            "The receiving app can act as soon as the message arrives, without having to ask repeatedly for updates.",
-            "Appena riceve il messaggio, l’altra app può agire senza dover chiedere di continuo se ci sono novità.",
+            "A webhook is an HTTP request one app sends to another when an event occurs. You give the sender a URL so the receiving app can act as soon as the event happens.",
+            "Un webhook è una richiesta HTTP che un’app invia a un’altra quando si verifica un evento. Indichi al mittente un URL e l’app che riceve la notifica può agire subito.",
           )}
         </p>
         <p className={styles.instruction}>

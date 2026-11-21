@@ -123,7 +123,7 @@ test("confirms an address and resets a password from real local messages", async
     await page.getByRole("button", { name: "Confirm my email" }).click();
     await expect(page.getByText("Your email is verified.")).toBeVisible();
     expect(Boolean(new URL(page.url()).hash)).toBe(false);
-    await page.goto("/workspace/security");
+    await page.goto("/workspace/profile");
     await expect(
       page.getByText("Verified address", { exact: false }),
     ).toBeVisible();

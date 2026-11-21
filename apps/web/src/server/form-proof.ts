@@ -10,6 +10,23 @@ function sign(action: string, time: string) {
     .digest("hex");
 }
 
+// Authenticated edits bind their proof to the session. Open forms remain usable throughout that session.
+export function profileEditToken(sessionId: string) {
+  return createHmac("sha256", settings().BETTER_AUTH_SECRET)
+    .update("csrf:profile:" + sessionId)
+    .digest();
+}
+
+export function validProfileEditToken(sessionId: string, token?: string) {
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+    return false;
+  }
+  return timingSafeEqual(
+    profileEditToken(sessionId),
+    Buffer.from(token, "hex"),
+  );
+}
+
 export function issueFormProof(action: string, now = Date.now()) {
   const time = String(now);
   return time + "." + sign(action, time);

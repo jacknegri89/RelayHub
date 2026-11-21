@@ -3,18 +3,18 @@ import { getLocale } from "../server/locale";
 import Link from "next/link";
 import { Brand } from "./brand";
 import { PolicyLinks } from "./policy-links";
-import { SectionGuide } from "./section-guide";
+import { InterfaceIcon } from "./interface-icon";
 import type { ReactNode } from "react";
 
 export async function PolicyPage({
   title,
   guideTitle,
-  guide,
+  sections,
   children,
 }: {
   title: string;
   guideTitle: string;
-  guide: ReactNode;
+  sections: [string, string][];
   children: ReactNode;
 }) {
   const { t } = await getLocale();
@@ -31,11 +31,20 @@ export async function PolicyPage({
         <LanguageSwitch />
       </header>
       <div className="guided-page">
-        <SectionGuide title={guideTitle}>{guide}</SectionGuide>
-        <article>
-          <h1>{title}</h1>
-          {children}
-        </article>
+        <h1>{title}</h1>
+        <aside className="section-guide policy-index">
+          <InterfaceIcon name="guide" />
+          <h2 id="policy-index-title">{guideTitle}</h2>
+          <nav aria-labelledby="policy-index-title">
+            {sections.map(([id, label]) => (
+              <a href={"#" + id} key={id}>
+                {label}
+                <span aria-hidden="true">↓</span>
+              </a>
+            ))}
+          </nav>
+        </aside>
+        <article>{children}</article>
       </div>
     </main>
   );

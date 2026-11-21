@@ -1,6 +1,9 @@
 import { createHmac, randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
+// Enrollment and recovery are deliberately inspected here. Keep their one-time values out of saved artifacts.
+test.use({ trace: "off", screenshot: "off" });
+
 function authenticatorCode(secret: string) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const bits = [...secret.toUpperCase().replace(/=+$/, "")]
@@ -54,7 +57,12 @@ test("public registration, authenticator challenge, one-use recovery and disabli
     page.getByRole("heading", { name: "Organizations" }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Security", exact: true }).click();
+  await page.getByLabel("Account menu", { exact: true }).click();
+  await page
+    .locator("details.account-menu")
+    .getByRole("link", { name: "Security", exact: true })
+    .click();
+  await expect(page.getByText("Off", { exact: true })).toBeVisible();
   await page.getByLabel("Current password").fill(password);
   await page.getByRole("button", { name: "Passa all’italiano" }).click();
   await expect(
@@ -67,9 +75,18 @@ test("public registration, authenticator challenge, one-use recovery and disabli
   await page.getByRole("button", { name: "Switch to English" }).click();
   await expect(page.getByLabel("Current password")).toHaveValue(password);
   await page.getByRole("button", { name: "Set up authenticator" }).click();
+  await page.setViewportSize({ width: 375, height: 812 });
   await expect(
     page.getByRole("img", { name: "Authenticator setup QR code" }),
   ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    375,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Add RelayHub to your authenticator" }),
+  ).toBeFocused();
+  await expect(page.getByLabel("Manual setup key")).toBeHidden();
+  await page.getByText("Enter a setup key instead", { exact: true }).click();
   const secret = await page.getByLabel("Manual setup key").inputValue();
   await page.getByLabel("Authenticator code").fill(authenticatorCode(secret));
   await page
@@ -78,14 +95,20 @@ test("public registration, authenticator challenge, one-use recovery and disabli
   await expect(
     page.getByText("Two-factor authentication is enabled.", { exact: false }),
   ).toBeVisible();
-  const recoveryCode = await page
-    .locator(".recovery-codes code")
+  const recoveryCodes = page.getByRole("list", { name: "Recovery codes" });
+  await expect(recoveryCodes).toBeVisible();
+  const recoveryCode = await recoveryCodes
+    .locator("code")
     .first()
     .textContent();
   if (!recoveryCode) {
     throw new Error("No recovery code was issued");
   }
   await page.getByRole("button", { name: "I saved my recovery codes" }).click();
+  await expect(recoveryCodes).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "How you sign in" }),
+  ).toBeVisible();
 
   await page.context().clearCookies();
   await signIn(page, email, password);
@@ -129,13 +152,24 @@ test("public registration, authenticator challenge, one-use recovery and disabli
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "The recovery code did not match or was already used.",
   );
+  await expect(page.getByLabel("Authenticator code")).toHaveCount(0);
+  await page.getByRole("button", { name: "Use an authenticator code" }).click();
+  await expect(page.getByLabel("Authenticator code")).toBeFocused();
   await page.getByLabel("Authenticator code").fill(authenticatorCode(secret));
   await page.getByRole("button", { name: "Verify code", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Organizations" }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Security", exact: true }).click();
+  await page.getByLabel("Account menu", { exact: true }).click();
+  await page
+    .locator("details.account-menu")
+    .getByRole("link", { name: "Security", exact: true })
+    .click();
+  await expect(page.getByLabel("Current password")).toBeHidden();
+  await page
+    .getByText("Turn off the extra sign-in step", { exact: true })
+    .click();
   await page.getByLabel("Current password").fill(password);
   page.once("dialog", (dialog) => dialog.accept());
   await page
