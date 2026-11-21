@@ -92,8 +92,8 @@ function setupStep(
   if (awaitingEvent) {
     return {
       text: t(
-        "Send a webhook to an enabled source endpoint.",
-        "Invia un webhook all’endpoint di una sorgente attiva.",
+        "Send a signed webhook from your app, or test a destination from RelayHub.",
+        "Invia un webhook firmato dalla tua app oppure prova una destinazione da RelayHub.",
       ),
       action: t("See source endpoints", "Vedi gli endpoint"),
       path: "/sources",
@@ -103,6 +103,87 @@ function setupStep(
       ),
     };
   }
+}
+
+function SetupChecklist({
+  report,
+  locale,
+}: {
+  report: Network;
+  locale: Locale;
+}) {
+  const t = translator(locale);
+  const missing = t("To configure", "Da configurare");
+  const disabled = t("To enable", "Da attivare");
+  let routeStatus = t("Waiting for endpoints", "In attesa dei collegamenti");
+  if (report.sources > 0 && report.destinations > 0) {
+    routeStatus = t("To connect", "Da collegare");
+  }
+  const steps = [
+    {
+      name: t("Source", "Sorgente"),
+      detail: t(
+        "The app that signs and sends the event.",
+        "L’app che firma e invia l’evento.",
+      ),
+      ready: report.sources > 0,
+      configured: report.hasConfiguredSources,
+    },
+    {
+      name: t("Destination", "Destinazione"),
+      detail: t(
+        "The URL that receives a copy.",
+        "L’URL che riceve una copia dell’evento.",
+      ),
+      ready: report.destinations > 0,
+      configured: report.hasConfiguredDestinations,
+    },
+    {
+      name: t("Routing rule", "Regola di inoltro"),
+      detail: t(
+        "Which events go to that destination.",
+        "Quali eventi inoltrare a quel destinatario.",
+      ),
+      ready: report.activeRoutes > 0,
+      configured: false,
+      pending: routeStatus,
+    },
+  ];
+  const completed = steps.filter((step) => step.ready).length;
+  return (
+    <>
+      <header className={styles.setupHeader}>
+        <h2 id="routing-title">
+          {t("Set up webhook delivery", "Prepara l’inoltro dei webhook")}
+        </h2>
+        <span>
+          {completed} / {steps.length} {t("ready", "pronti")}
+        </span>
+      </header>
+      <ol className={styles.checklist}>
+        {steps.map((step) => {
+          let status = step.pending ?? missing;
+          if (step.ready) {
+            status = t("Ready", "Pronta");
+          } else if (step.configured) {
+            status = disabled;
+          }
+          return (
+            <li key={step.name} data-ready={step.ready}>
+              <span className={styles.stepMarker} aria-hidden="true">
+                {step.ready && "✓"}
+              </span>
+              <div>
+                <strong>{step.name}</strong>
+                <small>{status}</small>
+                <p>{step.detail}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </>
+  );
 }
 
 export function OverviewRouting({
@@ -127,40 +208,58 @@ export function OverviewRouting({
   }
   return (
     <section className={styles.map} aria-labelledby="routing-title">
-      <h2 id="routing-title">{t("Webhook routing", "Percorso dei webhook")}</h2>
-      <div className={styles.flow} data-connected={report.activeRoutes > 0}>
-        <Link className={styles.node} href={workspace + "/sources"}>
-          <span className={styles.icon} aria-hidden="true">
-            <InterfaceIcon name="sources" />
-          </span>
-          <span>{t("Enabled sources", "Sorgenti attive")}</span>
-          <strong>{number.format(report.sources)}</strong>
-        </Link>
-        <Link className={styles.hub} href={workspace + "/destinations"}>
-          <span className={styles.icon}>
-            <BrandMark size={26} />
-          </span>
-          <span>RelayHub</span>
-          <small>
-            <b>{number.format(report.activeRoutes)}</b> {routeLabel}
-          </small>
-        </Link>
-        <Link className={styles.node} href={workspace + "/destinations"}>
-          <span className={styles.icon} aria-hidden="true">
-            <InterfaceIcon name="destinations" />
-          </span>
-          <span>{t("Enabled destinations", "Destinazioni attive")}</span>
-          <strong>{number.format(report.destinations)}</strong>
-        </Link>
-      </div>
+      {awaitingEvent && <SetupChecklist report={report} locale={locale} />}
+      {!awaitingEvent && (
+        <>
+          <h2 id="routing-title">
+            {t("Webhook routing", "Percorso dei webhook")}
+          </h2>
+          <div className={styles.flow} data-connected={report.activeRoutes > 0}>
+            <Link className={styles.node} href={workspace + "/sources"}>
+              <span className={styles.icon} aria-hidden="true">
+                <InterfaceIcon name="sources" />
+              </span>
+              <span>{t("Enabled sources", "Sorgenti attive")}</span>
+              <strong>{number.format(report.sources)}</strong>
+            </Link>
+            <Link className={styles.hub} href={workspace + "/destinations"}>
+              <span className={styles.icon}>
+                <BrandMark size={26} />
+              </span>
+              <span>RelayHub</span>
+              <small>
+                <b>{number.format(report.activeRoutes)}</b> {routeLabel}
+              </small>
+            </Link>
+            <Link className={styles.node} href={workspace + "/destinations"}>
+              <span className={styles.icon} aria-hidden="true">
+                <InterfaceIcon name="destinations" />
+              </span>
+              <span>{t("Enabled destinations", "Destinazioni attive")}</span>
+              <strong>{number.format(report.destinations)}</strong>
+            </Link>
+          </div>
+        </>
+      )}
       {next && (
         <div className={styles.next}>
           {editable && (
             <>
               <p>{next.text}</p>
-              <Link href={workspace + next.path}>
-                {next.action} <span aria-hidden="true">→</span>
-              </Link>
+              <div className={styles.actions}>
+                <Link href={workspace + next.path}>
+                  {next.action} <span aria-hidden="true">→</span>
+                </Link>
+                {awaitingEvent && report.activeRoutes > 0 && (
+                  <Link href={workspace + "/destinations?task=test"}>
+                    {t(
+                      "Prepare a test delivery",
+                      "Prepara una consegna di prova",
+                    )}{" "}
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                )}
+              </div>
             </>
           )}
           {!editable && <p>{next.viewer}</p>}

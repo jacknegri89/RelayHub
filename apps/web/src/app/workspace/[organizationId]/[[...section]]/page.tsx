@@ -136,12 +136,18 @@ export default async function OrganizationPage({
           <Sources organizationId={organizationId} editable={editable} />
         </LoadingSection>
       );
-    case "destinations":
+    case "destinations": {
+      const { task } = await searchParams;
       return (
         <LoadingSection>
-          <Destinations organizationId={organizationId} editable={editable} />
+          <Destinations
+            organizationId={organizationId}
+            editable={editable}
+            prepareTest={editable && task === "test"}
+          />
         </LoadingSection>
       );
+    }
     case "events":
       return (
         <LoadingSection>

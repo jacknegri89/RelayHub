@@ -4,6 +4,7 @@ import Link from "next/link";
 import { auth } from "../server/auth";
 import { SpacetimeHero } from "../components/spacetime-hero";
 import { WebhookExamples } from "../components/webhook-examples";
+import { ApiExplorer } from "../components/api-explorer";
 import { PublicFooter, PublicHeader } from "../components/public-navigation";
 import { LandingMotion } from "../components/landing-motion";
 import styles from "./landing.module.css";
@@ -95,10 +96,18 @@ export default async function Home() {
                   )}
                 </li>
               </ol>
+              <a className={styles.noteLink} href="#api-explorer">
+                {t(
+                  "Query events from your terminal",
+                  "Consulta gli eventi dal terminale",
+                )}{" "}
+                <span aria-hidden="true">↓</span>
+              </a>
             </section>
           </aside>
         </div>
         <WebhookExamples />
+        <ApiExplorer />
       </main>
       <PublicFooter />
     </LandingMotion>
