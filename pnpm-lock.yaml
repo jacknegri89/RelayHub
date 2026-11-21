@@ -154,6 +154,9 @@ importers:
       ipaddr.js:
         specifier: 2.5.0
         version: 2.5.0
+      nodemailer:
+        specifier: 10.6.1
+        version: 10.6.1
       zod:
         specifier: 4.6.7
         version: 4.6.7
@@ -2102,6 +2105,10 @@ packages:
   node-releases@2.0.65:
     resolution: {integrity: sha512-PfvofsGQ+MiOQIPkX9fU8ELUWmy5zL74CdQaph/ismKszfFkfwXaw0cGiwbwym2hT9k5+mdyl8O5WQ1MD8EHmA==}
     engines: {node: '>=18'}
+
+  nodemailer@10.6.1:
+    resolution: {integrity: sha512-d7kfFfS/tR4Aca+SBvRaQ+MXKNv7d2JiRe5TxaRcFT/kYMh4GGPnW9aKksTIEvyEbA7d/7HYWE4YPDEHxzJj/g==}
+    engines: {node: '>=20.0.0'}
 
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
@@ -4417,6 +4424,8 @@ snapshots:
 
   node-releases@2.0.65:
     optional: true
+
+  nodemailer@10.6.1: {}
 
   obug@3.0.0: {}
 

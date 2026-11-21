@@ -28,6 +28,10 @@ const schema = z.object({
   TRUST_PROXY: z.enum(["0", "1"]).default("0"),
   VERIFICATION_RECEIVER_SECRET: z.string().min(32).optional(),
   RESEND_API_KEY: z.string().optional(),
+  RELAYHUB_MAIL_PROVIDER: z.enum(["resend", "gmail"]).default("resend"),
+  GMAIL_CLIENT_ID: z.string().trim().optional(),
+  GMAIL_CLIENT_SECRET: z.string().trim().optional(),
+  GMAIL_REFRESH_TOKEN: z.string().trim().optional(),
   RELAYHUB_EMAIL_FROM: z.union([z.email(), z.literal("")]).optional(),
   RELAYHUB_RESEND_TEST_TO: z.union([z.email(), z.literal("")]).optional(),
   RELAYHUB_MAILPIT_URL: z.string().optional(),
@@ -59,6 +63,7 @@ export function parseConfig(environment: Record<string, string | undefined>) {
       !["127.0.0.1", "mailpit"].includes(mailpit.hostname) ||
       mailpit.origin !== config.RELAYHUB_MAILPIT_URL ||
       !mailpit.port ||
+      config.RELAYHUB_MAIL_PROVIDER === "gmail" ||
       config.RESEND_API_KEY ||
       config.RELAYHUB_EMAIL_FROM
     ) {

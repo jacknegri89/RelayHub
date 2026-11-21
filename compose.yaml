@@ -88,6 +88,9 @@ services:
     <<: *app
     command: ["node", "scripts/run.mjs", "receiver"]
     environment:
+      # The demo receiver checks webhook signatures and never sends email.
+      GMAIL_CLIENT_SECRET: ""
+      GMAIL_REFRESH_TOKEN: ""
       RECEIVER_BIND: 0.0.0.0
       RECEIVER_DB_PATH: /var/lib/relayhub-receiver/receipts.sqlite
     volumes:

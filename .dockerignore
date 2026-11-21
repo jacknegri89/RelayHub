@@ -2,6 +2,7 @@
 **/.next
 **/generated
 .env*
+**/client_secret_*.apps.googleusercontent.com.json
 .git
 .claude
 test-results

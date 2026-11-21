@@ -3,6 +3,7 @@
 .claude
 .env*
 **/.env*
+**/client_secret_*.apps.googleusercontent.com.json
 **/node_modules
 **/.next
 **/generated
