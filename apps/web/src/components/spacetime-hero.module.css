@@ -246,6 +246,10 @@
 }
 
 @media (max-width: 699px) {
+  .controls button,
+  .views button {
+    min-height: 2.75rem;
+  }
   .plot {
     height: clamp(17rem, 70vw, 22rem);
   }

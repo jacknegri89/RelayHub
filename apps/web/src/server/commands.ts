@@ -12,7 +12,11 @@ const destination = z.object({
 
 export const createOrganization = z.object({ name });
 export const commandSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("source_create"), name }),
+  z.object({
+    action: z.literal("source_create"),
+    name,
+    provider: z.enum(["relayhub", "github"]).optional(),
+  }),
   z.object({
     action: z.literal("source_update"),
     id,

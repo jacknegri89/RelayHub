@@ -39,6 +39,20 @@ export function signatureMatches(
   );
 }
 
+export function githubSignatureMatches(
+  secret: string,
+  body: Uint8Array,
+  provided: string,
+) {
+  // GitHub signs the exact body bytes, including whitespace, without a timestamp.
+  if (!/^sha256=[a-f0-9]{64}$/.test(provided)) {
+    return false;
+  }
+  const expected = createHmac("sha256", secret).update(body).digest();
+  const supplied = Buffer.from(provided.slice("sha256=".length), "hex");
+  return timingSafeEqual(expected, supplied);
+}
+
 // Outbound v2 also authenticates the identifiers a receiver uses for deduplication.
 export function deliverySignature(
   secret: string,
