@@ -113,6 +113,11 @@ export default async function DeliveryGuide() {
             <Link className={styles.guideExamples} href="/#webhooks">
               {t("See webhook examples", "Vedi gli esempi di webhook")} →
             </Link>
+            <div>
+              <Link className={styles.guideExamples} href="/#api-explorer">
+                {t("Explore the API", "Esplora le API")} →
+              </Link>
+            </div>
           </div>
           <div className={styles.ledgerRows}>
             {ledger.map((row) => (

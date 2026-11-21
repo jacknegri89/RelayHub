@@ -58,13 +58,17 @@ it("prioritizes setup when idle and retained attempts when routing is disabled",
   vi.mocked(readOverview).mockResolvedValueOnce(idle);
   const options = { organizationId: "example", editable: true };
   const quiet = renderToStaticMarkup(await Overview(options));
-  expect(quiet.indexOf("Webhook routing")).toBeLessThan(
+  expect(quiet).toContain("Set up webhook delivery");
+  expect(quiet.indexOf("Set up webhook delivery")).toBeLessThan(
     quiet.indexOf("Delivery activity"),
   );
   expect(quiet).toContain("Configure a source");
   expect(quiet).toContain('href="/workspace/example/sources#create-source"');
   expect(quiet).toContain("Full delivery history");
-  expect(quiet).toContain("Seven-day attempt history");
+  expect(quiet).toContain("Attempt trend");
+  expect(quiet).toContain('href="/workspace/example/events"');
+  expect(quiet).not.toContain("<polyline");
+  expect(quiet).not.toContain('type="radio"');
   expect(quiet).not.toContain("Success rate");
   expect(quiet).not.toContain("HTTP response times");
   expect(quiet).not.toContain("Recent events");
@@ -79,6 +83,31 @@ it("prioritizes setup when idle and retained attempts when routing is disabled",
     withHistory.indexOf("Webhook routing"),
   );
   expect(withHistory).not.toContain("Seven-day attempt history");
+});
+
+it("offers a test only with an active route and configuration permission", () => {
+  function setup(routes: number, editable: boolean) {
+    return renderToStaticMarkup(
+      <OverviewRouting
+        report={{ ...report, activeRoutes: routes }}
+        workspace={workspace}
+        locale="it"
+        editable={editable}
+        awaitingEvent
+      />,
+    );
+  }
+  const testPath = workspace + "/destinations?task=test";
+  const ready = setup(1, true);
+  expect(ready).toContain("3 / 3 pronti");
+  expect(ready).toContain(testPath);
+  expect(ready).toContain("Vedi gli endpoint");
+  const disconnected = setup(0, true);
+  expect(disconnected).toContain("2 / 3 pronti");
+  expect(disconnected).not.toContain(testPath);
+  const readOnly = setup(1, false);
+  expect(readOnly).toContain("3 / 3 pronti");
+  expect(readOnly).not.toContain(testPath);
 });
 
 it("compares rolling success rates in percentage points, including measured zero times", () => {
