@@ -2,7 +2,7 @@
 
 import { useId, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { translator, type Locale } from "../locale";
+import { formatUtcDateRange, translator, type Locale } from "../locale";
 import styles from "./destination-history.module.css";
 
 export type DestinationDay = {
@@ -91,16 +91,7 @@ export function DestinationHistory({
   const dates = days.map((day) => new Date(day.date + "T00:00:00Z"));
   let range = t("Last seven days", "Ultimi sette giorni");
   if (dates.length) {
-    const dateRange = new Intl.DateTimeFormat(locale, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: "UTC",
-    });
-    // Node and Chrome can use different Unicode spaces around the date-range dash.
-    range = dateRange
-      .formatRange(dates[0], dates[dates.length - 1])
-      .replace(/\s+/gu, " ");
+    range = formatUtcDateRange(locale, dates[0], dates[dates.length - 1]);
   }
   const period =
     range + t(" · UTC · Today is partial", " · UTC · Oggi parziale");

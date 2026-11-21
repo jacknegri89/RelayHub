@@ -46,6 +46,12 @@
   justify-content: space-between;
   margin-bottom: 0.6rem;
 }
+.inventoryActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 1.15rem;
+}
 .inventoryBar > span {
   color: var(--dust);
   font-size: 0.85rem;
@@ -137,6 +143,12 @@
 }
 .task {
   margin-top: 0.8rem;
+}
+.awaitingDestination button:disabled {
+  cursor: not-allowed;
+}
+.awaitingDestination button:disabled::after {
+  content: none;
 }
 .signal {
   width: 2.95rem;

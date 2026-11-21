@@ -12,6 +12,74 @@
   padding: 0.85rem clamp(0.8rem, 2vw, 1.35rem) 0;
   font-size: 1rem;
 }
+.setupHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  padding: 1.15rem clamp(1rem, 2vw, 1.4rem) 0;
+}
+.setupHeader h2 {
+  padding: 0;
+}
+.setupHeader > span {
+  font: 500 0.78rem var(--font-mono);
+  color: var(--dust);
+}
+.checklist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 1.1rem 0;
+  padding: 0 clamp(1rem, 2vw, 1.4rem);
+}
+.checklist li {
+  display: flex;
+  gap: 0.65rem;
+  padding-right: 0.65rem;
+}
+.checklist li + li {
+  padding-left: 1rem;
+  border-left: 1px solid var(--rule);
+}
+.checklist strong,
+.checklist small {
+  display: block;
+}
+.checklist strong {
+  font-size: 0.95rem;
+}
+.checklist small {
+  margin-top: 0.18rem;
+  font: 0.73rem var(--font-mono);
+  color: var(--dust);
+}
+.checklist p {
+  margin: 0.6rem 0 0;
+  color: var(--dust);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.stepMarker {
+  display: grid;
+  place-items: center;
+  flex: 0 0 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  border: 1px dashed var(--dust);
+  border-radius: 50%;
+  font-size: 0.8rem;
+}
+.checklist li[data-ready="true"] .stepMarker {
+  color: var(--delivered);
+  border: 1px solid currentColor;
+}
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 .flow {
   --socket: 2.85rem;
   display: grid;
@@ -147,6 +215,25 @@
   border-color: var(--photon);
 }
 @container (max-width: 29rem) {
+  .checklist {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+  .checklist li + li {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    padding: 0.7rem 0 0;
+  }
+  .checklist small {
+    display: inline-block;
+    margin: 0 0 0 0.5rem;
+  }
+  .checklist strong {
+    display: inline;
+  }
+  .checklist p {
+    margin-top: 0.2rem;
+  }
   .flow {
     --socket: 2.45rem;
     padding-inline: 0.28rem;

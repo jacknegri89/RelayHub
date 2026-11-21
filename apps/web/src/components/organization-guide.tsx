@@ -13,14 +13,14 @@ const guides: Partial<Record<string, Guide>> = {
   overview: {
     title: ["Check delivery health", "Controlla le consegne"],
     instructions: [
-      "Compare the success rate with the previous day. Filter the weekly chart to see failed attempts, then open a recent event to follow its deliveries.",
-      "Confronta il tasso di successo con le 24 ore precedenti. Filtra il grafico settimanale per vedere i tentativi falliti e apri un evento recente per seguirne le consegne.",
+      "Check which connections are ready. When events arrive, open one to follow its deliveries or select a day to compare attempts.",
+      "Controlla quali collegamenti sono pronti. Quando arrivano gli eventi, aprine uno per seguirne le consegne o scegli un giorno per confrontare i tentativi.",
     ],
     action: {
       permission: "configure",
       instructions: [
-        "Start with a source and a destination. Once events arrive, compare the last two days and filter the weekly chart to find failed attempts.",
-        "Inizia con una sorgente e una destinazione. Quando arrivano gli eventi, confronta le ultime due finestre di 24 ore e filtra il grafico settimanale per trovare i tentativi falliti.",
+        "Connect a source to a destination, then try the route. When traffic arrives, use the weekly chart and the delivery log to investigate failures.",
+        "Collega una sorgente a una destinazione e prova l’inoltro. Quando arriva traffico, usa il grafico settimanale e il registro consegne per esaminare gli errori.",
       ],
     },
   },

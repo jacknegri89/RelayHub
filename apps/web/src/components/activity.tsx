@@ -59,41 +59,40 @@ export async function Overview({
       <>
         {heading}
         {routing}
-        <section className={styles.quiet} aria-labelledby="quiet-activity">
-          <header className={styles.sectionTitle}>
-            <h2 id="quiet-activity">
-              {t("Delivery activity", "Attività di consegna")}
-            </h2>
-            <span>{t("Last 24 hours", "Ultime 24 ore")}</span>
-          </header>
-          <div className={styles.quietCounts}>
-            <span>
-              <b>{number.format(report.received)}</b>{" "}
-              {t("events received", "eventi ricevuti")}
-            </span>
-            <span>
-              <b>
-                {number.format(report.counts.delivered + report.counts.failed)}
-              </b>{" "}
-              {t("completed deliveries", "consegne concluse")}
-            </span>
-            <Link href={workspace + "/deliveries"}>
-              {t(
-                "Full delivery history →",
-                "Storico completo delle consegne →",
-              )}
-            </Link>
-          </div>
-          <details>
-            <summary>
-              {t(
-                "Seven-day attempt history",
-                "Storico dei tentativi degli ultimi 7 giorni",
-              )}
-            </summary>
-            {trend}
-          </details>
-        </section>
+        <div className={styles.lower}>
+          {trend}
+          <section className={styles.quiet} aria-labelledby="quiet-activity">
+            <header className={styles.sectionTitle}>
+              <h2 id="quiet-activity">
+                {t("Delivery activity", "Attività di consegna")}
+              </h2>
+              <span>{t("Last 24 hours", "Ultime 24 ore")}</span>
+            </header>
+            <dl className={styles.ledger}>
+              <div>
+                <dt>{t("Events received", "Eventi ricevuti")}</dt>
+                <dd>{number.format(report.received)}</dd>
+              </div>
+              <div>
+                <dt>{t("Successful deliveries", "Consegne riuscite")}</dt>
+                <dd>{number.format(report.counts.delivered)}</dd>
+              </div>
+              <div>
+                <dt>{t("Failed deliveries", "Consegne fallite")}</dt>
+                <dd>{number.format(report.counts.failed)}</dd>
+              </div>
+            </dl>
+            <div className={styles.registers}>
+              <Link href={workspace + "/events"}>
+                {t("Event log", "Registro eventi")} →
+              </Link>
+              <Link href={workspace + "/deliveries"}>
+                {t("Full delivery history", "Storico completo delle consegne")}{" "}
+                →
+              </Link>
+            </div>
+          </section>
+        </div>
       </>
     );
   }
