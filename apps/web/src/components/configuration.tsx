@@ -3,9 +3,14 @@ import Link from "next/link";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { ActionForm } from "./forms";
+import { ProfileAvatar } from "./profile-avatar";
+import { profileAvatar } from "../profile-avatars";
 import { ApiKeySettings } from "./api-key-settings";
-import { Status, ShortId, stateLabel } from "./display";
+import { Status, stateLabel } from "./display";
 import { PageHeading } from "./page-heading";
+import { WorkspaceEmpty } from "./workspace-empty";
+import { CreateDisclosure } from "./create-disclosure";
+import styles from "./workspace-records.module.css";
 
 const sourceProviderNames = { relayhub: "RelayHub", github: "GitHub" };
 
@@ -38,9 +43,157 @@ export async function Sources({
           "Gestisci gli endpoint pubblici che ricevono i webhook firmati.",
         )}
       />
+      {items.length > 0 && (
+        <div className={styles.inventoryBar}>
+          <span>
+            {t("Configured sources", "Sorgenti configurate")}{" "}
+            <strong>{items.length}</strong>
+          </span>
+          {editable && (
+            <a href="#create-source">
+              {t("New source", "Nuova sorgente")}{" "}
+              <span aria-hidden="true">+</span>
+            </a>
+          )}
+        </div>
+      )}
+      {!editable && !items.length && (
+        <WorkspaceEmpty
+          kind="source"
+          title={t("No sources yet.", "Nessuna sorgente configurata.")}
+          description={t(
+            "An owner or administrator can connect a sending app. Its endpoint and received event count will appear here.",
+            "Un proprietario o un amministratore può collegare un’app mittente. Qui vedrai il suo endpoint e il numero di eventi ricevuti.",
+          )}
+        />
+      )}
+      {items.length > 0 && (
+        <div className={styles.inventory}>
+          {items.map((item) => (
+            <section
+              key={item.id}
+              className={styles.record}
+              aria-labelledby={"source-" + item.id}
+            >
+              <div className={styles.recordHeader}>
+                <h2 id={"source-" + item.id}>{item.name}</h2>
+                <Status value={(item.enabled && "enabled") || "disabled"} />
+              </div>
+              <div className={styles.recordMeta}>
+                <span>{sourceProviderNames[item.provider]}</span>
+                <Link
+                  href={
+                    "/workspace/" + organizationId + "/events?source=" + item.id
+                  }
+                >
+                  {t("Retained events", "Eventi conservati")} ·{" "}
+                  {item._count.events}
+                </Link>
+              </div>
+              <details className={styles.recordTools}>
+                <summary>{t("Source details", "Dettagli sorgente")}</summary>
+                <div className={styles.toolBody}>
+                  <div className={styles.endpoint}>
+                    <span>{t("Source URL", "URL della sorgente")}</span>
+                    <code className="break">
+                      {settings().RELAYHUB_BASE_URL +
+                        "/api/webhooks/" +
+                        item.id}
+                    </code>
+                  </div>
+                  {editable && item.provider === "github" && (
+                    <details>
+                      <summary>
+                        {t(
+                          "Connect a GitHub repository",
+                          "Collega un repository GitHub",
+                        )}
+                      </summary>
+                      <ol>
+                        <li>
+                          {t(
+                            "In the repository, open Settings → Webhooks → Add webhook. Paste the source URL above into Payload URL.",
+                            "Nel repository apri Settings → Webhooks → Add webhook. Incolla l’URL della sorgente nel campo Payload URL.",
+                          )}
+                        </li>
+                        <li>
+                          {t(
+                            "Set Content type to application/json and paste the signing secret shown when you created this source into Secret. After rotating it, update Secret in GitHub.",
+                            "Seleziona application/json in Content type e incolla in Secret la chiave di firma mostrata alla creazione della sorgente. Se la sostituisci, aggiorna anche Secret su GitHub.",
+                          )}
+                        </li>
+                        <li>
+                          {t(
+                            "Select Just the push event and save. After your next push, look for github.push in Events. Use github.push as the event type when linking a destination.",
+                            "Seleziona Just the push event e salva. Dopo il prossimo push, cerca github.push in Eventi. Usa github.push come tipo di evento nella regola di inoltro verso una destinazione.",
+                          )}
+                        </li>
+                      </ol>
+                    </details>
+                  )}
+                  {editable && (
+                    <div className="edit-grid">
+                      <ActionForm
+                        endpoint={endpoint}
+                        label={t("Save source", "Salva sorgente")}
+                        fields={{ action: "source_update", id: item.id }}
+                      >
+                        <label>
+                          {t("Source name", "Nome della sorgente")}{" "}
+                          <input
+                            name="name"
+                            required
+                            maxLength={80}
+                            defaultValue={item.name}
+                            placeholder={t(
+                              "e.g. Online checkout",
+                              "Es. Cassa online",
+                            )}
+                          />
+                        </label>
+                        <label className="check">
+                          <input
+                            name="enabled"
+                            type="checkbox"
+                            defaultChecked={item.enabled}
+                          />{" "}
+                          {t("Enabled", "Attivo")}
+                        </label>
+                      </ActionForm>
+                      <ActionForm
+                        endpoint={endpoint}
+                        label={t(
+                          "Rotate signing secret",
+                          "Sostituisci la chiave di firma",
+                        )}
+                        fields={{ action: "source_rotate", id: item.id }}
+                        confirm={t(
+                          "Rotate this source secret? Update the sender before it sends another webhook.",
+                          "Vuoi sostituire la chiave di firma? Aggiorna il mittente prima del prossimo webhook.",
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              </details>
+            </section>
+          ))}
+        </div>
+      )}
       {editable && (
-        <section className="panel">
-          <h2>{t("Create source", "Crea sorgente")}</h2>
+        <CreateDisclosure
+          id="create-source"
+          firstUse={!items.length}
+          label={t("New source", "Nuova sorgente")}
+        >
+          {!items.length && (
+            <p className="muted">
+              {t(
+                "Create the endpoint for your sending app. RelayHub will show its URL and signing secret.",
+                "Crea l’endpoint per l’app mittente. RelayHub ti mostrerà l’URL e la chiave di firma.",
+              )}
+            </p>
+          )}
           <ActionForm
             endpoint={endpoint}
             label={t("Create source", "Crea sorgente")}
@@ -63,100 +216,8 @@ export async function Sources({
               </select>
             </label>
           </ActionForm>
-        </section>
+        </CreateDisclosure>
       )}
-      {!items.length && (
-        <p className="empty">
-          {t("No sources yet.", "Nessuna sorgente configurata.")}
-        </p>
-      )}
-      {items.map((item) => (
-        <section key={item.id} className="panel">
-          <div className="section-head">
-            <h2>{item.name}</h2>
-            <Status value={(item.enabled && "enabled") || "disabled"} />
-          </div>
-          <p>
-            <code className="break">
-              {settings().RELAYHUB_BASE_URL + "/api/webhooks/" + item.id}
-            </code>
-          </p>
-          <p className="muted">
-            {sourceProviderNames[item.provider]} · {item._count.events}{" "}
-            {t("retained events", "eventi conservati")}
-          </p>
-          {editable && item.provider === "github" && (
-            <details>
-              <summary>
-                {t(
-                  "Connect a GitHub repository",
-                  "Collega un repository GitHub",
-                )}
-              </summary>
-              <ol>
-                <li>
-                  {t(
-                    "In the repository, open Settings → Webhooks → Add webhook. Paste the source URL above into Payload URL.",
-                    "Nel repository apri Settings → Webhooks → Add webhook. Incolla l’URL della sorgente nel campo Payload URL.",
-                  )}
-                </li>
-                <li>
-                  {t(
-                    "Set Content type to application/json and paste the signing secret shown when you created this source into Secret. After rotating it, update Secret in GitHub.",
-                    "Seleziona application/json in Content type e incolla in Secret la chiave di firma mostrata alla creazione della sorgente. Se la sostituisci, aggiorna anche Secret su GitHub.",
-                  )}
-                </li>
-                <li>
-                  {t(
-                    "Select Just the push event and save. After your next push, look for github.push in Events. Use github.push as the event type when linking a destination.",
-                    "Seleziona Just the push event e salva. Dopo il prossimo push, cerca github.push in Eventi. Usa github.push come tipo di evento nella regola di inoltro verso una destinazione.",
-                  )}
-                </li>
-              </ol>
-            </details>
-          )}
-          {editable && (
-            <div className="edit-grid">
-              <ActionForm
-                endpoint={endpoint}
-                label={t("Save source", "Salva sorgente")}
-                fields={{ action: "source_update", id: item.id }}
-              >
-                <label>
-                  {t("Source name", "Nome della sorgente")}{" "}
-                  <input
-                    name="name"
-                    required
-                    maxLength={80}
-                    defaultValue={item.name}
-                    placeholder={t("e.g. Online checkout", "Es. Cassa online")}
-                  />
-                </label>
-                <label className="check">
-                  <input
-                    name="enabled"
-                    type="checkbox"
-                    defaultChecked={item.enabled}
-                  />{" "}
-                  {t("Enabled", "Attivo")}
-                </label>
-              </ActionForm>
-              <ActionForm
-                endpoint={endpoint}
-                label={t(
-                  "Rotate signing secret",
-                  "Sostituisci la chiave di firma",
-                )}
-                fields={{ action: "source_rotate", id: item.id }}
-                confirm={t(
-                  "Rotate this source secret? Update the sender before it sends another webhook.",
-                  "Vuoi sostituire la chiave di firma? Aggiorna il mittente prima del prossimo webhook.",
-                )}
-              />
-            </div>
-          )}
-        </section>
-      ))}
     </>
   );
 }
@@ -190,7 +251,7 @@ export async function Destinations({
     }),
     db.webhookSource.findMany({
       where: { organizationId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, enabled: true },
       orderBy: { name: "asc" },
     }),
   ]);
@@ -204,9 +265,203 @@ export async function Destinations({
           "Configura i destinatari e scegli gli eventi che ricevono.",
         )}
       />
+      {items.length > 0 && (
+        <div className={styles.inventoryBar}>
+          <span>
+            {t("Configured destinations", "Destinazioni configurate")}{" "}
+            <strong>{items.length}</strong>
+          </span>
+          {editable && (
+            <a href="#create-destination">
+              {t("New destination", "Nuova destinazione")}{" "}
+              <span aria-hidden="true">+</span>
+            </a>
+          )}
+        </div>
+      )}
+      {!editable && !items.length && (
+        <WorkspaceEmpty
+          kind="destination"
+          title={t("No destinations yet.", "Nessuna destinazione configurata.")}
+          description={t(
+            "An owner or administrator can connect a receiving app. Its routes, delivery history and alerts will appear here.",
+            "Un proprietario o un amministratore può collegare un’app destinataria. Qui vedrai le sue regole di inoltro, lo storico e gli avvisi.",
+          )}
+        />
+      )}
+      {items.length > 0 && (
+        <div className={styles.inventory}>
+          {items.map((item) => (
+            <section
+              key={item.id}
+              className={styles.record}
+              aria-labelledby={"destination-" + item.id}
+            >
+              <div className={styles.recordHeader}>
+                <h2 id={"destination-" + item.id}>{item.name}</h2>
+                <Status value={(item.enabled && "enabled") || "disabled"} />
+              </div>
+              <div className={styles.recordMeta}>
+                <span>
+                  {t("Routes", "Regole di inoltro")} ·{" "}
+                  {item.subscriptions.length}
+                </span>
+                <Link
+                  href={
+                    "/workspace/" + organizationId + "/destinations/" + item.id
+                  }
+                >
+                  {t(
+                    "View seven-day history and alerts",
+                    "Vedi storico di 7 giorni e avvisi",
+                  )}
+                </Link>
+              </div>
+              <details className={styles.recordTools}>
+                <summary>
+                  {t("Endpoint and routes", "Endpoint e regole")}
+                </summary>
+                <div className={styles.toolBody}>
+                  <div className={styles.endpoint}>
+                    <span>{t("Receiver URL", "URL del destinatario")}</span>
+                    <code className="break">{item.url}</code>
+                  </div>
+                  {!item.subscriptions.length && (
+                    <p className="muted">
+                      {t(
+                        "No sources are linked.",
+                        "Nessuna sorgente collegata.",
+                      )}
+                      {editable && !sources.length && (
+                        <>
+                          {" "}
+                          <Link
+                            href={
+                              "/workspace/" +
+                              organizationId +
+                              "/sources#create-source"
+                            }
+                          >
+                            {t(
+                              "Create a source to route events here.",
+                              "Crea una sorgente per inoltrare eventi qui.",
+                            )}
+                          </Link>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  <ul className="routes">
+                    {item.subscriptions.map((route) => (
+                      <li key={route.sourceId + ":" + route.eventType}>
+                        <span>
+                          {route.source.name}{" "}
+                          <code>
+                            {route.eventType ||
+                              t("all event types", "tutti i tipi di evento")}
+                          </code>
+                        </span>
+                        {editable && (
+                          <ActionForm
+                            endpoint={endpoint}
+                            label={t("Remove route", "Rimuovi regola")}
+                            confirm={t(
+                              "Remove this route for future events?",
+                              "Vuoi rimuovere questa regola per gli eventi futuri?",
+                            )}
+                            fields={{
+                              action: "route_remove",
+                              sourceId: route.sourceId,
+                              destinationId: item.id,
+                              eventType: route.eventType,
+                            }}
+                          />
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {editable && (
+                    <div className="edit-grid">
+                      <details>
+                        <summary>
+                          {t("Edit destination", "Modifica destinazione")}
+                        </summary>
+                        <ActionForm
+                          endpoint={endpoint}
+                          label={t("Save destination", "Salva destinazione")}
+                          fields={{ action: "destination_update", id: item.id }}
+                        >
+                          <DestinationFields item={item} />
+                          <label className="check">
+                            <input
+                              type="checkbox"
+                              name="enabled"
+                              defaultChecked={item.enabled}
+                            />{" "}
+                            {t("Enabled", "Attivo")}
+                          </label>
+                        </ActionForm>
+                      </details>
+                      {!!sources.length && (
+                        <details>
+                          <summary>
+                            {t("Link source", "Collega sorgente")}
+                          </summary>
+                          <ActionForm
+                            endpoint={endpoint}
+                            label={t("Save route", "Salva regola")}
+                            fields={{
+                              action: "route_save",
+                              destinationId: item.id,
+                            }}
+                          >
+                            <SourceSelect sources={sources} />
+                            <label>
+                              {t(
+                                "Event type (optional)",
+                                "Tipo di evento (facoltativo)",
+                              )}{" "}
+                              <input
+                                name="eventType"
+                                maxLength={100}
+                                placeholder={t(
+                                  "e.g. order.created · blank for all",
+                                  "Es. order.created · vuoto per tutti",
+                                )}
+                              />
+                            </label>
+                          </ActionForm>
+                        </details>
+                      )}
+                      {!!item.subscriptions.length && (
+                        <TestDeliveryForm
+                          organizationId={organizationId}
+                          destination={item}
+                          sources={sources}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </details>
+            </section>
+          ))}
+        </div>
+      )}
       {editable && (
-        <section className="panel">
-          <h2>{t("Create destination", "Crea destinazione")}</h2>
+        <CreateDisclosure
+          id="create-destination"
+          firstUse={!items.length}
+          label={t("New destination", "Nuova destinazione")}
+        >
+          {!items.length && (
+            <p className="muted">
+              {t(
+                "Enter the URL of the app that should receive webhooks. Then link a source to choose which events reach it.",
+                "Inserisci l’URL dell’app che deve ricevere i webhook. Poi collega una sorgente per scegliere quali eventi inoltrare.",
+              )}
+            </p>
+          )}
           <ActionForm
             endpoint={endpoint}
             label={t("Create destination", "Crea destinazione")}
@@ -233,150 +488,8 @@ export async function Destinations({
               </code>
             </p>
           )}
-        </section>
+        </CreateDisclosure>
       )}
-      {!items.length && (
-        <p className="empty">
-          {t("No destinations yet.", "Nessuna destinazione configurata.")}
-        </p>
-      )}
-      {items.map((item) => (
-        <section key={item.id} className="panel">
-          <div className="section-head">
-            <h2>{item.name}</h2>
-            <Status value={(item.enabled && "enabled") || "disabled"} />
-          </div>
-          <p>
-            <code className="break">{item.url}</code>
-          </p>
-          <p>
-            <Link
-              href={"/workspace/" + organizationId + "/destinations/" + item.id}
-            >
-              {t(
-                "View seven-day history and alerts",
-                "Vedi storico di 7 giorni e avvisi",
-              )}
-            </Link>
-          </p>
-          <h3>{t("Routes", "Regole di inoltro")}</h3>
-          {!item.subscriptions.length && (
-            <p className="muted">
-              {t("No sources are linked.", "Nessuna sorgente collegata.")}
-            </p>
-          )}
-          <ul className="routes">
-            {item.subscriptions.map((route) => (
-              <li key={route.sourceId + ":" + route.eventType}>
-                <span>
-                  {route.source.name}{" "}
-                  <code>
-                    {route.eventType ||
-                      t("all event types", "tutti i tipi di evento")}
-                  </code>
-                </span>
-                {editable && (
-                  <ActionForm
-                    endpoint={endpoint}
-                    label={t("Remove route", "Rimuovi regola")}
-                    confirm={t(
-                      "Remove this route for future events?",
-                      "Vuoi rimuovere questa regola per gli eventi futuri?",
-                    )}
-                    fields={{
-                      action: "route_remove",
-                      sourceId: route.sourceId,
-                      destinationId: item.id,
-                      eventType: route.eventType,
-                    }}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-          {editable && (
-            <div className="edit-grid">
-              <details>
-                <summary>
-                  {t("Edit destination", "Modifica destinazione")}
-                </summary>
-                <ActionForm
-                  endpoint={endpoint}
-                  label={t("Save destination", "Salva destinazione")}
-                  fields={{ action: "destination_update", id: item.id }}
-                >
-                  <DestinationFields item={item} />
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      name="enabled"
-                      defaultChecked={item.enabled}
-                    />{" "}
-                    {t("Enabled", "Attivo")}
-                  </label>
-                </ActionForm>
-              </details>
-              {!!sources.length && (
-                <details>
-                  <summary>{t("Link source", "Collega sorgente")}</summary>
-                  <ActionForm
-                    endpoint={endpoint}
-                    label={t("Save route", "Salva regola")}
-                    fields={{ action: "route_save", destinationId: item.id }}
-                  >
-                    <SourceSelect sources={sources} />
-                    <label>
-                      {t(
-                        "Event type (optional)",
-                        "Tipo di evento (facoltativo)",
-                      )}{" "}
-                      <input
-                        name="eventType"
-                        maxLength={100}
-                        placeholder={t(
-                          "e.g. order.created · blank for all",
-                          "Es. order.created · vuoto per tutti",
-                        )}
-                      />
-                    </label>
-                  </ActionForm>
-                </details>
-              )}
-              {!!item.subscriptions.length && (
-                <details>
-                  <summary>{t("Test delivery", "Consegna di prova")}</summary>
-                  <ActionForm
-                    endpoint={endpoint}
-                    label={t("Send test", "Invia prova")}
-                    onId={"/workspace/" + organizationId + "/events/"}
-                    fields={{ action: "test_delivery", destinationId: item.id }}
-                  >
-                    <SourceSelect
-                      sources={sources.filter((source) =>
-                        item.subscriptions.some(
-                          (route) => route.sourceId === source.id,
-                        ),
-                      )}
-                    />
-                    <label>
-                      {t("Event type", "Tipo di evento")}{" "}
-                      <input
-                        name="eventType"
-                        required
-                        maxLength={100}
-                        placeholder="order.created"
-                        defaultValue={
-                          item.subscriptions[0].eventType || "relayhub.test"
-                        }
-                      />
-                    </label>
-                  </ActionForm>
-                </details>
-              )}
-            </div>
-          )}
-        </section>
-      ))}
     </>
   );
 }
@@ -428,6 +541,73 @@ async function DestinationFields({
   );
 }
 
+async function TestDeliveryForm({
+  organizationId,
+  destination,
+  sources,
+}: {
+  organizationId: string;
+  destination: {
+    id: string;
+    enabled: boolean;
+    subscriptions: { sourceId: string; eventType: string }[];
+  };
+  sources: { id: string; name: string; enabled: boolean }[];
+}) {
+  const { t } = await getLocale();
+  if (!destination.enabled) {
+    return (
+      <p className="muted">
+        {t(
+          "Enable this destination to send a test delivery.",
+          "Attiva questa destinazione per inviare una consegna di prova.",
+        )}
+      </p>
+    );
+  }
+  const linkedSources = sources.filter(
+    (source) =>
+      source.enabled &&
+      destination.subscriptions.some((route) => route.sourceId === source.id),
+  );
+  if (!linkedSources.length) {
+    return (
+      <p className="muted">
+        {t(
+          "Enable a linked source to send a test delivery.",
+          "Attiva una sorgente collegata per inviare una consegna di prova.",
+        )}
+      </p>
+    );
+  }
+  const firstRoute = destination.subscriptions.find(
+    (route) => route.sourceId === linkedSources[0].id,
+  );
+  return (
+    <details>
+      <summary>{t("Test delivery", "Consegna di prova")}</summary>
+      <ActionForm
+        endpoint={"/api/organizations/" + organizationId}
+        label={t("Send test", "Invia prova")}
+        onId={"/workspace/" + organizationId + "/events/"}
+        fields={{ action: "test_delivery", destinationId: destination.id }}
+      >
+        <SourceSelect sources={linkedSources} />
+        <label>
+          {t("Event type", "Tipo di evento")}{" "}
+          <input
+            name="eventType"
+            required
+            maxLength={100}
+            placeholder="order.created"
+            defaultValue={firstRoute?.eventType || "relayhub.test"}
+          />
+        </label>
+      </ActionForm>
+    </details>
+  );
+}
+
 async function SourceSelect({
   sources,
 }: {
@@ -461,7 +641,11 @@ export async function Settings({
   const members = await database().organizationMember.findMany({
     where: { organizationId },
     orderBy: { createdAt: "asc" },
-    select: { userId: true, role: true, user: { select: { email: true } } },
+    select: {
+      userId: true,
+      role: true,
+      user: { select: { email: true, name: true, image: true } },
+    },
   });
   const endpoint = "/api/organizations/" + organizationId;
   return (
@@ -473,39 +657,66 @@ export async function Settings({
           "Gestisci i membri e i ruoli dell’organizzazione.",
         )}
       />
-      <section className="panel">
+      <nav
+        className={styles.settingsNav}
+        aria-label={t("Settings sections", "Sezioni delle impostazioni")}
+      >
+        <a href="#organization">{t("Organization", "Organizzazione")}</a>
+        <a href="#members">{t("Members", "Membri")}</a>
+        {owner && <a href="#api-keys">{t("API keys", "Chiavi API")}</a>}
+      </nav>
+      <section className="panel" id="organization">
         <h2>{name}</h2>
         <p className="muted">
           {t("Organization ID", "ID organizzazione")}{" "}
-          <ShortId id={organizationId} />
+          <code className={styles.identifier}>{organizationId}</code>
         </p>
         {owner && (
-          <ActionForm
-            endpoint={endpoint}
-            label={t("Rename organization", "Rinomina organizzazione")}
-            fields={{ action: "organization_rename" }}
-          >
-            <label>
-              {t("Organization name", "Nome dell’organizzazione")}{" "}
-              <input
-                name="name"
-                required
-                maxLength={80}
-                defaultValue={name}
-                placeholder={t("e.g. Online store", "Es. Negozio online")}
-              />
-            </label>
-          </ActionForm>
+          <details className={styles.task}>
+            <summary>
+              {t(
+                "Edit organization name",
+                "Modifica il nome dell’organizzazione",
+              )}
+            </summary>
+            <ActionForm
+              endpoint={endpoint}
+              label={t("Rename organization", "Rinomina organizzazione")}
+              fields={{ action: "organization_rename" }}
+            >
+              <label>
+                {t("Organization name", "Nome dell’organizzazione")}{" "}
+                <input
+                  name="name"
+                  required
+                  maxLength={80}
+                  defaultValue={name}
+                  placeholder={t("e.g. Online store", "Es. Negozio online")}
+                />
+              </label>
+            </ActionForm>
+          </details>
         )}
       </section>
-      {owner && <ApiKeySettings organizationId={organizationId} />}
-      <section className="panel">
-        <h2>{t("Members", "Membri")}</h2>
+      <section className="panel" id="members">
+        <h2>
+          {t("Members", "Membri")}{" "}
+          <span className={styles.quantity}>{members.length}</span>
+        </h2>
         <ul className="routes">
           {members.map((member) => (
             <li key={member.userId}>
-              <span className="break">
-                {member.user.email} · {stateLabel(member.role, t)}
+              <span className={styles.member}>
+                <ProfileAvatar
+                  name={member.user.name}
+                  avatar={profileAvatar(member.user.image)}
+                  small
+                />
+                <span className={styles.memberIdentity}>
+                  <strong>{member.user.name}</strong>
+                  <span>{member.user.email}</span>
+                </span>
+                <small>{stateLabel(member.role, t)}</small>
               </span>
               {owner && member.role !== "owner" && (
                 <ActionForm
@@ -522,42 +733,55 @@ export async function Settings({
           ))}
         </ul>
         {owner && (
-          <ActionForm
-            endpoint={endpoint}
-            label={t("Save member", "Salva membro")}
-            fields={{ action: "member_save" }}
-          >
-            <label>
-              {t("Account ID", "ID account")}{" "}
-              <input
-                name="accountId"
-                placeholder={t(
-                  "Paste the member’s account ID",
-                  "Incolla l’ID account del membro",
-                )}
-                required
-                minLength={36}
-                maxLength={36}
-                autoComplete="off"
-                aria-describedby="member-account-help"
-              />
-            </label>
-            <p id="member-account-help" className="muted">
+          <details className={styles.task}>
+            <summary>
               {t(
-                "Ask the member for the account ID shown on their Organizations page.",
-                "Chiedi al membro l’ID account che trova nella sua pagina Organizzazioni.",
+                "Add a member or change their role",
+                "Aggiungi un membro o modifica il suo ruolo",
               )}
-            </p>
-            <label>
-              {t("Role", "Ruolo")}{" "}
-              <select name="role">
-                <option value="viewer">{t("Viewer", "Lettore")}</option>
-                <option value="admin">{t("Admin", "Amministratore")}</option>
-              </select>
-            </label>
-          </ActionForm>
+            </summary>
+            <ActionForm
+              endpoint={endpoint}
+              label={t("Save member", "Salva membro")}
+              fields={{ action: "member_save" }}
+            >
+              <label>
+                {t("Account ID", "ID account")}{" "}
+                <input
+                  name="accountId"
+                  placeholder={t(
+                    "Paste the member’s account ID",
+                    "Incolla l’ID account del membro",
+                  )}
+                  required
+                  minLength={36}
+                  maxLength={36}
+                  autoComplete="off"
+                  aria-describedby="member-account-help"
+                />
+              </label>
+              <p id="member-account-help" className="muted">
+                {t(
+                  "Ask the member for the account ID shown on their Organizations page.",
+                  "Chiedi al membro l’ID account che trova nella sua pagina Organizzazioni.",
+                )}
+              </p>
+              <label>
+                {t("Role", "Ruolo")}{" "}
+                <select name="role">
+                  <option value="viewer">{t("Viewer", "Lettore")}</option>
+                  <option value="admin">{t("Admin", "Amministratore")}</option>
+                </select>
+              </label>
+            </ActionForm>
+          </details>
         )}
       </section>
+      {owner && (
+        <div id="api-keys">
+          <ApiKeySettings organizationId={organizationId} />
+        </div>
+      )}
     </>
   );
 }

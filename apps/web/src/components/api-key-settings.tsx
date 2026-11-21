@@ -3,6 +3,7 @@ import { ACTIVE_API_KEY_LIMIT } from "../server/organization-api-keys";
 import { getLocale } from "../server/locale";
 import { ActionForm } from "./forms";
 import { Time } from "./display";
+import styles from "./workspace-records.module.css";
 
 export async function ApiKeySettings({
   organizationId,
@@ -25,26 +26,6 @@ export async function ApiKeySettings({
           "Consenti a un’integrazione di consultare i metadati di eventi e consegne dell’organizzazione. Invia la chiave nell’header Authorization per chiamare /api/v1/events o /api/v1/deliveries.",
         )}
       </p>
-      <ActionForm
-        disabled={keys.length >= ACTIVE_API_KEY_LIMIT}
-        endpoint={endpoint}
-        fields={{ action: "create" }}
-        label={t("Create API key", "Crea chiave API")}
-        secretLabel={t("API key", "Chiave API")}
-      >
-        <label>
-          {t("Key name", "Nome della chiave")}
-          <input
-            name="name"
-            maxLength={80}
-            required
-            placeholder={t(
-              "e.g. Accounting dashboard",
-              "Es. Cruscotto contabilità",
-            )}
-          />
-        </label>
-      </ActionForm>
       {keys.length >= ACTIVE_API_KEY_LIMIT && (
         <p>
           {t(
@@ -78,6 +59,29 @@ export async function ApiKeySettings({
           ))}
         </ul>
       )}
+      <details className={styles.task}>
+        <summary>{t("Issue a new key", "Genera una nuova chiave")}</summary>
+        <ActionForm
+          disabled={keys.length >= ACTIVE_API_KEY_LIMIT}
+          endpoint={endpoint}
+          fields={{ action: "create" }}
+          label={t("Create API key", "Crea chiave API")}
+          secretLabel={t("API key", "Chiave API")}
+        >
+          <label>
+            {t("Key name", "Nome della chiave")}
+            <input
+              name="name"
+              maxLength={80}
+              required
+              placeholder={t(
+                "e.g. Accounting dashboard",
+                "Es. Cruscotto contabilità",
+              )}
+            />
+          </label>
+        </ActionForm>
+      </details>
     </section>
   );
 }

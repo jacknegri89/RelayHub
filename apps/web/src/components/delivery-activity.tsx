@@ -6,13 +6,7 @@ import styles from "./overview.module.css";
 type OverviewReport = Awaited<ReturnType<typeof readOverview>>;
 type MetricReport = Pick<
   OverviewReport,
-  | "counts"
-  | "timings"
-  | "received"
-  | "inflight"
-  | "sources"
-  | "destinations"
-  | "comparisonRetained"
+  "counts" | "received" | "inflight" | "comparisonRetained"
 >;
 
 function successRate(delivered: number, failed: number) {
@@ -73,12 +67,6 @@ export function DeliveryActivity({
       tone = "negative";
     }
   }
-  function ms(value: number | null | undefined) {
-    if (value == null) {
-      return "—";
-    }
-    return number.format(value) + " ms";
-  }
   return (
     <section className={styles.summary} aria-labelledby="delivery-activity">
       <header className={styles.sectionTitle}>
@@ -98,18 +86,25 @@ export function DeliveryActivity({
         </div>
         <div>
           <dt>{t("Successful deliveries", "Consegne riuscite")}</dt>
-          <dd className={styles.success}>{number.format(counts.delivered)}</dd>
+          <dd className={styles.success} data-empty={!counts.delivered}>
+            {number.format(counts.delivered)}
+          </dd>
           <dd className={styles.detail}>
             {t("Mean successful latency", "Latenza media riuscite")} ·{" "}
-            {ms(counts.meanSuccessfulMs)}
+            {milliseconds(counts.meanSuccessfulMs, number)}
           </dd>
         </div>
         <div>
           <dt>{t("Failed deliveries", "Consegne fallite")}</dt>
-          <dd className={styles.failure}>{number.format(counts.failed)}</dd>
+          <dd className={styles.failure} data-empty={!counts.failed}>
+            {number.format(counts.failed)}
+          </dd>
           <dd className={styles.detail}>
             <Link href={workspace + "/deliveries?status=failed"}>
-              {t("View deliveries →", "Vedi consegne →")}
+              {t(
+                "Full failure history →",
+                "Storico completo delle consegne fallite →",
+              )}
             </Link>
           </dd>
         </div>
@@ -121,44 +116,48 @@ export function DeliveryActivity({
           </dd>
         </div>
       </dl>
-      <div className={styles.secondary}>
-        <div className={styles.resources}>
-          <Link href={workspace + "/sources"}>
-            <span>
-              {t("Enabled sources", "Sorgenti attive")}{" "}
-              <i aria-hidden="true">↗</i>
-            </span>
-            <strong>{number.format(report.sources)}</strong>
-          </Link>
-          <Link href={workspace + "/destinations"}>
-            <span>
-              {t("Enabled destinations", "Destinazioni attive")}{" "}
-              <i aria-hidden="true">↗</i>
-            </span>
-            <strong>{number.format(report.destinations)}</strong>
-          </Link>
-        </div>
-        <section
-          className={styles.latency}
-          aria-label={t("HTTP response times", "Tempi di risposta HTTP")}
-        >
-          <header>
-            <h3>{t("HTTP response times", "Tempi di risposta HTTP")}</h3>
-            <small>
-              {t("Timed responses", "Risposte misurate")} ·{" "}
-              {number.format(report.timings.samples)}
-            </small>
-          </header>
-          <dl>
-            {["P50", "P95", "P99"].map((label, index) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{ms(report.timings.percentiles?.[index])}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </div>
+    </section>
+  );
+}
+
+function milliseconds(
+  value: number | null | undefined,
+  number: Intl.NumberFormat,
+) {
+  if (value == null) {
+    return "—";
+  }
+  return number.format(value) + " ms";
+}
+
+export function ResponseTimes({
+  timings,
+  locale,
+}: {
+  timings: OverviewReport["timings"];
+  locale: Locale;
+}) {
+  const t = translator(locale);
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  const title = t("HTTP response times", "Tempi di risposta HTTP");
+  return (
+    <section className={styles.latency} aria-label={title}>
+      <header>
+        <h2>{title}</h2>
+        <small>{t("Last 24h", "Ultime 24 ore")}</small>
+      </header>
+      <dl>
+        {["P50", "P95", "P99"].map((label, index) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{milliseconds(timings.percentiles?.[index], number)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p>
+        {t("Timed responses", "Risposte misurate")} ·{" "}
+        {number.format(timings.samples)}
+      </p>
     </section>
   );
 }

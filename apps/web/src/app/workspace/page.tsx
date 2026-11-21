@@ -6,9 +6,16 @@ import { redirect } from "next/navigation";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { ActionForm } from "../../components/forms";
-import { PageHeading } from "../../components/page-heading";
-import { SectionGuide } from "../../components/section-guide";
+import { PersonalWorkspace } from "../../components/personal-workspace";
+import { initials } from "../../profile-avatars";
+import styles from "../../components/personal-workspace.module.css";
+import { InterfaceIcon } from "../../components/interface-icon";
 import { auth } from "../../server/auth";
+
+export async function generateMetadata() {
+  const { t } = await getLocale();
+  return { title: t("Organizations", "Organizzazioni") };
+}
 
 export default async function Workspace() {
   const { t } = await getLocale();
@@ -18,65 +25,112 @@ export default async function Workspace() {
   }
   const memberships = await database().organizationMember.findMany({
     where: { userId: session.user.id },
-    include: { organization: true },
+    select: {
+      role: true,
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { sources: true, destinations: true } },
+        },
+      },
+    },
     orderBy: { organization: { name: "asc" } },
   });
   return (
-    <main id="main" className="guided-page">
-      <SectionGuide title={t("Choose where to work", "Scegli dove lavorare")}>
-        {t(
-          "Each organization has its own events, destinations and team. Open one you belong to or create one here. To join a teammate’s organization, share your account ID privately with its owner.",
-          "Ogni organizzazione ha i propri eventi, destinatari e membri. Aprine una di cui fai parte o creane una qui. Per unirti a quella del tuo team, comunica in privato il tuo ID account al proprietario.",
-        )}
-      </SectionGuide>
-      <div>
-        {settings().isDemo && (
-          <p className="demo-label">
-            {t("Local demo environment", "Ambiente di prova locale")}
-          </p>
-        )}
-        <PageHeading title={t("Organizations", "Organizzazioni")} />
-        <p className="muted">
-          {t("Your account ID", "Il tuo ID account")}{" "}
-          <code className="break">{session.user.id}</code>
+    <PersonalWorkspace
+      current="organizations"
+      title={t("Organizations", "Organizzazioni")}
+      guideTitle={t("Choose a workspace", "Scegli un’area di lavoro")}
+      guide={t(
+        "Each organization has its own sources, destinations and members. Open one to follow its deliveries. Your profile and sign-in settings apply to all your organizations.",
+        "Ogni organizzazione ha le proprie sorgenti, destinazioni e persone. Aprine una per seguire le consegne. Il profilo e le impostazioni di accesso valgono per tutte le tue organizzazioni.",
+      )}
+    >
+      {settings().isDemo && (
+        <p className="demo-label">
+          {t("Local demo environment", "Ambiente di prova locale")}
         </p>
+      )}
+      {memberships.length > 0 && (
+        <section className={styles.panel} aria-labelledby="workspaces-heading">
+          <header className={styles.listHeader}>
+            <h2 id="workspaces-heading">
+              {t("Your workspaces", "Le tue aree di lavoro")}
+            </h2>
+            <span>{memberships.length}</span>
+          </header>
+          <ul className={styles.organizations}>
+            {memberships.map(({ organization, role }) => {
+              const counts = organization._count;
+              let sourcesLabel = t("sources", "sorgenti");
+              let destinationsLabel = t("destinations", "destinazioni");
+              if (counts.sources === 1) {
+                sourcesLabel = t("source", "sorgente");
+              }
+              if (counts.destinations === 1) {
+                destinationsLabel = t("destination", "destinazione");
+              }
+              return (
+                <li key={organization.id}>
+                  <Link href={"/workspace/" + organization.id}>
+                    <span aria-hidden="true" className={styles.orgMark}>
+                      {initials(organization.name)}
+                    </span>
+                    <span className={styles.orgName}>
+                      <strong>{organization.name}</strong>
+                      <span>{stateLabel(role, t)}</span>
+                    </span>
+                    <span className={styles.orgCounts}>
+                      {counts.sources} {sourcesLabel} · {counts.destinations}{" "}
+                      {destinationsLabel}
+                    </span>
+                    <InterfaceIcon name="arrow" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+      <details className={styles.task} open={memberships.length === 0}>
+        <summary>{t("New organization", "Nuova organizzazione")}</summary>
         {!memberships.length && (
-          <p className="empty">
+          <p className={styles.taskHint}>
             {t(
-              "Create an organization to collect events and configure delivery routes.",
-              "Crea un’organizzazione per ricevere eventi e configurare le regole di inoltro.",
+              "Give your first workspace a name. You can then connect the app that sends your webhooks.",
+              "Dai un nome alla tua prima area di lavoro. Da lì potrai collegare l’app che invia i webhook.",
             )}
           </p>
         )}
-        <ul className="organizations">
-          {memberships.map(({ organization, role }) => (
-            <li key={organization.id}>
-              <Link href={"/workspace/" + organization.id}>
-                {organization.name}
-                <span>{stateLabel(role, t)} →</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <section className="panel">
-          <h2>{t("Create organization", "Crea organizzazione")}</h2>
-          <ActionForm
-            endpoint="/api/organizations"
-            label={t("Create organization", "Crea organizzazione")}
-            onId="/workspace/"
-          >
-            <label>
-              {t("Organization name", "Nome dell’organizzazione")}{" "}
-              <input
-                name="name"
-                maxLength={80}
-                required
-                placeholder={t("e.g. Online store", "Es. Negozio online")}
-              />
-            </label>
-          </ActionForm>
-        </section>
-      </div>
-    </main>
+        <ActionForm
+          endpoint="/api/organizations"
+          label={t("Create organization", "Crea organizzazione")}
+          onId="/workspace/"
+        >
+          <label>
+            {t("Organization name", "Nome dell’organizzazione")}{" "}
+            <input
+              name="name"
+              maxLength={80}
+              required
+              placeholder={t("e.g. Online store", "Es. Negozio online")}
+            />
+          </label>
+        </ActionForm>
+      </details>
+      <details className={styles.task}>
+        <summary>{t("Join a team", "Unisciti a un team")}</summary>
+        <div>
+          <p>
+            {t(
+              "Share your account ID privately with the organization owner so they can add you.",
+              "Per farti aggiungere, comunica in privato questo ID al proprietario dell’organizzazione.",
+            )}
+          </p>
+          <code className="break">{session.user.id}</code>
+        </div>
+      </details>
+    </PersonalWorkspace>
   );
 }

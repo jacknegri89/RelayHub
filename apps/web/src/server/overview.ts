@@ -3,7 +3,7 @@ import { settings } from "@relayhub/shared/config";
 
 const DAY_MS = 86_400_000;
 const WEEK_DAYS = 7;
-const RECENT_EVENTS = 8;
+const RECENT_EVENTS = 4;
 
 type WindowCounts = {
   delivered: number;
@@ -13,6 +13,7 @@ type WindowCounts = {
   meanSuccessfulMs: number | null;
 };
 type Timings = { samples: number; percentiles: number[] | null };
+type ResourceCounts = { enabled: number; configured: boolean };
 export type OverviewDay = { date: string; succeeded: number; failed: number };
 
 export async function readOverview(organizationId: string, now = new Date()) {
@@ -28,8 +29,9 @@ export async function readOverview(organizationId: string, now = new Date()) {
     timings,
     received,
     inflight,
-    sources,
-    destinations,
+    sourceCounts,
+    destinationCounts,
+    activeRoutes,
     daily,
     latest,
   ] = await db.$transaction(
@@ -59,8 +61,19 @@ export async function readOverview(organizationId: string, now = new Date()) {
           },
         },
       }),
-      db.webhookSource.count({ where: { organizationId, enabled: true } }),
-      db.webhookDestination.count({ where: { organizationId, enabled: true } }),
+      db.$queryRaw<ResourceCounts[]>`
+      SELECT count(*) FILTER (WHERE enabled)::int AS enabled, count(*) > 0 AS configured
+      FROM "WebhookSource" WHERE "organizationId"=${organizationId}`,
+      db.$queryRaw<ResourceCounts[]>`
+      SELECT count(*) FILTER (WHERE enabled)::int AS enabled, count(*) > 0 AS configured
+      FROM "WebhookDestination" WHERE "organizationId"=${organizationId}`,
+      db.subscription.count({
+        where: {
+          organizationId,
+          source: { enabled: true },
+          destination: { enabled: true },
+        },
+      }),
       db.destinationDailyStat.groupBy({
         by: ["day"],
         orderBy: { day: "asc" },
@@ -99,8 +112,11 @@ export async function readOverview(organizationId: string, now = new Date()) {
     timings: timings[0],
     received,
     inflight,
-    sources,
-    destinations,
+    sources: sourceCounts[0].enabled,
+    destinations: destinationCounts[0].enabled,
+    hasConfiguredSources: sourceCounts[0].configured,
+    hasConfiguredDestinations: destinationCounts[0].configured,
+    activeRoutes,
     days,
     latest,
   };

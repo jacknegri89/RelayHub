@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "../../server/auth";
 import { LanguageSwitch } from "../../components/locale";
 import { Brand } from "../../components/brand";
-import { ActionForm } from "../../components/forms";
+import { AccountMenu } from "../../components/account-menu";
 import { PolicyLinks } from "../../components/policy-links";
 import Link from "next/link";
 
@@ -22,20 +22,23 @@ export default async function WorkspaceLayout({
   return (
     <>
       <header className="topbar">
-        <Link
-          href="/"
-          aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}
-        >
-          <Brand />
-        </Link>
+        <div className="topbar-brand">
+          <Link
+            href="/"
+            aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}
+          >
+            <Brand />
+          </Link>
+          <Link className="workspace-shortcut" href="/workspace">
+            {t("Workspace", "Area di lavoro")}
+          </Link>
+        </div>
         <div className="account">
-          <span>{session.user.email}</span>
           <LanguageSwitch />
-          <Link href="/workspace/security">{t("Security", "Sicurezza")}</Link>
-          <ActionForm
-            endpoint="/api/auth/sign-out"
-            label={t("Sign out", "Esci")}
-            nextPath="/login"
+          <AccountMenu
+            email={session.user.email}
+            name={session.user.name}
+            image={session.user.image}
           />
         </div>
       </header>

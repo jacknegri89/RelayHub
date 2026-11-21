@@ -66,6 +66,17 @@ export function OverviewTrend({
     failed: t("Failed", "Falliti"),
   };
   const filters = { ...labels, total: t("All", "Tutti") };
+  const emptyMessages: Record<Series, string> = {
+    total: t("No attempts in this period", "Nessun tentativo nel periodo"),
+    succeeded: t(
+      "No successful attempts in this period",
+      "Nessun tentativo riuscito nel periodo",
+    ),
+    failed: t(
+      "No failed attempts in this period",
+      "Nessun tentativo fallito nel periodo",
+    ),
+  };
   function points(series: Series) {
     return days
       .map((day, i) => {
@@ -107,22 +118,27 @@ export function OverviewTrend({
           ))}
         </div>
       </header>
-      {maximum > 0 && (
-        <div className={styles.chartRow} aria-hidden="true">
-          <div className={styles.axis}>
-            <span>{axis.format(limit)}</span>
-            <span>{Number.isInteger(limit / 2) && axis.format(limit / 2)}</span>
-            <span>0</span>
-          </div>
-          <div className={styles.plot}>
-            {days.map((day) => (
-              <label
-                htmlFor={group + day.date}
-                key={day.date}
-                className={styles.column}
-                data-selected={selected?.date === day.date}
-              >
-                {visible.map((key) => (
+      <div className={styles.chartRow}>
+        <div className={styles.axis} aria-hidden="true">
+          <span>{maximum > 0 && axis.format(limit)}</span>
+          <span>
+            {maximum > 0 &&
+              Number.isInteger(limit / 2) &&
+              axis.format(limit / 2)}
+          </span>
+          <span>0</span>
+        </div>
+        <div className={styles.plot} data-empty={maximum === 0}>
+          {days.map((day) => (
+            <label
+              htmlFor={group + day.date}
+              key={day.date}
+              className={styles.column}
+              data-selected={selected?.date === day.date}
+              aria-hidden="true"
+            >
+              {maximum > 0 &&
+                visible.map((key) => (
                   <i
                     className={styles.dot}
                     data-series={key}
@@ -130,9 +146,25 @@ export function OverviewTrend({
                     style={{ bottom: (value(day, key) * 100) / limit + "%" }}
                   />
                 ))}
-              </label>
-            ))}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            </label>
+          ))}
+          {maximum > 0 && (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              <polygon
+                data-series={filter}
+                points={
+                  50 / days.length +
+                  ",100 " +
+                  points(filter) +
+                  " " +
+                  (100 - 50 / days.length) +
+                  ",100"
+                }
+              />
               {visible.map((key) => (
                 <polyline
                   key={key}
@@ -142,17 +174,12 @@ export function OverviewTrend({
                 />
               ))}
             </svg>
-          </div>
-        </div>
-      )}
-      {maximum === 0 && (
-        <p className={styles.chartEmpty}>
-          {t(
-            "No attempts for this selection in the last seven days.",
-            "Nessun tentativo per questa selezione negli ultimi sette giorni.",
           )}
-        </p>
-      )}
+          {maximum === 0 && (
+            <p className={styles.chartEmpty}>{emptyMessages[filter]}</p>
+          )}
+        </div>
+      </div>
       <div
         className={styles.dates}
         role="radiogroup"

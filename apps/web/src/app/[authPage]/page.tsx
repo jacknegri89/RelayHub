@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Brand } from "../../components/brand";
 import { ActionForm } from "../../components/forms";
+import { VerifySignIn } from "../../components/verify-sign-in";
 import { AuthTrace } from "../../components/auth-trace";
 import { PageHeading } from "../../components/page-heading";
 import { issueFormProof } from "../../server/form-proof";
@@ -241,65 +242,5 @@ async function AuthGuide({ step }: { step: "login" | "register" | "verify" }) {
         "Usa l’email e la password scelte durante la registrazione. Dopo l’accesso, scegli l’organizzazione di cui vuoi seguire gli eventi.",
       )}
     </SectionGuide>
-  );
-}
-
-async function VerifySignIn() {
-  const { t } = await getLocale();
-  return (
-    <>
-      <p>
-        {t(
-          "Enter the six-digit code from your authenticator app.",
-          "Inserisci il codice a sei cifre generato dalla tua app di autenticazione.",
-        )}
-      </p>
-      <ActionForm
-        endpoint="/api/auth/two-factor/verify-totp"
-        label={t("Verify code", "Verifica codice")}
-        nextPath="/workspace"
-      >
-        <label>
-          {t("Authenticator code", "Codice di autenticazione")}
-          <input
-            name="code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            placeholder="123456"
-            maxLength={6}
-            required
-          />
-        </label>
-      </ActionForm>
-      <details className="factor-details">
-        <summary>
-          {t("Use a recovery code", "Usa un codice di recupero")}
-        </summary>
-        <ActionForm
-          endpoint="/api/auth/two-factor/verify-backup-code"
-          label={t("Verify recovery code", "Verifica codice di recupero")}
-          nextPath="/workspace"
-        >
-          <label>
-            {t("Recovery code", "Codice di recupero")}
-            <input
-              name="code"
-              autoComplete="off"
-              placeholder={t(
-                "One of your saved codes",
-                "Uno dei codici salvati",
-              )}
-              spellCheck={false}
-              maxLength={64}
-              required
-            />
-          </label>
-        </ActionForm>
-      </details>
-      <p>
-        <Link href="/login">{t("Back to sign in", "Torna all’accesso")}</Link>
-      </p>
-    </>
   );
 }
