@@ -3,10 +3,12 @@ info:
   title: RelayHub Webhook and Read API
   version: 0.1.0
   description: >
-    Send signed UTF-8 JSON bytes. Use HMAC-SHA256 with the source secret as UTF-8 text
+    Send signed UTF-8 JSON bytes. Standard RelayHub sources use HMAC-SHA256 with the source secret as UTF-8 text
     over timestamp + "." + the original body bytes. Send the lowercase hexadecimal digest
     as v1=<digest>. Timestamp is Unix seconds. Use one stable external ID across retries.
     Include a unique ID in the signed JSON if otherwise identical events can occur in the same second.
+    Native GitHub sources verify the GitHub HMAC over the original body, use the delivery GUID
+    as their external ID and prefix the GitHub event name with "github." for routing.
     Responses contain X-Request-Id for request correlation.
 paths:
   /api/v1/events:
@@ -135,6 +137,11 @@ paths:
   /api/webhooks/{sourceId}:
     post:
       operationId: receiveWebhook
+      description: >-
+        The source's configured provider selects the required header set. RelayHub sources require
+        the three X-RelayHub headers and a JSON object with a type field. GitHub sources require
+        X-GitHub-Delivery, X-GitHub-Event and X-Hub-Signature-256 with GitHub's original JSON object.
+        A signed GitHub ping only checks connectivity and creates no event or delivery.
       parameters:
         - name: sourceId
           in: path
@@ -142,11 +149,11 @@ paths:
           schema: { type: string, format: uuid }
         - name: X-RelayHub-Timestamp
           in: header
-          required: true
+          description: Required for RelayHub sources.
           schema: { type: string, pattern: "^[0-9]{10}$" }
         - name: X-RelayHub-Event-Id
           in: header
-          required: true
+          description: Required for RelayHub sources.
           schema:
             {
               type: string,
@@ -155,15 +162,27 @@ paths:
             }
         - name: X-RelayHub-Signature
           in: header
-          required: true
+          description: Required for RelayHub sources.
           schema: { type: string, pattern: "^v1=[a-f0-9]{64}$" }
+        - name: X-GitHub-Delivery
+          in: header
+          description: Required for GitHub sources. Redelivery preserves this GUID.
+          schema: { type: string, format: uuid }
+        - name: X-GitHub-Event
+          in: header
+          description: Required for GitHub sources, for example push or ping.
+          schema: { type: string }
+        - name: X-Hub-Signature-256
+          in: header
+          description: Required for GitHub sources. HMAC-SHA256 of the raw request body.
+          schema: { type: string, pattern: "^sha256=[a-f0-9]{64}$" }
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [type]
+              description: Standard RelayHub sources require type. GitHub uses the original provider payload.
               properties:
                 type:
                   {
@@ -177,15 +196,20 @@ paths:
               id: event-123
       responses:
         "200":
-          description: Matching duplicate, original ID returned
+          description: Matching duplicate (original ID) or GitHub ping acknowledgement
           content:
             application/json:
               schema:
-                type: object
-                required: [eventId, duplicate]
-                properties:
-                  eventId: { type: string, format: uuid }
-                  duplicate: { const: true }
+                oneOf:
+                  - type: object
+                    required: [eventId, duplicate]
+                    properties:
+                      eventId: { type: string, format: uuid }
+                      duplicate: { const: true }
+                  - type: object
+                    required: [pong]
+                    properties:
+                      pong: { const: true }
         "202":
           description: Event and deliveries committed
           content:

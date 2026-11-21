@@ -84,6 +84,7 @@ async function applyCommand(
           id,
           organizationId,
           name: command.name,
+          provider: command.provider ?? "relayhub",
           secret: encrypt(Buffer.from(secret), "source:" + id),
         },
       });

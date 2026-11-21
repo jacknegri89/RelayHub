@@ -7,6 +7,8 @@ import { ApiKeySettings } from "./api-key-settings";
 import { Status, ShortId, stateLabel } from "./display";
 import { PageHeading } from "./page-heading";
 
+const sourceProviderNames = { relayhub: "RelayHub", github: "GitHub" };
+
 export async function Sources({
   organizationId,
   editable,
@@ -21,6 +23,7 @@ export async function Sources({
     select: {
       id: true,
       name: true,
+      provider: true,
       enabled: true,
       _count: { select: { events: true } },
     },
@@ -52,6 +55,13 @@ export async function Sources({
                 placeholder={t("e.g. Online checkout", "Es. Cassa online")}
               />
             </label>
+            <label>
+              {t("Source type", "Tipo di sorgente")}
+              <select name="provider" defaultValue="relayhub">
+                <option value="relayhub">RelayHub</option>
+                <option value="github">GitHub</option>
+              </select>
+            </label>
           </ActionForm>
         </section>
       )}
@@ -72,8 +82,39 @@ export async function Sources({
             </code>
           </p>
           <p className="muted">
-            {item._count.events} {t("retained events", "eventi conservati")}
+            {sourceProviderNames[item.provider]} · {item._count.events}{" "}
+            {t("retained events", "eventi conservati")}
           </p>
+          {editable && item.provider === "github" && (
+            <details>
+              <summary>
+                {t(
+                  "Connect a GitHub repository",
+                  "Collega un repository GitHub",
+                )}
+              </summary>
+              <ol>
+                <li>
+                  {t(
+                    "In the repository, open Settings → Webhooks → Add webhook. Paste the source URL above into Payload URL.",
+                    "Nel repository apri Settings → Webhooks → Add webhook. Incolla l’URL della sorgente nel campo Payload URL.",
+                  )}
+                </li>
+                <li>
+                  {t(
+                    "Set Content type to application/json and paste the signing secret shown when you created this source into Secret. After rotating it, update Secret in GitHub.",
+                    "Seleziona application/json in Content type e incolla in Secret la chiave di firma mostrata alla creazione della sorgente. Se la sostituisci, aggiorna anche Secret su GitHub.",
+                  )}
+                </li>
+                <li>
+                  {t(
+                    "Select Just the push event and save. After your next push, look for github.push in Events. Use github.push as the event type when linking a destination.",
+                    "Seleziona Just the push event e salva. Dopo il prossimo push, cerca github.push in Eventi. Usa github.push come tipo di evento nella regola di inoltro verso una destinazione.",
+                  )}
+                </li>
+              </ol>
+            </details>
+          )}
           {editable && (
             <div className="edit-grid">
               <ActionForm

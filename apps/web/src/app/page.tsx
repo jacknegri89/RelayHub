@@ -30,10 +30,10 @@ export default async function Home() {
     {
       key: "signature",
       label: t("Signature", "Firma"),
-      value: "HMAC-SHA256 · v1",
+      value: "HMAC-SHA256",
       text: t(
-        "Per-source secret over timestamp and raw body. Five-minute replay window by default.",
-        "Chiave per sorgente su timestamp e corpo grezzo. Finestra anti-replay di cinque minuti, per impostazione predefinita.",
+        "RelayHub checks GitHub’s signature on the original request body. For RelayHub v1, the signature also covers the timestamp, with a five-minute window by default.",
+        "RelayHub verifica la firma di GitHub sul corpo originale della richiesta. Per il formato RelayHub v1, la firma copre anche il timestamp, con una finestra predefinita di cinque minuti.",
       ),
     },
     {
@@ -116,10 +116,13 @@ export default async function Home() {
             </h1>
             <p className={styles.lede} data-intro="lede">
               {t(
-                "Use RelayHub when several apps need to act on the same event. It verifies the message from your app and forwards it to the services you choose. Your dashboard shows who received it and which deliveries need another attempt.",
-                "RelayHub serve quando più app devono reagire allo stesso evento. Verifica la firma del messaggio e lo inoltra ai servizi che scegli. Nel pannello vedi chi l’ha ricevuto e quali consegne sono da riprovare.",
+                "RelayHub verifies webhooks and forwards them to your services. If a service is offline, RelayHub retries. Track each delivery in your dashboard.",
+                "RelayHub verifica i webhook e li inoltra ai tuoi servizi. Se un servizio è offline, RelayHub riprova. Nel pannello segui ogni consegna.",
               )}
             </p>
+          </div>
+          <SpacetimeHero />
+          <div className={styles.details}>
             <div className={styles.useCase} data-intro="case">
               <h2>{t("When an order comes in", "Quando arriva un ordine")}</h2>
               <p>
@@ -139,7 +142,6 @@ export default async function Home() {
               </a>
             </div>
           </div>
-          <SpacetimeHero />
         </section>
 
         <WebhookExamples />

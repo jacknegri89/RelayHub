@@ -13,6 +13,11 @@ enum Role {
   viewer
 }
 
+enum SourceProvider {
+  relayhub
+  github
+}
+
 enum DeliveryStatus {
   pending
   queued
@@ -141,6 +146,7 @@ model WebhookSource {
   organizationId String
   organization Organization @relation(fields: [organizationId], references: [id])
   name String
+  provider SourceProvider @default(relayhub)
   secret String
   enabled Boolean @default(true)
   createdAt DateTime @default(now())

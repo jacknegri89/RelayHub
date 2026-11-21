@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import Redis from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -85,6 +85,21 @@ async function sendEvent(type: string) {
     await submitSigned(source.id, source.secret, id, sampleEvent(type, id)),
     202,
   );
+}
+
+function githubHeaders(
+  secret: string,
+  deliveryId: string,
+  event: string,
+  body: string,
+) {
+  return {
+    "content-type": "application/json",
+    "x-github-event": event,
+    "x-github-delivery": deliveryId,
+    "x-hub-signature-256":
+      "sha256=" + createHmac("sha256", secret).update(body).digest("hex"),
+  };
 }
 
 async function delivered(eventId: string, status = "delivered") {
@@ -221,6 +236,132 @@ describe("RelayHub with PostgreSQL, Redis and HTTP", () => {
         where: { organizationId: org, externalId: id },
       }),
     ).toBe(0);
+  });
+
+  it("authenticates GitHub pings and requires a signed GitHub JSON object", async () => {
+    const github = await ok(
+      await manage({
+        action: "source_create",
+        name: "GitHub ping",
+        provider: "github",
+      }),
+    );
+    const endpoint = config.RELAYHUB_BASE_URL + "/api/webhooks/" + github.id;
+    const body = '{"zen":"Stay curious"}';
+    const headers = githubHeaders(github.secret, randomUUID(), "ping", body);
+    const send = (payload: string, values = headers) =>
+      fetch(endpoint, { method: "POST", headers: values, body: payload });
+    expect(await ok(await send(body))).toEqual({ pong: true });
+    expect((await send(body + " ")).status).toBe(401);
+    expect(
+      (await send(body, { ...headers, "x-github-delivery": "missing" })).status,
+    ).toBe(422);
+    expect(
+      (await send(body, { ...headers, "x-github-event": "two events" })).status,
+    ).toBe(422);
+    for (const invalid of ["null", "[]", "{"]) {
+      expect(
+        (
+          await send(
+            invalid,
+            githubHeaders(github.secret, randomUUID(), "push", invalid),
+          )
+        ).status,
+      ).toBe(422);
+    }
+    expect(
+      (await submitSigned(github.id, github.secret, randomUUID(), body)).status,
+    ).toBe(401);
+    const relayEndpoint =
+      config.RELAYHUB_BASE_URL + "/api/webhooks/" + source.id;
+    const relayHeaders = githubHeaders(
+      source.secret,
+      randomUUID(),
+      "push",
+      body,
+    );
+    expect(
+      (
+        await fetch(relayEndpoint, {
+          method: "POST",
+          headers: relayHeaders,
+          body,
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      await db.webhookEvent.count({ where: { sourceId: github.id } }),
+    ).toBe(0);
+  });
+
+  it("stores a GitHub push once across concurrent requests and redelivery", async () => {
+    const github = await ok(
+      await manage({
+        action: "source_create",
+        name: "GitHub push",
+        provider: "github",
+      }),
+    );
+    const endpoint = config.RELAYHUB_BASE_URL + "/api/webhooks/" + github.id;
+    await ok(
+      await manage({
+        action: "route_save",
+        sourceId: github.id,
+        destinationId: routes.get("success"),
+        eventType: "github.push",
+      }),
+    );
+    // GitHub delivery GUIDs may be version 1.
+    const deliveryId = "e3944890-f442-11ed-9ac2-3394e8c91e42";
+    const body = JSON.stringify({
+      ref: "refs/heads/main",
+      head_commit: { message: "caffè" },
+    });
+    function send(id = deliveryId, event = "push", payload = body) {
+      return fetch(endpoint, {
+        method: "POST",
+        headers: githubHeaders(github.secret, id, event, payload),
+        body: payload,
+      });
+    }
+    const concurrent = await Promise.all([send(), send(), send()]);
+    expect(concurrent.map((item) => item.status).sort()).toEqual([
+      200, 200, 202,
+    ]);
+    const responses = await Promise.all(concurrent.map((item) => item.json()));
+    const eventId = responses[0].eventId;
+    expect(responses.map((item) => item.eventId)).toEqual([
+      eventId,
+      eventId,
+      eventId,
+    ]);
+    expect(await ok(await send())).toEqual({ duplicate: true, eventId });
+    expect(
+      await db.webhookEvent.findMany({
+        where: { sourceId: github.id },
+        select: {
+          id: true,
+          eventType: true,
+          externalId: true,
+          _count: { select: { deliveries: true } },
+        },
+      }),
+    ).toEqual([
+      {
+        id: eventId,
+        eventType: "github.push",
+        externalId: deliveryId,
+        _count: { deliveries: 1 },
+      },
+    ]);
+    // A reused delivery ID must agree on content and event type.
+    expect(
+      (await send(deliveryId, "push", '{"ref":"refs/heads/other"}')).status,
+    ).toBe(409);
+    expect((await send(deliveryId, "create")).status).toBe(409);
+    // Distinct GitHub deliveries can legitimately have identical bodies.
+    const other = await ok(await send(randomUUID()), 202);
+    expect(other.eventId).not.toBe(eventId);
   });
 
   it("deduplicates simultaneous requests and rejects reused IDs or signatures", async () => {
