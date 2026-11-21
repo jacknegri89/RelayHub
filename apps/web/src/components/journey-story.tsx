@@ -22,8 +22,8 @@ function journeySteps(t: (english: string, italian: string) => string): Step[] {
       label: t("Verify", "Verifica"),
       title: t("The shop signs the order.", "Il negozio firma l’ordine."),
       detail: t(
-        "RelayHub checks the signature and timestamp. To forward an event from a provider, your app verifies the provider’s signature first, then signs a new request for RelayHub.",
-        "RelayHub controlla la firma e l’ora di invio. Per inoltrare un evento di un servizio esterno, la tua app verifica prima la firma del servizio e poi firma una nuova richiesta per RelayHub.",
+        "The shop signs the order and its timestamp with its source secret. RelayHub checks both before accepting the order. For a GitHub source, RelayHub verifies the signature sent by GitHub directly.",
+        "Il negozio firma l’ordine e l’ora di invio con la chiave della sorgente. RelayHub li verifica prima di accettare l’ordine. Per una sorgente GitHub, RelayHub verifica direttamente la firma inviata da GitHub.",
       ),
       receipt: "HMAC v1",
       status: t("Signature verified", "Firma verificata"),

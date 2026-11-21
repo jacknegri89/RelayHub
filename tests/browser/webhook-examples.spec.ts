@@ -3,7 +3,11 @@ import { expect, test } from "@playwright/test";
 test("a visitor follows a webhook, changes example and replays the exchange", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Send a test order" }),
+  ).toBeInViewport({ ratio: 1 });
   await page.getByRole("link", { name: "Explore webhook examples" }).click();
   const guide = page.getByRole("region", { name: "What is a webhook?" });
   await expect(guide).toBeFocused();

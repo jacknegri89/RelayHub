@@ -181,6 +181,22 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
     .textContent();
   const sourceId = endpoint?.split("/").at(-1) ?? "";
 
+  const createSource = page
+    .locator("form")
+    .filter({ has: page.getByRole("button", { name: "Create source" }) });
+  await createSource.getByLabel("Source name").fill("Release repository");
+  await createSource.getByLabel("Source type").selectOption("github");
+  await createSource.getByRole("button", { name: "Create source" }).click();
+  await page.getByText("Connect a GitHub repository", { exact: true }).click();
+  await expect(
+    page.getByText(/Set Content type to application\/json/),
+  ).toBeVisible();
+  await expect(page.getByText(/look for github\.push in Events/)).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Signing secret", { exact: true })).toHaveCount(
+    0,
+  );
+
   await page.getByRole("link", { name: "Destinations", exact: true }).click();
   await page.getByLabel("Destination name").fill("Browser receiver");
   await page

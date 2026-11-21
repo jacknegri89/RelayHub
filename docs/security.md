@@ -11,7 +11,9 @@ Internet senders, authenticated tenant users, destination receivers, Redis and n
 | Untrusted destination URLs             | Allowlisted HTTPS hostnames, address classification, pinned resolution, TLS validation, no redirects and an absolute request deadline                                     |
 | Unsafe browser output                  | React text escaping, security headers, no third-party scripts and no persisted credentials in browser storage                                                             |
 
-Ingress HMAC v1 signs the timestamp and original payload bytes. Senders should include a unique business ID inside the JSON so identical payloads sent in the same second can be distinguished. The signature receipt limits reuse with a different header ID once a valid request has been observed.
+RelayHub sources sign the timestamp and original payload bytes with HMAC v1. Senders should include a unique business ID inside the JSON so identical payloads sent in the same second can be distinguished. The signature receipt limits reuse with a different header ID once a valid request has been observed.
+
+GitHub sources verify `X-Hub-Signature-256` over the original bytes using a dedicated webhook secret. GitHub's signature covers only the body. Use HTTPS with certificate verification and keep the payload and signature private. GitHub reuses `X-GitHub-Delivery` on redelivery. PostgreSQL enforces one event per source and delivery GUID while the event is retained. A matching redelivery returns the original event ID, and reuse of the same GUID with a different body or event type returns HTTP 409.
 
 The worker also sends an outbound v2 signature in `X-RelayHub-Delivery-Signature`. It binds the timestamp, stable delivery ID, external event ID and raw body. Receivers that deduplicate a business operation should verify this signature and the timestamp before using those identifiers. The original v1 header remains available for existing integrations. Use TLS and a distinct secret per destination.
 
