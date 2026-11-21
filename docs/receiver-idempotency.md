@@ -4,6 +4,10 @@ RelayHub delivers at least once. A shop can send one order to its warehouse and 
 
 ## Try a lost acknowledgement
 
+From the homepage, open **Try a lost response** and start a test. This uses the running worker and a dedicated receiver. Open both attempts to compare their delivery IDs. The receiver commits an order before delaying its first reply beyond the worker's deadline. When the retry arrives, it increments the receipt count on that order and acknowledges the request. The page reads the request count and saved order count from PostgreSQL. Reloading the page in the same tab reopens the current test.
+
+The browser test uses a separate workspace with no members and a fixed receiver. Its order expires with its delivery under the normal retention policy. The worker must be running and `MAX_ATTEMPTS` must be at least two. The following steps exercise the SQLite example in the local demo.
+
 1. Start the local demo and seed its routes using the [testing guide](testing.md#seed-and-replay-fixtures).
 2. Run `pnpm demo lost-response` in the seeded environment. Each run submits a new fictional order.
 3. Open **Deliveries** in the demo workspace and select the delivery for **Demo lost-response**. The first attempt times out after the receiver has committed the order. On the next attempt, the receiver recognizes the delivery ID and returns HTTP 200. Both attempts appear under the same delivery.

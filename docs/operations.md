@@ -18,6 +18,7 @@
 | DELIVERY_TIMEOUT_MS / MAX_ATTEMPTS / WORKER_CONCURRENCY | Defaults 5000, 5 and 4                                                                      |
 | WORKER_HEALTH_PORT                                      | Loopback worker health port, default 3002                                                   |
 | DEMO_RECEIVER_URL / DEMO_RECEIVER_SECRET                | Demo only. Use an explicit loopback or Compose receiver origin                              |
+| DEMO_LOST_RESPONSE_ORIGIN                               | Set by local Compose to `http://web:3000` for the worker to reach the test receiver         |
 
 ## Linux container deployment
 

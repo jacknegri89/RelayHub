@@ -5,6 +5,7 @@ import {
   DestinationBlocked,
   destinationUrl,
   publicAddress,
+  type DeliveryScope,
 } from "@relayhub/shared/destinations";
 
 export async function approvedAddress(
@@ -28,8 +29,9 @@ export async function send(
   body: Buffer,
   headers: Record<string, string>,
   timeoutMs: number,
+  scope?: DeliveryScope,
 ) {
-  const { url, isDemo } = destinationUrl(destination);
+  const { url, isDemo } = destinationUrl(destination, undefined, scope);
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -49,7 +51,7 @@ export async function send(
     return await new Promise<{ status: number; retryAfter?: string }>(
       (resolve, reject) => {
         let transport = httpsRequest;
-        if (isDemo) {
+        if (url.protocol === "http:") {
           transport = httpRequest;
         }
         const outgoing = transport(
