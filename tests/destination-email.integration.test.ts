@@ -187,7 +187,7 @@ it("confirms mailbox ownership before monitoring, retries the same message and s
   expect(await emailPreference(scope)).toBe("off");
 });
 
-it("calls the fixed provider with plain text and stops uncertain retries before its deduplication expires", async () => {
+it("sends HTML and text through Resend and stops uncertain retries before its deduplication expires", async () => {
   await db.user.update({ where: { id: user }, data: { emailVerified: true } });
   await changeDestinationEmail(scope, { action: "enable" }, "en");
   await openIncident();
@@ -209,6 +209,7 @@ it("calls the fixed provider with plain text and stops uncertain retries before 
   const body = JSON.parse(String(request?.body));
   expect(body).toMatchObject({ from: "sender@relayhub.example", to: [email] });
   expect(body.text).toContain("/destinations/" + destination);
+  expect(body.html).toContain("/destinations/" + destination);
   expect(provider.mock.calls[1][1]?.body).toBe(request?.body);
   expect(
     new Headers(provider.mock.calls[1][1]?.headers).get("idempotency-key"),
@@ -226,6 +227,54 @@ it("calls the fixed provider with plain text and stops uncertain retries before 
   );
   expect(provider).toHaveBeenCalledTimes(3);
   expect(await emailPreference(scope)).toBe("activeWithFailure");
+});
+
+it("recovers a lost pre-upgrade Resend receipt using the original text-only request", async () => {
+  await db.user.update({ where: { id: user }, data: { emailVerified: true } });
+  await changeDestinationEmail(scope, { action: "enable" }, "en");
+  await openIncident();
+  const receipt = randomUUID();
+  let accepted: { key: string | null; body: string } | undefined;
+  const provider = vi.fn<typeof fetch>(async (_url, request) => {
+    const key = new Headers(request?.headers).get("idempotency-key");
+    const body = String(request?.body);
+    if (!accepted) {
+      accepted = { key, body };
+      throw new Error("Original response lost after provider acceptance");
+    }
+    if (key !== accepted.key || body !== accepted.body) {
+      return Response.json(
+        { name: "invalid_idempotent_request" },
+        { status: 409 },
+      );
+    }
+    return Response.json({ id: receipt });
+  });
+  vi.stubGlobal("fetch", provider);
+
+  // The first worker sent the legacy format. A newer worker picks up the same durable row.
+  const legacySend = ({ to, key, subject, text }: NoticeMail) =>
+    sendMail({ to, key, subject, text });
+  const now = nextTick();
+  await dispatchDestinationEmail(legacySend, now);
+  const retry = new Date(now.getTime() + 31_000);
+  await dispatchDestinationEmail(undefined, retry);
+  expect(provider).toHaveBeenCalledTimes(3);
+  const requests = provider.mock.calls.map(([, request]) => ({
+    key: new Headers(request?.headers).get("idempotency-key"),
+    body: JSON.parse(String(request?.body)),
+  }));
+  const [legacy, withHtml, replay] = requests;
+  expect(legacy.key).toMatch(/^relayhub\/.+\/outage\//);
+  expect(legacy.body).not.toHaveProperty("html");
+  expect(withHtml.key).toBe(legacy.key);
+  expect(withHtml.body).toMatchObject({
+    ...legacy.body,
+    html: expect.any(String),
+  });
+  expect(replay).toEqual(legacy);
+  expect(await emailPreference(scope)).toBe("active");
+  expect(await dispatchDestinationEmail(undefined, retry)).toBe(false);
 });
 
 it("scopes opt-in to its member, removes work on address change, unsubscribe or removal", async () => {
@@ -325,6 +374,28 @@ it.each([
   },
 );
 
+it("finishes an ambiguous Gmail send once and lets the recovery email through", async () => {
+  await db.user.update({ where: { id: user }, data: { emailVerified: true } });
+  await changeDestinationEmail(scope, { action: "enable" }, "en");
+  const incident = await openIncident();
+  const send = vi
+    .fn()
+    .mockResolvedValueOnce({ status: 503, uncertain: true })
+    .mockResolvedValueOnce({ status: 200 });
+  await dispatchDestinationEmail(send);
+  expect(await emailPreference(scope)).toBe("activeWithFailure");
+  await db.destinationIncident.update({
+    where: { id: incident.id },
+    data: { resolvedAt: new Date() },
+  });
+  await dispatchDestinationEmail(send);
+  expect(send.mock.calls[1][0].subject).toContain("Destination recovered");
+  expect(
+    await dispatchDestinationEmail(send, new Date(Date.now() + 60_000)),
+  ).toBe(false);
+  expect(send).toHaveBeenCalledTimes(2);
+});
+
 it("expires a stale outage even when the worker never attempted it", async () => {
   await db.user.update({ where: { id: user }, data: { emailVerified: true } });
   await changeDestinationEmail(scope, { action: "enable" }, "en");
@@ -412,15 +483,25 @@ it.skipIf(!process.env.RELAYHUB_TEST_MAILPIT_URL)(
       };
       return result.messages;
     }
+    async function readMessage(id: string) {
+      const response = await fetch(
+        origin + "/api/v1/message/" + encodeURIComponent(id),
+        { redirect: "error" },
+      );
+      expect(response.ok).toBe(true);
+      return (await response.json()) as { Text: string; HTML: string };
+    }
     await changeDestinationEmail(scope, { action: "enable" }, "en");
     await dispatchDestinationEmail(send);
     const [confirmation] = await inbox();
     expect(confirmation.Subject).toBe("RelayHub email confirmation");
-    const detail = await fetch(
-      origin + "/api/v1/message/" + encodeURIComponent(confirmation.ID),
-    );
-    const { Text } = (await detail.json()) as { Text: string };
-    const code = Text.match(/\b\d{8}\b/)?.[0] ?? "";
+    const confirmationMail = await readMessage(confirmation.ID);
+    const code = confirmationMail.Text.match(/\b\d{8}\b/)?.[0] ?? "";
+    expect(code).toHaveLength(8);
+    // The recipient must see the same code in either MIME part, before disclosing any destination name.
+    const htmlText = confirmationMail.HTML.replace(/<[^>]+>/g, "");
+    expect(htmlText.includes(code)).toBe(true);
+    expect(htmlText.includes("Billing")).toBe(false);
     await changeDestinationEmail(scope, { action: "confirm", code }, "en");
     const incident = await openIncident();
     await db.destinationIncident.update({
@@ -429,7 +510,8 @@ it.skipIf(!process.env.RELAYHUB_TEST_MAILPIT_URL)(
     });
     await dispatchDestinationEmail(send);
     await dispatchDestinationEmail(send);
-    const subjects = (await inbox()).map((message) => message.Subject).sort();
+    const delivered = await inbox();
+    const subjects = delivered.map((message) => message.Subject).sort();
     expect(subjects).toEqual(
       [
         "RelayHub email confirmation",
@@ -437,5 +519,26 @@ it.skipIf(!process.env.RELAYHUB_TEST_MAILPIT_URL)(
         "RelayHub · Destination recovered · Billing",
       ].sort(),
     );
+    const destinationUrl =
+      config.RELAYHUB_BASE_URL +
+      "/workspace/" +
+      org +
+      "/destinations/" +
+      destination;
+    for (const message of delivered) {
+      if (message.ID === confirmation.ID) {
+        continue;
+      }
+      const incidentMail = await readMessage(message.ID);
+      expect(incidentMail.Text).toContain("Billing");
+      expect(incidentMail.HTML).toContain("Billing");
+      expect(incidentMail.Text).toContain(destinationUrl);
+      // Match a quoted HTML link target, including single-quoted attributes.
+      const links = Array.from(
+        incidentMail.HTML.matchAll(/\bhref\s*=\s*["']([^"']+)["']/gi),
+        (attribute) => attribute[1],
+      );
+      expect(links).toContain(destinationUrl);
+    }
   },
 );

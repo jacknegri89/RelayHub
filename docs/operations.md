@@ -43,10 +43,10 @@ After the first account enrolls in MFA, keep the second-factor checks in any rol
 
 ### Rolling out account mail
 
-1. Leave `RELAYHUB_ACCOUNT_EMAIL` off on the existing public demo. Registering and signing in remain available. Never mark legacy accounts verified in bulk.
+1. Choose a sender for account messages. Set `RELAYHUB_BASE_URL` to the application's public HTTPS origin so that links received by email open the correct installation. Existing accounts retain their verification status.
 2. Back up the database. After release approval, apply `20261121005000_account_reset_revocation` and `20261121005100_replace_reset_links` before enabling the new code. The migrations add triggers for password changes and reset issuance.
-3. Test verification, reset and the next MFA challenge with Mailpit first. For general public mail, use a domain already controlled and verified with Resend. The default Resend testing sender only supports its account owner's destination alerts. Configure the account's test mailbox via the private `RELAYHUB_RESEND_TEST_TO` when using that sender. [Mail setup](destination-email.md)
-4. Only enable `RELAYHUB_ACCOUNT_EMAIL=1` once a general sender has delivered to a controlled real inbox. `RELAYHUB_ACCOUNT_LINK_MINUTES` defaults to 20 and accepts 5–60. Existing users sign in and confirm their address under **Security**. A user who lost access before verifying their address has no self-service reset. To suspend account mail, disable the switch and restart the web service.
+3. Test verification, reset and the next MFA challenge with Mailpit first. For public mail, authorize an existing Gmail sender or verify a sending domain with Resend. The Resend testing sender only supports its account owner's destination alerts, restricted by `RELAYHUB_RESEND_TEST_TO`. Verify receipt from the chosen sender before enabling account email. [Mail setup](destination-email.md)
+4. Set `RELAYHUB_ACCOUNT_EMAIL=1` and restart the web service. Verify receipt of both the address confirmation and a password reset in your controlled inbox. `RELAYHUB_ACCOUNT_LINK_MINUTES` defaults to 20 and accepts 5–60. Existing users sign in and confirm their address under **Security**. A user who lost access before verifying their address has no self-service reset. To suspend account mail, disable the switch and restart the web service.
 
 Set `VERIFICATION_RECEIVER_SECRET` to a separate random key of at least 32 characters to enable the built-in receiver. It verifies the signature over the raw payload and returns HTTP 204. The destination form shows the exact URL. To deliver to another system, add its HTTPS hostname to `DESTINATION_HOSTS` and configure a destination and route for it.
 

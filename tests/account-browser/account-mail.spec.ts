@@ -22,8 +22,14 @@ async function waitForProof(page: Page) {
   });
 }
 
-async function inboxLink(email: string, page: string, ids: Set<string>) {
+async function inboxLink(
+  email: string,
+  path: string,
+  ids: Set<string>,
+  browserPage: Page,
+) {
   let link: URL | undefined;
+  let html = "";
   // Only read this run's synthetic mailbox; never scan or clear an entire inbox.
   await expect
     .poll(
@@ -38,12 +44,16 @@ async function inboxLink(email: string, page: string, ids: Set<string>) {
           const response = await fetch(
             new URL("/api/v1/message/" + mail.ID, mailpit),
           );
-          const { Text } = (await response.json()) as { Text: string };
-          const candidate = Text.split(/\s+/).find((word) =>
-            word.startsWith(baseURL.origin + page + "#"),
+          const message = (await response.json()) as {
+            Text: string;
+            HTML: string;
+          };
+          const candidate = message.Text.split(/\s+/).find((word) =>
+            word.startsWith(baseURL.origin + path + "#"),
           );
           if (candidate) {
             link = new URL(candidate);
+            html = message.HTML;
             return true;
           }
         }
@@ -55,6 +65,23 @@ async function inboxLink(email: string, page: string, ids: Set<string>) {
   if (!link) {
     throw new Error("Missing account link");
   }
+  // Inspect the delivered markup without navigating to a token or printing it on a failed assertion.
+  const matchingAction = await browserPage.evaluate(
+    ({ html, url }) => {
+      const message = new DOMParser().parseFromString(html, "text/html");
+      return Array.from(message.querySelectorAll("a[href]")).some((anchor) => {
+        const label = anchor.textContent?.trim();
+        return (
+          anchor.getAttribute("href") === url && Boolean(label) && label !== url
+        );
+      });
+    },
+    { html, url: link.href },
+  );
+  expect(
+    matchingAction,
+    "The HTML action must use the same link as the text part",
+  ).toBe(true);
   return link;
 }
 
@@ -84,7 +111,7 @@ test("confirms an address and resets a password from real local messages", async
     await expect(
       page.getByRole("heading", { name: "Sign in", exact: true }),
     ).toBeVisible();
-    const verification = await inboxLink(email, "/confirm-email", ids);
+    const verification = await inboxLink(email, "/confirm-email", ids, page);
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(currentPassword);
     await waitForProof(page);
@@ -117,7 +144,7 @@ test("confirms an address and resets a password from real local messages", async
     await expect(
       resetPage.getByText("Se questo indirizzo appartiene", { exact: false }),
     ).toBeVisible();
-    const reset = await inboxLink(email, "/reset-password", ids);
+    const reset = await inboxLink(email, "/reset-password", ids, resetPage);
     await resetPage.goto(reset.href);
     await resetPage.getByLabel("Nuova password").fill(newPassword);
     await resetPage

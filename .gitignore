@@ -4,6 +4,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+client_secret_*.apps.googleusercontent.com.json
 apps/web/next-env.d.ts
 packages/db/generated/
 test-results/

@@ -14,6 +14,10 @@ export async function generateMetadata() {
 
 export default async function PrivacyPage() {
   const { t } = await getLocale();
+  let emailProvider = "Resend";
+  if (process.env.RELAYHUB_MAIL_PROVIDER === "gmail") {
+    emailProvider = "Google (Gmail)";
+  }
   return (
     <PolicyPage
       title={t("Privacy Policy", "Informativa sulla privacy")}
@@ -109,14 +113,14 @@ export default async function PrivacyPage() {
       </p>
       <p>
         {t(
-          "If you subscribe to email alerts for a destination, Resend processes your account email address and the message to deliver it. Incident messages include the destination name, its status and a link to the workspace. You can turn them off in that destination’s settings.",
-          "Quando attivi gli avvisi email per una destinazione, Resend tratta il tuo indirizzo email e il messaggio per recapitarlo. Gli avvisi riportano il nome della destinazione, il suo stato e un link all’area di lavoro. Puoi disattivarli dalla pagina della destinazione.",
+          `If you subscribe to email alerts for a destination, ${emailProvider} processes your account email address and the message to deliver it. Incident messages include the destination name, its status and a link to the workspace. You can turn them off in that destination’s settings.`,
+          `Quando attivi gli avvisi email per una destinazione, ${emailProvider} tratta il tuo indirizzo email e il messaggio per recapitarlo. Gli avvisi riportano il nome della destinazione, il suo stato e un link all’area di lavoro. Puoi disattivarli dalla pagina della destinazione.`,
         )}
       </p>
       <p>
         {t(
-          "When account email is enabled, Resend also receives your address and a time-limited link to confirm your email or reset your password. These account messages are separate from destination subscriptions.",
-          "Quando i messaggi per l’account sono attivi, Resend riceve anche il tuo indirizzo e un link a scadenza per confermare l’email o reimpostare la password. Puoi ricevere questi messaggi anche senza iscriverti agli avvisi di una destinazione.",
+          `When account email is enabled, ${emailProvider} also receives your address and a time-limited link to confirm your email or reset your password. These account messages are separate from destination subscriptions.`,
+          `Quando i messaggi per l’account sono attivi, ${emailProvider} riceve anche il tuo indirizzo e un link a scadenza per confermare l’email o reimpostare la password. Puoi ricevere questi messaggi anche senza iscriverti agli avvisi di una destinazione.`,
         )}
       </p>
       <h2 id="retention">{t("Retention", "Tempi di conservazione")}</h2>
