@@ -10,6 +10,11 @@ import { Status, stateLabel } from "./display";
 import { PageHeading } from "./page-heading";
 import { WorkspaceEmpty } from "./workspace-empty";
 import { CreateDisclosure } from "./create-disclosure";
+import {
+  TestDeliveryForm,
+  type TestDestination,
+  type TestSource,
+} from "./test-delivery-form";
 import styles from "./workspace-records.module.css";
 
 const sourceProviderNames = { relayhub: "RelayHub", github: "GitHub" };
@@ -225,9 +230,11 @@ export async function Sources({
 export async function Destinations({
   organizationId,
   editable,
+  prepareTest = false,
 }: {
   organizationId: string;
   editable: boolean;
+  prepareTest?: boolean;
 }) {
   const { t } = await getLocale();
   const db = database();
@@ -244,8 +251,13 @@ export async function Destinations({
           select: {
             sourceId: true,
             eventType: true,
-            source: { select: { name: true } },
+            source: { select: { name: true, enabled: true } },
           },
+          orderBy: [
+            { source: { name: "asc" } },
+            { sourceId: "asc" },
+            { eventType: "asc" },
+          ],
         },
       },
     }),
@@ -256,6 +268,81 @@ export async function Destinations({
     }),
   ]);
   const endpoint = "/api/organizations/" + organizationId;
+  // Only subscriptions between enabled endpoints can receive a test event.
+  const testDestinations = new Map<string, TestDestination>();
+  if (editable) {
+    for (const item of items) {
+      if (!item.enabled) {
+        continue;
+      }
+      const linkedSources = new Map<string, TestSource>();
+      for (const route of item.subscriptions) {
+        if (!route.source.enabled) {
+          continue;
+        }
+        let source = linkedSources.get(route.sourceId);
+        if (!source) {
+          source = {
+            id: route.sourceId,
+            name: route.source.name,
+            eventTypes: [],
+          };
+          linkedSources.set(source.id, source);
+        }
+        source.eventTypes.push(route.eventType);
+      }
+      if (linkedSources.size) {
+        testDestinations.set(item.id, {
+          id: item.id,
+          name: item.name,
+          sources: Array.from(linkedSources.values()),
+        });
+      }
+    }
+  }
+  if (editable && prepareTest) {
+    const listPath = "/workspace/" + organizationId + "/destinations";
+    return (
+      <>
+        <PageHeading
+          title={t("Prepare a test delivery", "Prepara una consegna di prova")}
+        />
+        {testDestinations.size > 0 && (
+          <section className="panel">
+            <p>
+              {t(
+                "Choose a route. When you select Send test, RelayHub sends a sample event only to that destination.",
+                "Scegli una regola di inoltro. Quando premi Invia prova, RelayHub invia un evento di esempio solo alla destinazione scelta.",
+              )}
+            </p>
+            <TestDeliveryForm
+              organizationId={organizationId}
+              destinations={Array.from(testDestinations.values())}
+              chooseDestination
+            />
+          </section>
+        )}
+        {!testDestinations.size && (
+          <WorkspaceEmpty
+            kind="destination"
+            title={t(
+              "No routes ready for a test",
+              "Nessuna regola pronta per la prova",
+            )}
+            description={t(
+              "To test a delivery, link an enabled source to an enabled destination.",
+              "Per provare una consegna, collega una sorgente attiva a una destinazione attiva.",
+            )}
+          />
+        )}
+        <p>
+          <Link href={listPath}>
+            {t("Back to destinations", "Torna alle destinazioni")}
+          </Link>
+        </p>
+      </>
+    );
+  }
   return (
     <>
       <PageHeading
@@ -272,10 +359,20 @@ export async function Destinations({
             <strong>{items.length}</strong>
           </span>
           {editable && (
-            <a href="#create-destination">
-              {t("New destination", "Nuova destinazione")}{" "}
-              <span aria-hidden="true">+</span>
-            </a>
+            <div className={styles.inventoryActions}>
+              {testDestinations.size > 0 && (
+                <Link href="?task=test">
+                  {t(
+                    "Prepare a test delivery",
+                    "Prepara una consegna di prova",
+                  )}
+                </Link>
+              )}
+              <a href="#create-destination">
+                {t("New destination", "Nuova destinazione")}{" "}
+                <span aria-hidden="true">+</span>
+              </a>
+            </div>
           )}
         </div>
       )}
@@ -434,10 +531,10 @@ export async function Destinations({
                         </details>
                       )}
                       {!!item.subscriptions.length && (
-                        <TestDeliveryForm
+                        <DestinationTest
                           organizationId={organizationId}
-                          destination={item}
-                          sources={sources}
+                          enabled={item.enabled}
+                          destination={testDestinations.get(item.id)}
                         />
                       )}
                     </div>
@@ -541,21 +638,17 @@ async function DestinationFields({
   );
 }
 
-async function TestDeliveryForm({
+async function DestinationTest({
   organizationId,
+  enabled,
   destination,
-  sources,
 }: {
   organizationId: string;
-  destination: {
-    id: string;
-    enabled: boolean;
-    subscriptions: { sourceId: string; eventType: string }[];
-  };
-  sources: { id: string; name: string; enabled: boolean }[];
+  enabled: boolean;
+  destination?: TestDestination;
 }) {
   const { t } = await getLocale();
-  if (!destination.enabled) {
+  if (!enabled) {
     return (
       <p className="muted">
         {t(
@@ -565,12 +658,7 @@ async function TestDeliveryForm({
       </p>
     );
   }
-  const linkedSources = sources.filter(
-    (source) =>
-      source.enabled &&
-      destination.subscriptions.some((route) => route.sourceId === source.id),
-  );
-  if (!linkedSources.length) {
+  if (!destination) {
     return (
       <p className="muted">
         {t(
@@ -580,30 +668,13 @@ async function TestDeliveryForm({
       </p>
     );
   }
-  const firstRoute = destination.subscriptions.find(
-    (route) => route.sourceId === linkedSources[0].id,
-  );
   return (
     <details>
       <summary>{t("Test delivery", "Consegna di prova")}</summary>
-      <ActionForm
-        endpoint={"/api/organizations/" + organizationId}
-        label={t("Send test", "Invia prova")}
-        onId={"/workspace/" + organizationId + "/events/"}
-        fields={{ action: "test_delivery", destinationId: destination.id }}
-      >
-        <SourceSelect sources={linkedSources} />
-        <label>
-          {t("Event type", "Tipo di evento")}{" "}
-          <input
-            name="eventType"
-            required
-            maxLength={100}
-            placeholder="order.created"
-            defaultValue={firstRoute?.eventType || "relayhub.test"}
-          />
-        </label>
-      </ActionForm>
+      <TestDeliveryForm
+        organizationId={organizationId}
+        destinations={[destination]}
+      />
     </details>
   );
 }

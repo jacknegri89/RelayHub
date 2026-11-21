@@ -1,12 +1,145 @@
 "use client";
 
-import { useId, useState } from "react";
-import { translator, type Locale } from "../locale";
+import { useId, useState, type ReactNode } from "react";
+import { formatUtcDateRange, translator, type Locale } from "../locale";
 import type { OverviewDay } from "../server/overview";
 import styles from "./overview.module.css";
 
 type Series = "total" | "succeeded" | "failed";
 const ALL_SERIES: Series[] = ["total", "succeeded", "failed"];
+type TrendProps = { days: OverviewDay[]; locale: Locale };
+
+const EXAMPLE_COUNTS = [
+  { succeeded: 12, failed: 0 },
+  { succeeded: 18, failed: 2 },
+  { succeeded: 15, failed: 6 },
+  { succeeded: 21, failed: 1 },
+  { succeeded: 26, failed: 0 },
+  { succeeded: 19, failed: 0 },
+  { succeeded: 9, failed: 1 },
+];
+
+export function OverviewTrend({ days, locale }: TrendProps) {
+  const hasAttempts = days.some((day) => day.succeeded > 0 || day.failed > 0);
+  if (hasAttempts) {
+    return (
+      <WeekPanel days={days} locale={locale}>
+        <TrendPlot days={days} locale={locale} />
+      </WeekPanel>
+    );
+  }
+  // A new reporting window starts on real data, even if the old window was previewing a sample.
+  return <EmptyWeek key={days.at(-1)?.date} days={days} locale={locale} />;
+}
+
+function EmptyWeek({ days, locale }: TrendProps) {
+  const t = translator(locale);
+  const [example, setExample] = useState(false);
+  const weekday = new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    timeZone: "UTC",
+  });
+  const panelId = useId();
+  let buttonLabel = t("Explore an example", "Esplora un esempio");
+  let plot: ReactNode;
+  if (example) {
+    buttonLabel = t("Return to real data", "Torna ai dati reali");
+    const sample = days.map((day, index) => ({
+      date: day.date,
+      ...EXAMPLE_COUNTS[index % EXAMPLE_COUNTS.length],
+    }));
+    plot = <TrendPlot days={sample} locale={locale} example />;
+  }
+  return (
+    <WeekPanel
+      days={days}
+      locale={locale}
+      example={example}
+      action={
+        days.length > 0 && (
+          <button
+            type="button"
+            className={styles.exampleButton}
+            aria-controls={panelId}
+            aria-expanded={example}
+            onClick={() => setExample(!example)}
+          >
+            {buttonLabel}
+          </button>
+        )
+      }
+    >
+      {!example && (
+        <>
+          <div className={styles.emptyDays} aria-hidden="true">
+            {days.map((day) => (
+              <time key={day.date} dateTime={day.date}>
+                {weekday.format(new Date(day.date + "T00:00:00Z"))}
+              </time>
+            ))}
+          </div>
+          <p className={styles.weekEmpty}>
+            {t(
+              "No delivery attempts finished in these seven days.",
+              "Nessun tentativo di consegna concluso in questi sette giorni.",
+            )}
+          </p>
+        </>
+      )}
+      <div id={panelId} hidden={!example}>
+        {plot}
+      </div>
+    </WeekPanel>
+  );
+}
+
+function WeekPanel({
+  days,
+  locale,
+  example = false,
+  action,
+  children,
+}: TrendProps & {
+  example?: boolean;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  const t = translator(locale);
+  const titleId = useId();
+  let title = t("Attempt trend", "Andamento dei tentativi");
+  if (example) {
+    title = t(
+      "Attempt trend · Example data",
+      "Andamento dei tentativi · Dati di esempio",
+    );
+  }
+  let range = t("Last 7 days", "Ultimi 7 giorni");
+  const first = days[0];
+  const last = days.at(-1);
+  if (first && last) {
+    range = formatUtcDateRange(
+      locale,
+      new Date(first.date + "T00:00:00Z"),
+      new Date(last.date + "T00:00:00Z"),
+    );
+  }
+  return (
+    <section className={styles.trend} aria-labelledby={titleId}>
+      <header className={styles.trendHead}>
+        <div>
+          <h2 id={titleId}>{title}</h2>
+          <p>
+            {range} · UTC
+            {!example && <> · {t("Today is partial", "Oggi parziale")}</>}
+          </p>
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
+  );
+}
+
 function value(day: OverviewDay, series: Series) {
   if (series === "total") {
     return day.succeeded + day.failed;
@@ -28,13 +161,11 @@ function scaleCeiling(maximum: number) {
   return maximum;
 }
 
-export function OverviewTrend({
+function TrendPlot({
   days,
   locale,
-}: {
-  days: OverviewDay[];
-  locale: Locale;
-}) {
+  example = false,
+}: TrendProps & { example?: boolean }) {
   const t = translator(locale);
   const group = useId();
   const [filter, setFilter] = useState<Series>("total");
@@ -45,6 +176,10 @@ export function OverviewTrend({
     visible = ALL_SERIES;
   }
   const maximum = Math.max(0, ...days.map((day) => value(day, filter)));
+  const periodTotal = days.reduce(
+    (total, day) => total + value(day, filter),
+    0,
+  );
   const limit = scaleCeiling(maximum);
   const axis = new Intl.NumberFormat(locale, {
     notation: "compact",
@@ -87,20 +222,13 @@ export function OverviewTrend({
       .join(" ");
   }
   return (
-    <section
-      className={styles.trend}
-      aria-label={t("Attempt trend", "Andamento dei tentativi")}
-    >
-      <header className={styles.trendHead}>
-        <div>
-          <h2>{t("Attempt trend", "Andamento dei tentativi")}</h2>
-          <p>
-            {t(
-              "Last 7 days · UTC · Today is partial",
-              "Ultimi 7 giorni · UTC · Oggi parziale",
-            )}
-          </p>
-        </div>
+    <>
+      <div className={styles.plotTools}>
+        <p>
+          {example && t("Example total", "Totale di esempio")}
+          {!example && t("Period total", "Totale nel periodo")}{" "}
+          <strong>{count.format(periodTotal)}</strong>
+        </p>
         <div
           className={styles.filters}
           role="group"
@@ -117,28 +245,24 @@ export function OverviewTrend({
             </button>
           ))}
         </div>
-      </header>
-      <div className={styles.chartRow}>
-        <div className={styles.axis} aria-hidden="true">
-          <span>{maximum > 0 && axis.format(limit)}</span>
-          <span>
-            {maximum > 0 &&
-              Number.isInteger(limit / 2) &&
-              axis.format(limit / 2)}
-          </span>
-          <span>0</span>
-        </div>
-        <div className={styles.plot} data-empty={maximum === 0}>
-          {days.map((day) => (
-            <label
-              htmlFor={group + day.date}
-              key={day.date}
-              className={styles.column}
-              data-selected={selected?.date === day.date}
-              aria-hidden="true"
-            >
-              {maximum > 0 &&
-                visible.map((key) => (
+      </div>
+      {maximum > 0 && (
+        <div className={styles.chartRow}>
+          <div className={styles.axis} aria-hidden="true">
+            <span>{axis.format(limit)}</span>
+            <span>{Number.isInteger(limit / 2) && axis.format(limit / 2)}</span>
+            <span>0</span>
+          </div>
+          <div className={styles.plot}>
+            {days.map((day) => (
+              <label
+                htmlFor={group + day.date}
+                key={day.date}
+                className={styles.column}
+                data-selected={selected?.date === day.date}
+                aria-hidden="true"
+              >
+                {visible.map((key) => (
                   <i
                     className={styles.dot}
                     data-series={key}
@@ -146,9 +270,8 @@ export function OverviewTrend({
                     style={{ bottom: (value(day, key) * 100) / limit + "%" }}
                   />
                 ))}
-            </label>
-          ))}
-          {maximum > 0 && (
+              </label>
+            ))}
             <svg
               aria-hidden="true"
               viewBox="0 0 100 100"
@@ -174,14 +297,15 @@ export function OverviewTrend({
                 />
               ))}
             </svg>
-          )}
-          {maximum === 0 && (
-            <p className={styles.chartEmpty}>{emptyMessages[filter]}</p>
-          )}
+          </div>
         </div>
-      </div>
+      )}
+      {maximum === 0 && (
+        <p className={styles.filterEmpty}>{emptyMessages[filter]}</p>
+      )}
       <div
         className={styles.dates}
+        data-no-series={maximum === 0}
         role="radiogroup"
         aria-label={t("Select UTC day", "Seleziona il giorno UTC")}
       >
@@ -206,6 +330,7 @@ export function OverviewTrend({
       {selected && (
         <div className={styles.readout} role="status" aria-atomic="true">
           <strong>
+            {example && <>{t("Example", "Esempio")} · </>}
             {fullDate.format(new Date(selected.date + "T00:00:00Z"))}
           </strong>
           <dl>
@@ -218,6 +343,6 @@ export function OverviewTrend({
           </dl>
         </div>
       )}
-    </section>
+    </>
   );
 }
