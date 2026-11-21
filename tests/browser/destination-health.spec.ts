@@ -340,6 +340,7 @@ test("destination health follows a single outage and recovery across workspace v
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     375,
   );
+  await page.getByLabel("Account menu", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
 
   // This operator can open their own workspace but cannot borrow the other tenant's destination ID.

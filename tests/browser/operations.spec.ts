@@ -148,6 +148,7 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
   await expect(
     page.getByRole("heading", { name: "Organizations" }),
   ).toBeVisible();
+  await page.getByLabel("Account menu", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
@@ -173,36 +174,63 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
   await expect(
     page.getByRole("region", { name: "Identify the sender" }),
   ).toContainText("Save the signing secret");
-  await page.getByLabel("Source name").fill("Shop");
-  await page.getByRole("button", { name: "Create source" }).click();
-  const secret = await page.getByLabel("Signing secret").inputValue();
-  const endpoint = await page
+  const createSource = page.locator("#create-source");
+  await expect(createSource).toHaveAttribute("open", "");
+  await createSource.getByLabel("Source name").fill("Shop");
+  await createSource.getByRole("button", { name: "Create source" }).click();
+  const secretField = createSource.getByLabel("Signing secret");
+  await expect(secretField).toBeVisible();
+  const secret = await secretField.inputValue();
+  const shop = page.getByRole("region", { name: "Shop", exact: true });
+  await shop.getByText("Source details", { exact: true }).click();
+  const endpoint = await shop
     .locator("code", { hasText: "/api/webhooks/" })
     .textContent();
   const sourceId = endpoint?.split("/").at(-1) ?? "";
 
-  const createSource = page
-    .locator("form")
-    .filter({ has: page.getByRole("button", { name: "Create source" }) });
+  await page.reload();
+  await expect(createSource).not.toHaveAttribute("open", "");
+  await page.getByRole("link", { name: "New source" }).click();
+  await expect(page).toHaveURL(/#create-source$/);
+  await expect(createSource.getByLabel("Source name")).toBeFocused();
   await createSource.getByLabel("Source name").fill("Release repository");
   await createSource.getByLabel("Source type").selectOption("github");
   await createSource.getByRole("button", { name: "Create source" }).click();
+  const repositorySource = page.getByRole("region", {
+    name: "Release repository",
+    exact: true,
+  });
+  await repositorySource.getByText("Source details", { exact: true }).click();
+  await expect(page).toHaveURL(/#create-source$/);
+  await expect(secretField).toBeVisible();
   await page.getByText("Connect a GitHub repository", { exact: true }).click();
   await expect(
     page.getByText(/Set Content type to application\/json/),
   ).toBeVisible();
   await expect(page.getByText(/look for github\.push in Events/)).toBeVisible();
   await page.reload();
+  await expect(createSource.getByLabel("Source name")).toBeFocused();
   await expect(page.getByLabel("Signing secret", { exact: true })).toHaveCount(
     0,
   );
 
   await page.getByRole("link", { name: "Destinations", exact: true }).click();
-  await page.getByLabel("Destination name").fill("Browser receiver");
-  await page
+  const createDestination = page.locator("#create-destination");
+  await expect(createDestination).toHaveAttribute("open", "");
+  await createDestination
+    .getByLabel("Destination name")
+    .fill("Browser receiver");
+  await createDestination
     .getByLabel("Destination URL")
     .fill(DEMO_RECEIVER_URL + "/hooks/permanent");
-  await page.getByRole("button", { name: "Create destination" }).click();
+  await createDestination
+    .getByRole("button", { name: "Create destination" })
+    .click();
+  const receiver = page.getByRole("region", {
+    name: "Browser receiver",
+    exact: true,
+  });
+  await receiver.getByText("Endpoint and routes", { exact: true }).click();
   await page.getByText("Link source", { exact: true }).click();
   await page
     .getByRole("combobox", { name: "Source", exact: true })
@@ -241,8 +269,13 @@ test("operator signs in, routes a webhook, and retries a failed delivery", async
   ).toBeVisible();
 
   await page.goto(orgPath + "/destinations");
-  await page.getByText("Edit destination", { exact: true }).click();
-  const edit = page.locator("details").filter({ hasText: "Edit destination" });
+  await expect(createDestination).not.toHaveAttribute("open", "");
+  await page.getByRole("link", { name: "New destination" }).click();
+  await expect(createDestination.getByLabel("Destination name")).toBeFocused();
+  await receiver.getByText("Endpoint and routes", { exact: true }).click();
+  const editSummary = receiver.getByText("Edit destination", { exact: true });
+  await editSummary.click();
+  const edit = editSummary.locator("..");
   await edit
     .getByLabel("Destination URL")
     .fill(DEMO_RECEIVER_URL + "/hooks/success");

@@ -1,0 +1,325 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(2rem, 5vw, 5rem);
+  width: min(calc(100% - 3rem), 76rem);
+  min-height: calc(100svh - 9rem);
+  margin-inline: auto;
+  padding-block: clamp(2rem, 5vw, 4.5rem);
+}
+.rail,
+.body {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.rail {
+  position: sticky;
+  top: 5.5rem;
+  gap: 2rem;
+}
+.nav {
+  display: grid;
+  gap: 0.2rem;
+}
+.nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.85rem;
+  border-inline-start: 3px solid transparent;
+  border-radius: 0.4rem;
+  color: var(--dust);
+  font-weight: 550;
+  text-decoration: none;
+}
+.nav a:hover {
+  background: var(--void-2);
+  color: var(--bone);
+}
+.nav a[aria-current="page"] {
+  border-color: var(--photon);
+  color: var(--bone);
+  background: #18293a;
+}
+.content {
+  min-width: 0;
+}
+.heading {
+  margin-bottom: 1.5rem;
+  font-size: clamp(2rem, 3.7vw, 3.3rem);
+  letter-spacing: -0.055em;
+}
+.panel,
+.task {
+  min-width: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.75rem;
+  background: var(--void-1);
+}
+.panelBody,
+.identity,
+.listHeader,
+.editor,
+.task > div,
+.task > form {
+  padding: clamp(1rem, 2.3vw, 1.65rem);
+}
+.panel h2 {
+  margin: 0;
+  font-size: 1.14rem;
+}
+.listHeader,
+.identity {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+}
+.listHeader {
+  justify-content: space-between;
+}
+.listHeader > span {
+  font: 0.9rem var(--font-mono);
+  color: var(--dust);
+}
+.organizations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.organizations li + li {
+  border-top: 1px solid var(--rule);
+}
+.organizations a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.1rem clamp(1rem, 2.3vw, 1.65rem);
+  color: var(--bone);
+  text-decoration: none;
+}
+.organizations a:hover,
+.organizations a:focus-visible {
+  background: #16212c;
+}
+.organizations li:last-child a {
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+.orgMark {
+  display: grid;
+  place-items: center;
+  width: 2.85rem;
+  aspect-ratio: 1;
+  border: 1px solid #384c60;
+  border-radius: 0.65rem;
+  background: #202d3c;
+  color: #cce5ff;
+  font: 600 1rem var(--font-mono);
+}
+.orgName {
+  display: grid;
+  overflow-wrap: anywhere;
+}
+.orgName span,
+.orgCounts {
+  color: var(--dust);
+  font-size: 0.85rem;
+}
+.organizations svg {
+  color: var(--photon);
+}
+.task > summary {
+  padding: 1rem clamp(1rem, 2.3vw, 1.65rem);
+}
+.task :global(.action-form) {
+  margin: 0;
+}
+.taskHint {
+  color: var(--dust);
+  margin: 1rem 1.65rem 0;
+}
+.task p:last-child {
+  margin-bottom: 0;
+}
+.task code {
+  user-select: all;
+}
+.identity {
+  background: var(--lattice), #131d28;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+.identity h2 {
+  font-size: clamp(1.3rem, 2.5vw, 1.9rem);
+}
+.avatar {
+  display: inline-grid;
+  flex: none;
+  width: 3.65rem;
+  height: 3.65rem;
+  border-radius: 50%;
+  place-items: center;
+  overflow: hidden;
+  background: #25415a;
+  color: #e2f1ff;
+  border: 1px solid #54718b;
+  font: 600 1.35rem var(--font-mono);
+}
+.avatar[data-small="true"] {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.71rem;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.editor {
+  display: grid;
+  justify-items: start;
+  gap: 1.3rem;
+}
+.editor > label {
+  width: min(100%, 31rem);
+}
+.appearances {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.appearances legend {
+  margin-bottom: 0.45rem;
+  color: var(--dust);
+  font-size: 0.85rem;
+  font-weight: 550;
+}
+.appearances > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.appearances label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.95rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.45rem;
+  cursor: pointer;
+}
+.appearances input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+.appearances label:has(input:checked) {
+  border-color: var(--photon);
+  color: var(--bone);
+  background: #18293a;
+}
+.appearances label:has(input:focus-visible) {
+  outline: 2px solid var(--photon);
+  outline-offset: 3px;
+}
+.emailRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.emailRow strong {
+  color: #8fd4a0;
+  font-size: 0.82rem;
+}
+.panelBody p {
+  margin: 0.5rem 0;
+  color: var(--dust);
+}
+.body :global(.demo-label) {
+  justify-self: start;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "nav" "title" "body" "guide";
+    gap: 1rem;
+    align-content: start;
+    width: min(calc(100% - 2rem), 42rem);
+    padding-block: 1rem 2rem;
+  }
+  .rail,
+  .content {
+    display: contents;
+  }
+  .nav {
+    grid-area: nav;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav a {
+    justify-content: center;
+    font-size: 0.86rem;
+    padding: 0.55rem 0.2rem;
+    gap: 0.35rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    min-height: 2.8rem;
+  }
+  .nav a[aria-current="page"] {
+    background: transparent;
+  }
+  .heading {
+    grid-area: title;
+    margin: 0.45rem 0 0;
+  }
+  .guide {
+    grid-area: guide;
+  }
+  .body {
+    grid-area: body;
+  }
+}
+@media (max-width: 520px) {
+  .organizations a {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.25rem 0.7rem;
+  }
+  .orgMark {
+    grid-row: span 2;
+  }
+  .orgCounts {
+    grid-area: 2 / 2;
+  }
+  .organizations svg {
+    grid-area: 1 / 3 / 3;
+  }
+  .taskHint {
+    margin-inline: 1rem;
+  }
+}
+@media (max-width: 390px) {
+  .nav a {
+    flex-direction: column;
+  }
+  .appearances > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

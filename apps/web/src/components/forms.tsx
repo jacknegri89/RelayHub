@@ -126,6 +126,15 @@ const messages: Record<string, [string, string]> = {
     "Connessione a RelayHub non riuscita. Riprova.",
   ],
   saved: ["Saved.", "Modifiche salvate."],
+  profile_saved: ["Profile saved.", "Profilo salvato."],
+  profile_form_expired: [
+    "Reload your profile and save again.",
+    "Ricarica il profilo e riprova a salvare.",
+  ],
+  invalid_profile: [
+    "Enter a name of up to 80 characters and choose one of the available avatars.",
+    "Inserisci un nome di massimo 80 caratteri e scegli uno degli avatar disponibili.",
+  ],
   form_not_ready: [
     "Wait a moment and retry. Reload the form if it has been open for a long time.",
     "Attendi un momento e riprova. Se il modulo è aperto da molto, ricarica la pagina.",
@@ -156,7 +165,8 @@ export function ActionForm({
   nextPath?: string;
   onId?: string;
   className?: string;
-  successMessage?: "saved" | "reset_requested" | "verification_requested";
+  successMessage?:
+    "saved" | "reset_requested" | "verification_requested" | "profile_saved";
   onSuccess?: () => void;
 }) {
   const { t } = useLocale();

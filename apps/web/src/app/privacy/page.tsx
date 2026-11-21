@@ -22,27 +22,13 @@ export default async function PrivacyPage() {
     <PolicyPage
       title={t("Privacy Policy", "Informativa sulla privacy")}
       guideTitle={t("Find a privacy answer", "Consulta l’informativa")}
-      guide={
-        <>
-          {t("See ", "Consulta ")}
-          <a href="#data">
-            {t("which data RelayHub handles", "quali dati tratta RelayHub")}
-          </a>
-          {t(" and ", " e ")}
-          <a href="#retention">
-            {t("how long it keeps them", "per quanto tempo li conserva")}
-          </a>
-          .{" "}
-          {t(
-            "For a privacy request, ",
-            "Per una richiesta relativa alla privacy, ",
-          )}
-          <a href="#operator">
-            {t("contact the operator", "contatta il gestore")}
-          </a>
-          .
-        </>
-      }
+      sections={[
+        ["operator", t("Operator and contact", "Gestore e contatti")],
+        ["data", t("Data and purposes", "Dati trattati e finalità")],
+        ["recipients", t("Data recipients", "Destinatari dei dati")],
+        ["retention", t("Retention", "Tempi di conservazione")],
+        ["rights", t("Your rights", "I tuoi diritti")],
+      ]}
     >
       <p>
         {t(
@@ -72,8 +58,8 @@ export default async function PrivacyPage() {
         <li>
           <strong>{t("Account data.", "Dati dell’account.")}</strong>{" "}
           {t(
-            "Name, email, and password hash support registration and sign-in. If you enable two-factor authentication, the service stores encrypted authenticator data and recovery codes.",
-            "Usiamo nome, email e hash della password per la registrazione e l’accesso. Se attivi l’autenticazione a due fattori, il servizio conserva in forma cifrata i dati dell’app di autenticazione e i codici di recupero.",
+            "Name, email, and password hash support registration and sign-in. Members of your organizations see your display name and profile avatar. If you enable two-factor authentication, the service stores encrypted authenticator data and recovery codes.",
+            "Usiamo nome, email e hash della password per la registrazione e l’accesso. I membri delle tue organizzazioni vedono il tuo nome e l’avatar del profilo. Se attivi l’autenticazione a due fattori, il servizio conserva in forma cifrata i dati dell’app di autenticazione e i codici di recupero.",
           )}
         </li>
         <li>
@@ -104,7 +90,7 @@ export default async function PrivacyPage() {
           "RelayHub tratta i dati dell’account e di instradamento per fornire il servizio richiesto. I trattamenti di sicurezza e diagnostica rispondono al legittimo interesse del gestore a mantenere il servizio affidabile e a proteggere gli account.",
         )}
       </p>
-      <h2>{t("Who receives data", "Chi riceve i dati")}</h2>
+      <h2 id="recipients">{t("Who receives data", "Chi riceve i dati")}</h2>
       <p>
         {t(
           "Vercel hosts the web and worker services. Neon provides PostgreSQL and Upstash provides the Redis queue. These services support RelayHub’s operation. Delivery sends webhook contents to the destinations configured by workspace operators. Select destinations you are authorized to use.",
@@ -136,7 +122,7 @@ export default async function PrivacyPage() {
           "I grafici di ogni destinazione coprono sette giorni UTC. Un guasto aperto resta visibile fino al ripristino. Da quel momento decorre il periodo di conservazione dei relativi avvisi.",
         )}
       </p>
-      <h2>{t("Your choices and rights", "Scelte e diritti")}</h2>
+      <h2 id="rights">{t("Your choices and rights", "Scelte e diritti")}</h2>
       <p>
         {t(
           "You can sign out and manage two-factor authentication from your workspace. Where applicable, you can request access, correction, deletion, restriction, or portability, object to certain processing, and lodge a complaint with your data-protection authority.",

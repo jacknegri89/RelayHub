@@ -1,12 +1,11 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin);
+gsap.registerPlugin(useGSAP, ScrollToPlugin);
 
 const MOTION_QUERY = "(prefers-reduced-motion: no-preference)";
 const PENDING_CLASS = "intro-pending";
@@ -15,6 +14,16 @@ const GLIDE_SECONDS = 1.2;
 // In-page links glide to their section instead of jumping, then move focus
 // there so keyboard and screen reader users land in the same place.
 function glideToAnchor(event: MouseEvent) {
+  if (
+    event.button !== 0 ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.defaultPrevented
+  ) {
+    return;
+  }
   const origin = event.target;
   if (!(origin instanceof Element)) {
     return;
@@ -41,7 +50,7 @@ function glideToAnchor(event: MouseEvent) {
   });
 }
 
-// Directs the homepage entrance and the scroll reveals below the hero.
+// Limits the entrance animation to the homepage introduction.
 export function LandingMotion({
   className,
   children,
@@ -50,6 +59,19 @@ export function LandingMotion({
   children: ReactNode;
 }) {
   const scope = useRef<HTMLDivElement>(null);
+
+  // Keep previously shared links to the two sections moved to the public guide.
+  useEffect(() => {
+    function followGuideBookmark() {
+      const hash = window.location.hash;
+      if (hash === "#journey" || hash === "#ledger-title") {
+        window.location.replace("/guide" + hash);
+      }
+    }
+    followGuideBookmark();
+    window.addEventListener("hashchange", followGuideBookmark);
+    return () => window.removeEventListener("hashchange", followGuideBookmark);
+  }, []);
 
   useGSAP(
     () => {
@@ -86,17 +108,6 @@ export function LandingMotion({
             0.75,
           )
           .fromTo(
-            "[data-intro=case]",
-            { x: -10, autoAlpha: 0 },
-            {
-              x: 0,
-              autoAlpha: 1,
-              duration: 0.5,
-              clearProps: "transform,opacity,visibility",
-            },
-            0.65,
-          )
-          .fromTo(
             "[data-intro=actions] > *",
             { y: 16, autoAlpha: 0 },
             { ...settled, duration: 0.7, stagger: 0.08 },
@@ -104,29 +115,6 @@ export function LandingMotion({
           );
         document.documentElement.classList.remove(PENDING_CLASS);
 
-        for (const element of gsap.utils.toArray<HTMLElement>(
-          "[data-reveal]",
-        )) {
-          gsap.from(element, {
-            y: 34,
-            autoAlpha: 0,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: element, start: "top 86%", once: true },
-          });
-        }
-        for (const list of gsap.utils.toArray<HTMLElement>(
-          "[data-reveal-list]",
-        )) {
-          gsap.from(list.children, {
-            y: 22,
-            autoAlpha: 0,
-            duration: 0.8,
-            stagger: 0.07,
-            ease: "power3.out",
-            scrollTrigger: { trigger: list, start: "top 82%", once: true },
-          });
-        }
         return () => {
           root?.removeEventListener("click", glideToAnchor);
         };

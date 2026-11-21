@@ -53,7 +53,7 @@ export default async function OrganizationPage({
   if (!section.length) {
     return (
       <LoadingSection>
-        <Overview organizationId={organizationId} />
+        <Overview organizationId={organizationId} editable={editable} />
       </LoadingSection>
     );
   }

@@ -5,10 +5,20 @@ test("a visitor follows a webhook, changes example and replays the exchange", as
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
+  const navigation = page.getByRole("navigation", { name: "Main navigation" });
+  const signIn = navigation.getByRole("link", { name: "Sign in" });
+  const register = page.getByRole("link", { name: "Create an account" });
+  await expect(signIn).toHaveAttribute("href", "/login");
+  await expect(register).toHaveAttribute("href", "/register");
+  await expect(signIn).toBeInViewport({ ratio: 1 });
+  await expect(register).toBeInViewport({ ratio: 1 });
+  await expect(
+    navigation.getByRole("link", { name: "Delivery guide" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Send a test order" }),
   ).toBeInViewport({ ratio: 1 });
-  await page.getByRole("link", { name: "Explore webhook examples" }).click();
+  await page.getByRole("link", { name: "View examples" }).click();
   const guide = page.getByRole("region", { name: "What is a webhook?" });
   await expect(guide).toBeFocused();
   await expect(guide.getByText("payment_intent.succeeded")).toBeVisible();
@@ -60,6 +70,17 @@ test("a visitor follows a webhook, changes example and replays the exchange", as
     375,
   );
 
+  await page.getByRole("link", { name: "Segui un evento" }).click();
+  await expect(page).toHaveURL(/\/guide#journey$/);
+  await expect(
+    page.getByRole("link", { name: "Torna al simulatore" }),
+  ).toHaveAttribute("href", "/#simulator");
+  await expect(
+    page.getByRole("link", { name: "Vedi gli esempi di webhook" }),
+  ).toHaveAttribute("href", "/#webhooks");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Guida alle consegne",
+  );
   const stages = page.getByRole("group", { name: "Fasi della consegna" });
   await stages.getByRole("radio", { name: "Verifica" }).focus();
   for (let step = 1; step < 4; step++) {
@@ -70,4 +91,11 @@ test("a visitor follows a webhook, changes example and replays the exchange", as
   await expect(page.locator("#journey-caption")).toContainText(
     "Solo la fatturazione richiede un nuovo tentativo",
   );
+  await page.goto("/#ledger-title");
+  await expect(page).toHaveURL(/\/guide#ledger-title$/);
+  const acceptance = page
+    .locator("details")
+    .filter({ hasText: "Accettazione" });
+  await acceptance.locator("summary").click();
+  await expect(acceptance.locator("p")).toContainText("409");
 });
