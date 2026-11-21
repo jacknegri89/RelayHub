@@ -1,4 +1,5 @@
 import { settings } from "./config";
+import { sendGmail } from "./gmail";
 import { parseJson, readBody } from "./protocol";
 
 const HTTP_TIMEOUT_MS = 5_000;
@@ -8,12 +9,14 @@ export type NoticeMail = {
   to: string;
   subject: string;
   text: string;
+  html?: string;
   key: string;
 };
 export type MailResult = {
   status: number;
   retryAfterMs?: number;
   permanentConflict?: boolean;
+  uncertain?: boolean;
 };
 
 function usesResendTestDomain(config: ReturnType<typeof settings>) {
@@ -24,6 +27,14 @@ function usesResendTestDomain(config: ReturnType<typeof settings>) {
 export function mailConfigured(recipient?: string, config = settings()) {
   if (config.RELAYHUB_MAILPIT_URL) {
     return true;
+  }
+  if (config.RELAYHUB_MAIL_PROVIDER === "gmail") {
+    return Boolean(
+      config.RELAYHUB_EMAIL_FROM?.toLowerCase().endsWith("@gmail.com") &&
+      config.GMAIL_CLIENT_ID &&
+      config.GMAIL_CLIENT_SECRET &&
+      config.GMAIL_REFRESH_TOKEN,
+    );
   }
   if (!config.RESEND_API_KEY || !config.RELAYHUB_EMAIL_FROM) {
     return false;
@@ -64,6 +75,9 @@ export async function sendMail(
   if (!mailConfigured(mail.to, config)) {
     return { status: 403 };
   }
+  if (config.RELAYHUB_MAIL_PROVIDER === "gmail") {
+    return sendGmail(mail, config);
+  }
   const headers = new Headers({ "content-type": "application/json" });
   let url = "https://api.resend.com/emails";
   let body: object;
@@ -76,6 +90,7 @@ export async function sendMail(
       To: [{ Email: mail.to }],
       Subject: mail.subject,
       Text: mail.text,
+      HTML: mail.html,
     };
   } else {
     headers.set("authorization", "Bearer " + config.RESEND_API_KEY);
@@ -85,6 +100,7 @@ export async function sendMail(
       to: [mail.to],
       subject: mail.subject,
       text: mail.text,
+      html: mail.html,
     };
   }
   const response = await fetch(url, {

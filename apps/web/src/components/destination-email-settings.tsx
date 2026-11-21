@@ -54,8 +54,8 @@ export async function DestinationEmailSettings({
       {state === "activeWithFailure" && (
         <p role="status">
           {t(
-            "An alert could not be sent. Check the alert history for missed updates.",
-            "Un avviso non è stato inviato. Controlla il registro degli avvisi per leggere gli aggiornamenti.",
+            "Email delivery could not be confirmed. Check the alert history for missed updates.",
+            "RelayHub non ha ricevuto conferma dell’invio. Puoi leggere gli aggiornamenti nel registro degli avvisi.",
           )}
         </p>
       )}

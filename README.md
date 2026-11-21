@@ -35,6 +35,16 @@ Use the **EN / IT** switch to change the interface language. RelayHub remembers 
 
 Email is the sign-in identifier. Enable two-factor authentication under **Workspace → Security** and save the one-use recovery codes. On installations with account email enabled, verify your address there to use **Forgot your password?**. A password change signs out existing sessions. The public demo's core workflow needs only a RelayHub account. [Privacy](https://relayhub-webhooks.vercel.app/privacy) · [Cookies](https://relayhub-webhooks.vercel.app/cookies) · [Account mail rollout](docs/operations.md#rolling-out-account-mail)
 
+### Password recovery from your Gmail
+
+You can send verification and password reset links from an existing personal Gmail address. After local setup, run the command below with your Google Desktop OAuth client file and your sender address. Open the Google consent link on the same computer. RelayHub requests permission to send email. The command saves the credentials in the local, Git-ignored `.env` file.
+
+```sh
+pnpm gmail:authorize --client-json "/path/to/google-desktop-client.json" --sender "you@gmail.com"
+```
+
+Set `RELAYHUB_MAIL_PROVIDER=gmail` and `RELAYHUB_ACCOUNT_EMAIL=1`, then restart the application. For a hosted installation, configure the same mail settings and OAuth credentials in the server's secret manager and set `RELAYHUB_BASE_URL` to the public HTTPS origin before sending links. To test, sign in, verify your address in **Security**, then use **Forgot your password?** in a private browser window. [Gmail setup and token lifetime](docs/destination-email.md#send-from-an-existing-gmail-account)
+
 The hosted portfolio uses Vercel, Neon and Upstash. Their free quotas can suspend background deliveries or database access. The 1 GiB worker alone can exhaust the monthly Hobby memory allowance in approximately 17.5 days of continuous operation. The local Compose stack can run the full webhook demo while a hosted quota is exhausted. [Free-tier limits and recovery](docs/operations.md#keeping-the-portfolio-demo-within-free-tiers)
 
 ## How a delivery works
