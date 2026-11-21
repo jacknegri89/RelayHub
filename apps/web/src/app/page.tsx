@@ -71,6 +71,12 @@ export default async function Home() {
                 {t("Follow one event", "Segui un evento")}{" "}
                 <span aria-hidden="true">→</span>
               </Link>
+              <div>
+                <Link className={styles.noteLink} href="/lost-response">
+                  {t("Try a lost response", "Prova una risposta persa")}{" "}
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
             </section>
             <section aria-labelledby="closing-title">
               <h2 id="closing-title" tabIndex={-1}>

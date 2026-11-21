@@ -132,6 +132,11 @@ async function attempt({
         ),
       },
       timeout,
+      {
+        organizationId: delivery.organizationId,
+        destinationId: delivery.destinationId,
+        sourceId: event.sourceId,
+      },
     );
     const classification = classifyStatus(result.status);
     let outcome: AttemptResult["outcome"] = "http_error";

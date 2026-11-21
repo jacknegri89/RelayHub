@@ -6,6 +6,7 @@ x-app: &app
     DATABASE_URL: postgresql://relayhub:${POSTGRES_PASSWORD:?Run node scripts/setup.mjs before Compose}@postgres:5432/relayhub
     REDIS_URL: redis://redis:6379
     DEMO_RECEIVER_URL: http://mock-receiver:3001
+    DEMO_LOST_RESPONSE_ORIGIN: http://web:3000
   init: true
   restart: unless-stopped
 

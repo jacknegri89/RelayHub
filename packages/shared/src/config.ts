@@ -17,6 +17,10 @@ const schema = z.object({
   ACTIVE_KEY_ID: z.string().regex(/^[\w-]{1,32}$/),
   ENCRYPTION_KEYS: z.string().min(1),
   DESTINATION_HOSTS: z.string().default(""),
+  DEMO_LOST_RESPONSE_ORIGIN: z
+    .enum(["http://web:3000", ""])
+    .optional()
+    .transform((value) => value || undefined),
   DEMO_RECEIVER_URL: z
     .string()
     .optional()
@@ -55,6 +59,9 @@ export function parseConfig(environment: Record<string, string | undefined>) {
   const config = parsed.data;
   const origin = new URL(config.RELAYHUB_BASE_URL);
   const isDemo = config.RELAYHUB_MODE === "demo";
+  if (!isDemo && config.DEMO_LOST_RESPONSE_ORIGIN) {
+    throw new Error("DEMO_LOST_RESPONSE_ORIGIN requires demo mode");
+  }
   if (config.RELAYHUB_MAILPIT_URL) {
     const mailpit = new URL(config.RELAYHUB_MAILPIT_URL);
     if (

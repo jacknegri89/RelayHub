@@ -1,0 +1,1 @@
+ALTER TABLE "LostResponseOrder" ADD COLUMN "receipts" INTEGER NOT NULL DEFAULT 1;

@@ -4,6 +4,7 @@ x-runtime: &runtime
   environment:
     RELAYHUB_MODE: production
     DEMO_RECEIVER_URL: ""
+    DEMO_LOST_RESPONSE_ORIGIN: ""
     DEMO_RECEIVER_SECRET: ""
   init: true
   restart: unless-stopped
