@@ -1,12 +1,25 @@
 import { isIP } from "node:net";
 import ipaddr from "ipaddr.js";
 import { settings } from "./config";
+import {
+  LAB_DESTINATION_ID,
+  LAB_ORGANIZATION_ID,
+  LAB_SOURCE_ID,
+  lostResponseReceiverUrl,
+} from "./lost-response";
 
 export class DestinationBlocked extends Error {}
+
+export type DeliveryScope = {
+  organizationId: string;
+  destinationId: string;
+  sourceId: string;
+};
 
 export function destinationUrl(
   raw: string,
   configuration?: ReturnType<typeof settings>,
+  scope?: DeliveryScope,
 ) {
   let url: URL;
   try {
@@ -20,6 +33,24 @@ export function destinationUrl(
     throw new DestinationBlocked(
       "Credentials, fragments and query strings are forbidden",
     );
+  }
+  const reservedDestination =
+    scope?.organizationId === LAB_ORGANIZATION_ID &&
+    scope.destinationId === LAB_DESTINATION_ID;
+  if (reservedDestination) {
+    // This receiver is worker-only. Ordinary workspaces cannot select a private destination URL.
+    if (
+      scope.sourceId !== LAB_SOURCE_ID ||
+      raw !== lostResponseReceiverUrl(config)
+    ) {
+      throw new DestinationBlocked("Invalid lab source or destination");
+    }
+    if (config.isDemo) {
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        throw new DestinationBlocked("Invalid lab transport");
+      }
+      return { url, isDemo: true, isVerificationReceiver: false };
+    }
   }
   if (
     config.isDemo &&
@@ -48,7 +79,8 @@ export function destinationUrl(
     !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(
       domain,
     ) ||
-    (!isVerificationReceiver &&
+    (!reservedDestination &&
+      !isVerificationReceiver &&
       (ownReceiverOrigin || !config.hosts.has(domain)))
   ) {
     throw new DestinationBlocked(

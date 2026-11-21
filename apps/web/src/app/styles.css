@@ -610,7 +610,6 @@ button.language-switch:hover {
 }
 @keyframes guide-in {
   from {
-    opacity: 0;
     transform: translateY(0.35rem);
   }
 }
