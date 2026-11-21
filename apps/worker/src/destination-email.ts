@@ -1,6 +1,7 @@
 import { database, Prisma } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
 import { log } from "@relayhub/shared/log";
+import { renderMail } from "@relayhub/shared/mail-layout";
 import {
   sendMail,
   type NoticeMail,
@@ -30,9 +31,12 @@ type Envelope = {
 type Transport = (mail: NoticeMail) => Promise<MailResult>;
 
 function buildMail(row: Envelope): NoticeMail {
-  const it = row.locale === "it";
+  let locale: "it" | "en" = "en";
+  if (row.locale === "it") {
+    locale = "it";
+  }
   const t = (en: string, italian: string) => {
-    if (it) {
+    if (locale === "it") {
       return italian;
     }
     return en;
@@ -41,11 +45,16 @@ function buildMail(row: Envelope): NoticeMail {
     to: row.email,
     key: "relayhub/" + row.subscriptionId + "/" + row.eventKey,
   };
+  const section = t("Delivery alerts", "Avvisi di consegna");
   if (row.kind === "confirmation") {
     const code = mailboxCode(row.subscriptionId, row.email);
     const instruction = t(
       "Enter this code in RelayHub to enable destination alerts.",
       "Inserisci questo codice in RelayHub per attivare gli avvisi della destinazione.",
+    );
+    const footer = t(
+      "If you did not request this, you can ignore this email.",
+      "Se non hai richiesto il codice, puoi ignorare questa email.",
     );
     return {
       ...base,
@@ -56,20 +65,36 @@ function buildMail(row: Envelope): NoticeMail {
         t("Minutes before the code expires", "Minuti di validità del codice") +
           " · " +
           CONFIRMATION_MINUTES,
-        t(
-          "If you did not request this, you can ignore this email.",
-          "Se non hai richiesto il codice, puoi ignorare questa email.",
-        ),
+        footer,
       ].join("\n\n"),
+      html: renderMail({
+        locale,
+        kind: "code",
+        section,
+        title: t("Activate delivery alerts", "Attiva gli avvisi di consegna"),
+        description: instruction,
+        preview: instruction,
+        code: {
+          label: t("Confirmation code", "Codice di conferma"),
+          value: code,
+        },
+        expiry: t(
+          `The code is valid for ${CONFIRMATION_MINUTES} minutes from your request.`,
+          `Il codice è valido per ${CONFIRMATION_MINUTES} minuti dalla richiesta.`,
+        ),
+        footer,
+      }),
     };
   }
   const name = row.destinationName.replace(/[\r\n\t]+/g, " ");
+  let kind: "outage" | "recovery" = "outage";
   let title = t("Destination outage", "Guasto della destinazione");
   let description = t(
     "Three consecutive outbound attempts failed.",
     "Tre tentativi di invio consecutivi sono falliti.",
   );
   if (row.kind === "recovery") {
+    kind = "recovery";
     title = t("Destination recovered", "Destinazione ripristinata");
     description = t(
       "The destination returned a successful HTTP response.",
@@ -82,6 +107,11 @@ function buildMail(row: Envelope): NoticeMail {
     row.organizationId +
     "/destinations/" +
     row.destinationId;
+  const timestamp = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(row.occurredAt);
   return {
     ...base,
     subject: "RelayHub · " + title + " · " + name,
@@ -95,6 +125,23 @@ function buildMail(row: Envelope): NoticeMail {
       ),
       url,
     ].join("\n\n"),
+    html: renderMail({
+      locale,
+      kind,
+      section,
+      title,
+      description,
+      preview: name + " · " + description,
+      details: [
+        { label: t("Destination", "Destinazione"), value: name },
+        { label: t("Detected at", "Rilevato il"), value: timestamp + " UTC" },
+      ],
+      action: { label: t("View destination", "Apri la destinazione"), url },
+      footer: t(
+        "You receive these alerts because you subscribed to this destination. You can turn them off in its settings.",
+        "Ricevi questi avvisi perché li hai attivati per questa destinazione. Puoi disattivarli dalle sue impostazioni.",
+      ),
+    }),
   };
 }
 
@@ -163,9 +210,22 @@ export async function dispatchDestinationEmail(
   }
   let result: MailResult = { status: 0 };
   try {
-    result = await send(
-      buildMail({ ...message, ...sub, subscriptionId: sub.id }),
-    );
+    const mail = buildMail({ ...message, ...sub, subscriptionId: sub.id });
+    result = await send(mail);
+    // Resend may already have accepted the text-only payload before the template upgrade.
+    if (
+      claim.attempts > 1 &&
+      result.status === 409 &&
+      result.permanentConflict
+    ) {
+      result = { status: 0 };
+      result = await send({
+        to: mail.to,
+        key: mail.key,
+        subject: mail.subject,
+        text: mail.text,
+      });
+    }
   } catch {
     // A transport timeout can happen after acceptance. Replay with the original idempotency key.
   }
@@ -175,7 +235,7 @@ export async function dispatchDestinationEmail(
     result.status >= 500 ||
     (result.status === 409 && !result.permanentConflict) ||
     [408, 429].includes(result.status);
-  if (accepted || !transient) {
+  if (accepted || !transient || result.uncertain) {
     await db.destinationEmailMessage.updateMany({
       where: marker,
       data: { finishedAt: now, failed: !accepted },
