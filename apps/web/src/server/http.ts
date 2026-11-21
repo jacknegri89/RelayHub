@@ -8,6 +8,7 @@ export class HttpError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
+    readonly retryAfterSeconds?: number,
   ) {
     super(code);
   }
@@ -54,7 +55,15 @@ export async function handle(
     return await operation(correlationId);
   } catch (error) {
     if (error instanceof HttpError) {
-      return response(error.status, { error: error.code }, correlationId);
+      const result = response(
+        error.status,
+        { error: error.code },
+        correlationId,
+      );
+      if (error.status === 429 && error.retryAfterSeconds !== undefined) {
+        result.headers.set("retry-after", String(error.retryAfterSeconds));
+      }
+      return result;
     }
     if (error instanceof PayloadTooLarge) {
       return response(413, { error: "payload_too_large" }, correlationId);

@@ -18,7 +18,10 @@ type EventInput = {
   actorId?: string;
 };
 
-export async function storeEvent(input: EventInput) {
+export async function storeEvent(
+  input: EventInput,
+  reserveNewEvent?: (tx: Prisma.TransactionClient) => Promise<void>,
+) {
   const db = database();
   const eventId = randomUUID();
   const payloadHash = hashPayload(input.body);
@@ -84,6 +87,10 @@ export async function storeEvent(input: EventInput) {
           return { kind: "event_conflict" } as const;
         }
         return { kind: "duplicate", eventId: existing.id } as const;
+      }
+      // A replay consumes no extra quota. A rejected reservation rolls back this new event.
+      if (reserveNewEvent) {
+        await reserveNewEvent(tx);
       }
       const receivedAt = new Date();
       const subscriptions = await tx.subscription.findMany({

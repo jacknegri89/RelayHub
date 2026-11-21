@@ -307,12 +307,20 @@ model Delivery {
   finishedAt DateTime?
   attempts DeliveryAttempt[]
   outbox OutboxEntry?
+  lostResponseOrder LostResponseOrder?
 
   @@unique([eventId, destinationId])
   @@index([organizationId, createdAt, id])
   @@index([organizationId, status, createdAt])
   @@index([destinationId, organizationId])
   @@index([status, leaseExpiresAt])
+}
+
+model LostResponseOrder {
+  deliveryId String @id
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  receipts Int @default(1)
 }
 
 model DeliveryAttempt {

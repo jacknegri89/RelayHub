@@ -10,6 +10,8 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 The homepage simulator follows a shop order to the warehouse, billing and email services. Switch billing offline, send an order, then bring it back online to watch just that delivery retry. **Route** shows the signature check, response code and attempt count for each service. **Timeline** follows the same order over time. When paused or using reduced motion, **Next step** advances to its next delivery or retry. In the workspace, every delivery shows the trace for its real attempts.
 
+Choose **Try a lost response** to send one test order through the actual worker. Open both attempts and compare their delivery IDs with the receiver's count of requests and saved orders. [How the receiver handles the retry](docs/receiver-idempotency.md#try-a-lost-acknowledgement)
+
 Before signing in, explore how Stripe, GitHub and Shopify use webhooks. GitHub repositories can send events directly to RelayHub. For Stripe and Shopify, verify the provider event in your own app and forward it using a RelayHub source.
 
 ### Connect a GitHub repository
