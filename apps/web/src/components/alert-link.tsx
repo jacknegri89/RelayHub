@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AlertSummary } from "../server/destination-monitoring";
 import { useLocale } from "./locale";
+import { InterfaceIcon } from "./interface-icon";
 import styles from "./destination-alerts.module.css";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -93,23 +94,26 @@ export function AlertLink({
       href={"/workspace/" + organizationId + "/alerts"}
       aria-current={(active && "page") || undefined}
     >
-      {t("Alerts", "Avvisi")}
-      <span aria-live="polite" aria-atomic="true">
-        {summary.openCount > 0 && (
-          <span className={styles.count}>
-            {summary.openCount} {t("open", "aperti")}
-          </span>
-        )}
-        {latest && (
-          <small className={styles.latest}>
-            {transition} · {latest.name}
-          </small>
-        )}
-        {stale && (
-          <small className={styles.latest}>
-            {t("Update unavailable", "Aggiornamento non disponibile")}
-          </small>
-        )}
+      <InterfaceIcon name="alerts" />
+      <span>
+        {t("Alerts", "Avvisi")}
+        <span aria-live="polite" aria-atomic="true">
+          {summary.openCount > 0 && (
+            <span className={styles.count}>
+              {summary.openCount} {t("open", "aperti")}
+            </span>
+          )}
+          {latest && (
+            <small className={styles.latest}>
+              {transition} · {latest.name}
+            </small>
+          )}
+          {stale && (
+            <small className={styles.latest}>
+              {t("Update unavailable", "Aggiornamento non disponibile")}
+            </small>
+          )}
+        </span>
       </span>
     </Link>
   );

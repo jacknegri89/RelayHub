@@ -12,6 +12,7 @@ import { getLocale } from "../server/locale";
 import { DestinationHistory } from "./destination-history";
 import { DestinationEmailSettings } from "./destination-email-settings";
 import { PageHeading } from "./page-heading";
+import { WorkspaceEmpty } from "./workspace-empty";
 import { Time } from "./display";
 import styles from "./destination-alerts.module.css";
 
@@ -101,6 +102,10 @@ export async function DestinationAlertPage({
     (page - 1) * PAGE_SIZE,
   );
   const path = "/workspace/" + organizationId + "/alerts";
+  let allDestinations = path;
+  if (openOnly) {
+    allDestinations += "?view=open";
+  }
   function href(onlyOpen: boolean, number = 1) {
     const params = new URLSearchParams();
     if (destination) {
@@ -118,14 +123,44 @@ export async function DestinationAlertPage({
     return path;
   }
   let empty = t("No alerts yet.", "Nessun avviso finora.");
+  let guidance = t(
+    "The history shows when a receiving app stops accepting deliveries and when it starts responding again.",
+    "Lo storico indica quando un’app destinataria smette di accettare le consegne e quando torna a rispondere.",
+  );
+  let nextLink = {
+    href: "/workspace/" + organizationId + "/destinations",
+    label: t("View destinations", "Vedi le destinazioni"),
+  };
+  if (destination) {
+    nextLink = {
+      href: "/workspace/" + organizationId + "/destinations/" + destination.id,
+      label: t(
+        "View destination history",
+        "Vedi lo storico della destinazione",
+      ),
+    };
+  }
   if (openOnly) {
     empty = t("No open outages.", "Nessun guasto aperto.");
+    guidance = t(
+      "There are no unresolved outages in this view. The alert history also includes recoveries.",
+      "In questa vista non ci sono guasti da risolvere. Nello storico trovi anche i ripristini.",
+    );
+    nextLink = {
+      href: href(false),
+      label: t("View alert history", "Vedi lo storico degli avvisi"),
+    };
   }
   if (page > 1) {
     empty = t(
       "No more alerts on this page.",
       "Nessun altro avviso in questa pagina.",
     );
+    guidance = t(
+      "Return to the first page of this view to see the most recent alerts.",
+      "Torna alla prima pagina di questa vista per vedere gli avvisi più recenti.",
+    );
+    nextLink = { href: href(openOnly), label: t("First page", "Prima pagina") };
   }
   return (
     <>
@@ -139,7 +174,7 @@ export async function DestinationAlertPage({
       {destination && (
         <p className={styles.scope}>
           {destination.name}{" "}
-          <Link href={path}>
+          <Link href={allDestinations}>
             {t("Show all destinations", "Mostra tutte le destinazioni")}
           </Link>
         </p>
@@ -167,7 +202,14 @@ export async function DestinationAlertPage({
           alerts={rows.slice(0, PAGE_SIZE)}
         />
       )}
-      {!rows.length && <p className="empty">{empty}</p>}
+      {!rows.length && (
+        <WorkspaceEmpty
+          kind="alerts"
+          title={empty}
+          description={guidance}
+          link={nextLink}
+        />
+      )}
       {(page > 1 || rows.length > PAGE_SIZE) && (
         <nav className="pagination" aria-label={t("Pagination", "Paginazione")}>
           {page > 1 && (
@@ -269,7 +311,11 @@ export async function DestinationDetail({
         )}
         {!alerts.length && (
           <p className="muted">
-            {t("No alerts yet.", "Nessun avviso finora.")}
+            {t("No alerts yet.", "Nessun avviso finora.")}{" "}
+            {t(
+              "Outage and recovery alerts for this destination appear here.",
+              "Qui vedrai gli avvisi di guasto e ripristino di questa destinazione.",
+            )}
           </p>
         )}
       </section>

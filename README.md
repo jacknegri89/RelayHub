@@ -43,7 +43,7 @@ You can send verification and password reset links from an existing personal Gma
 pnpm gmail:authorize --client-json "/path/to/google-desktop-client.json" --sender "you@gmail.com"
 ```
 
-Set `RELAYHUB_MAIL_PROVIDER=gmail` and `RELAYHUB_ACCOUNT_EMAIL=1`, then restart the application. For a hosted installation, configure the same mail settings and OAuth credentials in the server's secret manager and set `RELAYHUB_BASE_URL` to the public HTTPS origin before sending links. To test, sign in, verify your address in **Security**, then use **Forgot your password?** in a private browser window. [Gmail setup and token lifetime](docs/destination-email.md#send-from-an-existing-gmail-account)
+Set `RELAYHUB_MAIL_PROVIDER=gmail` and `RELAYHUB_ACCOUNT_EMAIL=1`, then restart the application. For a hosted installation, configure the same mail settings and OAuth credentials in the server's secret manager and set `RELAYHUB_BASE_URL` to the public HTTPS origin before sending links. To test, sign in, verify your address in **Profile**, then use **Forgot your password?** in a private browser window. [Gmail setup and token lifetime](docs/destination-email.md#send-from-an-existing-gmail-account)
 
 The hosted portfolio uses Vercel, Neon and Upstash. Their free quotas can suspend background deliveries or database access. The 1 GiB worker alone can exhaust the monthly Hobby memory allowance in approximately 17.5 days of continuous operation. The local Compose stack can run the full webhook demo while a hosted quota is exhausted. [Free-tier limits and recovery](docs/operations.md#keeping-the-portfolio-demo-within-free-tiers)
 

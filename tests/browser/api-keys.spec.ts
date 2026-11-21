@@ -29,6 +29,8 @@ test("an owner grants and revokes access for a reporting service", async ({
     await page.getByRole("button", { name: "Create organization" }).click();
     await page.getByRole("link", { name: "Settings", exact: true }).click();
     const keyName = page.getByLabel("Key name", { exact: true });
+    await expect(keyName).toBeHidden();
+    await page.getByText("Issue a new key", { exact: true }).click();
     await expect(keyName).toHaveAttribute("placeholder", /\S/);
     await keyName.fill("Delivery reports");
     await page.getByRole("button", { name: "Create API key" }).click();
