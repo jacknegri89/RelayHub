@@ -116,6 +116,15 @@ export async function readLostResponse(
         select: {
           id: true,
           status: true,
+          event: {
+            select: {
+              id: true,
+              eventType: true,
+              receivedAt: true,
+              source: { select: { name: true } },
+            },
+          },
+          destination: { select: { name: true } },
           attempts: {
             orderBy: { number: "asc" },
             select: {
@@ -142,6 +151,13 @@ export async function readLostResponse(
       });
       return {
         runId,
+        event: {
+          id: delivery.event.id,
+          type: delivery.event.eventType,
+          receivedAt: delivery.event.receivedAt.toISOString(),
+          sourceName: delivery.event.source.name,
+        },
+        destinationName: delivery.destination.name,
         deliveryId: delivery.id,
         status: delivery.status,
         attempts: delivery.attempts.map((attempt) => ({
