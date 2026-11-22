@@ -76,6 +76,8 @@ In **Vercel → Project → Settings → Environment Variables**, inspect the en
 
 ## Backups, recovery and keys
 
+For personal data requests, accidental live payloads, provider checks and erasures after a restore, see [Hosted demo privacy operations](privacy-operations.md).
+
 Follow the [encrypted backup and isolated restore procedure](backup-restore.md) before a schema change. It includes a repeatable test of encrypted fields and the PostgreSQL outbox with a fresh queue.
 
 Back up PostgreSQL, including organization and auth data, and keep encrypted backups in access-controlled storage. Keep the encryption keyring separately and back it up too. Redis AOF speeds queue restart. PostgreSQL can republish missing jobs. Before restoring a PostgreSQL snapshot, stop web and worker and use a fresh Redis queue namespace or dedicated empty Redis instance. Restored rows may reissue prior deliveries. Receivers should preserve deduplication state.

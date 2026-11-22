@@ -8,6 +8,19 @@ import { ApiExplorer } from "../components/api-explorer";
 import { PublicFooter, PublicHeader } from "../components/public-navigation";
 import { LandingMotion } from "../components/landing-motion";
 import styles from "./landing.module.css";
+import { publicPageMetadata } from "../server/public-metadata";
+
+export async function generateMetadata() {
+  const { t } = await getLocale();
+  return publicPageMetadata(
+    "/",
+    t("Webhook delivery and monitoring", "Consegna e monitoraggio dei webhook"),
+    t(
+      "Receive signed webhooks, route them to your endpoints and follow every delivery attempt.",
+      "Ricevi webhook firmati, instradali ai tuoi endpoint e segui ogni tentativo di consegna.",
+    ),
+  );
+}
 
 export default async function Home() {
   const { t } = await getLocale();

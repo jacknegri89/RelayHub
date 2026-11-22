@@ -87,11 +87,13 @@ export function LanguageSwitch() {
         className="language-switch"
         data-locale={locale}
         aria-disabled={pending}
-        aria-label={t("Passa all’italiano", "Switch to English")}
+        aria-label={t(
+          "EN IT · Passa all’italiano",
+          "EN IT · Switch to English",
+        )}
         onClick={changeLanguage}
       >
-        <span lang="en">EN</span>
-        <span lang="it">IT</span>
+        <span lang="en">EN</span> <span lang="it">IT</span>
       </button>
       {failed && (
         <span role="alert">

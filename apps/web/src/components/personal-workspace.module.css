@@ -247,6 +247,66 @@
   margin: 0.5rem 0;
   color: var(--dust);
 }
+.privacyTask {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+}
+.privacyTask > summary,
+.privacyTask > div {
+  padding: 0.9rem clamp(1rem, 2.3vw, 1.65rem);
+}
+.privacyTask > div > p {
+  max-width: 65ch;
+  margin: 0 0 1rem;
+  color: var(--dust);
+}
+.privacyForm {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  width: min(100%, 34rem);
+  overflow-wrap: anywhere;
+}
+.deletionNotice {
+  width: min(calc(100% - 2rem), 26rem);
+  padding: 1.5rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.75rem;
+  background: var(--void-1);
+  color: var(--bone);
+}
+.deletionNotice::backdrop {
+  background: var(--void);
+}
+.privacyForm button[data-destructive="true"] {
+  border-color: #bd6762;
+  background: #341d20;
+  color: #ffcdca;
+}
+.privacyForm button[data-destructive="true"]:hover {
+  background: #50272b;
+}
+.privacyForm input[type="checkbox"] {
+  flex: none;
+}
+.ownershipChoice {
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.4rem;
+}
+.ownershipChoice legend {
+  padding-inline: 0.3rem;
+  font-weight: 600;
+}
+.ownershipChoice select {
+  width: 100%;
+  min-width: 0;
+}
 .body :global(.demo-label) {
   justify-self: start;
   margin: 0;

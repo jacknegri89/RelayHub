@@ -1,5 +1,18 @@
 import { expect, test } from "@playwright/test";
 
+test("an unknown public URL returns a real HTTP 404 and a recovery link", async ({
+  page,
+}) => {
+  const response = await page.goto("/unknown-relayhub-page");
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: "Page unavailable" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Back to the homepage" }),
+  ).toHaveAttribute("href", "/");
+});
+
 test("language follows navigation and preserves a partially completed registration", async ({
   page,
 }) => {
@@ -9,7 +22,9 @@ test("language follows navigation and preserves a partially completed registrati
     "At least 12 characters",
   );
   await page.getByLabel("Name", { exact: true }).fill("Relay Operator");
-  await page.getByRole("button", { name: "Passa all’italiano" }).click();
+  await page
+    .getByRole("button", { name: "EN IT · Passa all’italiano", exact: true })
+    .click();
   await expect(page.locator("html")).toHaveAttribute("lang", "it");
   await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
     "placeholder",

@@ -11,6 +11,7 @@ export async function PolicyLinks() {
       <Link href="/cookies">
         {t("Cookie Policy", "Informativa sui cookie")}
       </Link>
+      <Link href="/terms">{t("Demo terms", "Condizioni della demo")}</Link>
     </nav>
   );
 }
