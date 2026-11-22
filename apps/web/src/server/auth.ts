@@ -11,6 +11,31 @@ import {
   sendVerificationLink,
 } from "./account-mail";
 
+async function discardOrphanedChallenge(record: {
+  id: string;
+  identifier: string;
+  value: string;
+}) {
+  // Better Auth stores reset, MFA and trusted-device challenges outside the user foreign keys.
+  if (
+    !record.identifier.startsWith("relayhub-reset:") &&
+    !record.identifier.startsWith("trust-device-") &&
+    !(
+      record.identifier.startsWith("2fa-") &&
+      !record.identifier.startsWith("2fa-attempts-")
+    )
+  ) {
+    return;
+  }
+  await database().$transaction(async (tx) => {
+    const owner = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "User" WHERE id = ${record.value} FOR KEY SHARE`;
+    if (!owner.length) {
+      await tx.verification.deleteMany({ where: { id: record.id } });
+    }
+  });
+}
+
 function makeAuth() {
   const config = settings();
   const mailEnabled = accountEmailConfigured();
@@ -22,6 +47,9 @@ function makeAuth() {
       provider: "postgresql",
       transaction: true,
     }),
+    databaseHooks: {
+      verification: { create: { after: discardOrphanedChallenge } },
+    },
     verification: {
       storeIdentifier: {
         default: "plain",

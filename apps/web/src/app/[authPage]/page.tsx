@@ -16,18 +16,14 @@ import {
   accountMailTitle,
 } from "../../components/account-mail-page";
 import { accountEmailConfigured } from "@relayhub/shared/mail";
+import { accountPages, accountMailPages } from "../../server/account-pages";
 
 type AuthParams = { params: Promise<{ authPage: string }> };
-const mailPages = new Set([
-  "forgot-password",
-  "reset-password",
-  "confirm-email",
-]);
 
 export async function generateMetadata({ params }: AuthParams) {
   const { authPage } = await params;
   const { t } = await getLocale();
-  if (mailPages.has(authPage) && accountEmailConfigured()) {
+  if (accountMailPages.has(authPage) && accountEmailConfigured()) {
     return { title: accountMailTitle(authPage, t), robots: { index: false } };
   }
   if (authPage === "verify") {
@@ -64,10 +60,10 @@ export default async function AuthPage({ params }: AuthParams) {
   const { t } = await getLocale();
   const { authPage } = await params;
   const mailEnabled = accountEmailConfigured();
-  if (mailEnabled && mailPages.has(authPage)) {
+  if (mailEnabled && accountMailPages.has(authPage)) {
     return <AccountMailPage page={authPage} />;
   }
-  if (!["login", "register", "verify"].includes(authPage)) {
+  if (!accountPages.has(authPage)) {
     notFound();
   }
   await connection();
@@ -163,6 +159,17 @@ export default async function AuthPage({ params }: AuthParams) {
                   required
                 />
               </label>
+              {registering && (
+                <div>
+                  <p className="muted">
+                    {t(
+                      "Use your own email for the account. Send only fictional data in demo webhooks.",
+                      "Usa il tuo indirizzo email per l’account. Nei webhook della demo invia solo dati di fantasia.",
+                    )}
+                  </p>
+                  <PolicyLinks />
+                </div>
+              )}
             </ActionForm>
           )}
           {registering && mailEnabled && (
@@ -194,7 +201,7 @@ export default async function AuthPage({ params }: AuthParams) {
               </Link>
             </p>
           )}
-          <PolicyLinks />
+          {!registering && <PolicyLinks />}
         </div>
       </section>
     </main>

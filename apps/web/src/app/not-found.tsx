@@ -1,6 +1,12 @@
 import { T } from "../components/locale";
 import Link from "next/link";
 import { VoidPage } from "../components/void-page";
+import { getLocale } from "../server/locale";
+
+export async function generateMetadata() {
+  const { t } = await getLocale();
+  return { title: t("Page unavailable", "Pagina non disponibile") };
+}
 
 export default function NotFound() {
   return (

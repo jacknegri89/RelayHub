@@ -245,7 +245,20 @@ export function ActionForm({
     button = t("Working…", "Attendi…");
   }
   return (
-    <form className={className ?? "action-form"} onSubmit={submit}>
+    <form
+      method="post"
+      action={endpoint}
+      className={className ?? "action-form"}
+      onSubmit={submit}
+    >
+      <noscript>
+        <p>
+          {t(
+            "Enable JavaScript to use this form.",
+            "Attiva JavaScript per usare questo modulo.",
+          )}
+        </p>
+      </noscript>
       {children}
       <button type="submit" disabled={pending || disabled}>
         {button}
