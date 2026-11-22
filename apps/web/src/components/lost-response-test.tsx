@@ -35,7 +35,7 @@ function measuredStatus(status: string, t: Translate) {
   return labels[status] ?? status;
 }
 
-function Timestamp({ value }: { value: string }) {
+export function Timestamp({ value }: { value: string }) {
   const { locale } = useLocale();
   const format = new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -72,8 +72,8 @@ function AttemptDetails({ attempt }: { attempt: Attempt }) {
         <span>{response}</span>
       </summary>
       <dl>
-        <div>
-          <dt>Delivery ID</dt>
+        <div className={styles.deliveryKey}>
+          <dt>{t("Delivery ID", "ID consegna")}</dt>
           <dd>
             <code>{attempt.deliveryId}</code>
           </dd>
@@ -198,10 +198,17 @@ export function RunEvidence({ report }: { report: LostResponseReport | null }) {
   );
 }
 
-function monitorMessage(monitor: Monitor, t: Translate) {
+export function monitorMessage(
+  monitor: Pick<Monitor, "phase" | "issue" | "report">,
+  t: Translate,
+) {
   const { phase, issue, report } = monitor;
   const messages: Record<Monitor["issue"], string> = {
     none: "",
+    access: t(
+      "Open the dashboard from the tab where you started this test.",
+      "Apri la dashboard dalla scheda in cui hai avviato questa prova.",
+    ),
     connection: t(
       "Connection interrupted. The last reading is still shown.",
       "Connessione interrotta. Rimane visibile l’ultima lettura disponibile.",
@@ -302,6 +309,18 @@ export function LostResponseTest({
             {t("Company website", "Sito aziendale")}
             <input name="website" autoComplete="off" ref={trap} tabIndex={-1} />
           </label>
+          {report && (
+            <Link
+              className={styles.dashboardLink}
+              href={"/lost-response/dashboard/" + report.runId}
+            >
+              {t(
+                "Open this test in the dashboard",
+                "Apri questa prova nella dashboard",
+              )}
+              <span aria-hidden="true"> →</span>
+            </Link>
+          )}
           {phase === "idle" && (
             <button
               type="button"

@@ -1,4 +1,5 @@
-.main {
+.main,
+.dashboard {
   width: min(calc(100% - var(--gutter) * 2), 72rem);
   margin-inline: auto;
   padding-block: clamp(1.5rem, 4vw, 3rem) clamp(3rem, 7vw, 7rem);
@@ -8,6 +9,85 @@
   align-items: center;
   min-height: 2.75rem;
   font-size: 0.9rem;
+}
+.dashboardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--photon);
+  border-radius: 0.4rem;
+  color: var(--photon);
+  font-weight: 600;
+  text-decoration: none;
+}
+.dashboardLink:hover {
+  background: var(--void-2);
+}
+.dashboardHead,
+.reading,
+.eventMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 2rem;
+}
+.dashboardHead {
+  justify-content: space-between;
+  margin-block: 1.5rem;
+}
+.dashboardHead p,
+.route dt {
+  color: var(--dust);
+  font-size: 0.88rem;
+}
+.dashboardHead p,
+.dashboardHead h1,
+.route dd {
+  margin: 0;
+}
+.dashboardHead h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+.route {
+  overflow-wrap: anywhere;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--rule);
+  border-radius: 0.65rem;
+  background: var(--void-1);
+}
+.route h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+  margin-block: 1.25rem;
+}
+.steps dt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.steps dt svg {
+  color: var(--photon);
+}
+.route dd {
+  margin-top: 0.25rem;
+}
+.eventMeta {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.eventMeta code,
+.eventMeta time {
+  font: 0.85rem/1.5 var(--font-mono);
+  white-space: normal;
 }
 .intro {
   display: grid;
@@ -184,7 +264,26 @@
   }
 }
 @media (max-width: 25rem) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .steps > div {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: baseline;
+    gap: 0.5rem;
+  }
   .attempt dl > div {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .dashboard .attempt dl > div {
+    grid-template-columns: minmax(5rem, 0.48fr) minmax(0, 1fr);
+  }
+  .dashboard .attempt dl > .deliveryKey {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dashboard .deliveryKey code {
+    font-size: clamp(0.76rem, 3.5vw, 0.85rem);
+    letter-spacing: -0.02em;
   }
 }

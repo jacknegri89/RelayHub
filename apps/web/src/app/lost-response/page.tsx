@@ -1,10 +1,6 @@
-import { headers } from "next/headers";
-import { PublicFooter, PublicHeader } from "../../components/public-navigation";
 import { LostResponseTest } from "../../components/lost-response-test";
-import { auth } from "../../server/auth";
 import { getLocale } from "../../server/locale";
 import { issueFormProof, MIN_FORM_TIME_MS } from "../../server/form-proof";
-import landing from "../landing.module.css";
 
 export async function generateMetadata() {
   const { t } = await getLocale();
@@ -17,16 +13,11 @@ export async function generateMetadata() {
   };
 }
 
-export default async function LostResponsePage() {
-  const session = await auth().api.getSession({ headers: await headers() });
+export default function LostResponsePage() {
   return (
-    <div className={landing.landing}>
-      <PublicHeader signedIn={Boolean(session)} />
-      <LostResponseTest
-        formProof={issueFormProof("lost-response")}
-        minFormTimeMs={MIN_FORM_TIME_MS}
-      />
-      <PublicFooter />
-    </div>
+    <LostResponseTest
+      formProof={issueFormProof("lost-response")}
+      minFormTimeMs={MIN_FORM_TIME_MS}
+    />
   );
 }
