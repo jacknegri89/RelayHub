@@ -5,13 +5,23 @@ import {
   LostResponseTest,
   RunEvidence,
 } from "../src/components/lost-response-test";
-import type { LostResponseReport } from "../src/lost-response-report";
+import {
+  hasDashboardEvent,
+  type LostResponseReport,
+} from "../src/lost-response-report";
 
 const deliveryId = "79c2b693-a673-4e9a-be5a-65f1fcb48f25";
 const start = "2026-11-21T14:11:52.031Z";
 const finish = "2026-11-21T14:11:57.050Z";
 const report: LostResponseReport = {
   runId: "f2df3e42-086e-4d29-a7f6-b4884bd93e50",
+  event: {
+    id: "13ddb949-609b-4dd0-8128-6db15032d75d",
+    type: "order.created",
+    receivedAt: start,
+    sourceName: "Test orders",
+  },
+  destinationName: "Order receiver",
   deliveryId,
   status: "retry_scheduled",
   requestsReceived: 1,
@@ -37,6 +47,18 @@ it("starts with no claimed measurements before the visitor sends an order", () =
   expect(html).toContain("Start the test");
   expect(html).not.toContain("<output");
   expect(html).not.toContain("<details");
+});
+
+it("requires event metadata and a valid receipt time before rendering a dashboard report", () => {
+  expect(hasDashboardEvent(report)).toBe(true);
+  const previousFormat = { runId: report.runId, attempts: report.attempts };
+  expect(hasDashboardEvent(previousFormat)).toBe(false);
+  expect(
+    hasDashboardEvent({
+      ...report,
+      event: { ...report.event, receivedAt: "unknown" },
+    }),
+  ).toBe(false);
 });
 
 it("shows the receiver's first commit even before another attempt has run", () => {
