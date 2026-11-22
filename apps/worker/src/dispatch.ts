@@ -151,6 +151,11 @@ export async function retainRecent(now = Date.now()) {
       });
     });
   }
+  // Expired login sessions and unused verification challenges can remain after a browser closes.
+  await db.session.deleteMany({ where: { expiresAt: { lte: new Date(now) } } });
+  await db.verification.deleteMany({
+    where: { expiresAt: { lte: new Date(now) } },
+  });
   await db.requestCounter.deleteMany({
     where: { expiresAt: { lt: new Date(now) } },
   });

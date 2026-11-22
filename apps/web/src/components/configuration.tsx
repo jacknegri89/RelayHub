@@ -191,14 +191,15 @@ export async function Sources({
           firstUse={!items.length}
           label={t("New source", "Nuova sorgente")}
         >
-          {!items.length && (
-            <p className="muted">
-              {t(
-                "Create the endpoint for your sending app. RelayHub will show its URL and signing secret.",
-                "Crea l’endpoint per l’app mittente. RelayHub ti mostrerà l’URL e la chiave di firma.",
-              )}
-            </p>
-          )}
+          <p className="muted">
+            {t(
+              "For the hosted demo, send fictional data only. A GitHub push can include commit authors’ names and email addresses. Check your test repository before connecting it.",
+              "Nella demo ospitata invia solo dati fittizi. Un push GitHub può includere nomi ed email degli autori dei commit. Controlla il repository di prova prima di collegarlo.",
+            )}{" "}
+            <Link href="/terms">
+              {t("Demo terms", "Condizioni della demo")}
+            </Link>
+          </p>
           <ActionForm
             endpoint={endpoint}
             label={t("Create source", "Crea sorgente")}

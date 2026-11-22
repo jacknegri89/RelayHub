@@ -55,6 +55,52 @@ async function createDestination() {
   return destination.id;
 }
 
+it("purges expired login sessions and verification records while keeping active ones", async () => {
+  const ownerId = randomUUID();
+  const expiredId = randomUUID();
+  const activeId = randomUUID();
+  const now = Date.now();
+  const records = [
+    { id: expiredId, expiresAt: new Date(now - 60_000) },
+    { id: activeId, expiresAt: new Date(now + 60_000) },
+  ];
+  try {
+    await db.user.create({
+      data: {
+        id: ownerId,
+        name: "Retention fixture",
+        email: ownerId + "@example.test",
+        sessions: {
+          create: records.map((record) => ({ ...record, token: randomUUID() })),
+        },
+      },
+    });
+    await db.verification.createMany({
+      data: records.map((record) => ({
+        ...record,
+        identifier: record.id,
+        value: ownerId,
+      })),
+    });
+    await retainRecent(now);
+    const sessions = await db.session.findMany({
+      where: { userId: ownerId },
+      select: { id: true },
+    });
+    const verifications = await db.verification.findMany({
+      where: { value: ownerId },
+      select: { id: true },
+    });
+    expect(sessions).toEqual([{ id: activeId }]);
+    expect(verifications).toEqual([{ id: activeId }]);
+  } finally {
+    await db.verification.deleteMany({
+      where: { id: { in: [expiredId, activeId] } },
+    });
+    await db.user.deleteMany({ where: { id: ownerId } });
+  }
+});
+
 async function beginAttempt(
   destinationId: string,
   attemptId: string = randomUUID(),

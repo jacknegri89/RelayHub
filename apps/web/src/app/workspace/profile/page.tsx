@@ -7,6 +7,8 @@ import { profileEditToken } from "../../../server/form-proof";
 import { avatarIds, profileAvatar } from "../../../profile-avatars";
 import { PersonalWorkspace } from "../../../components/personal-workspace";
 import { ProfileAvatar } from "../../../components/profile-avatar";
+import { ProfilePrivacy } from "../../../components/profile-privacy";
+import { getAccountDeletionPlan } from "../../../server/account-privacy";
 import { ActionForm } from "../../../components/forms";
 import styles from "../../../components/personal-workspace.module.css";
 
@@ -29,6 +31,8 @@ export default async function ProfilePage() {
     redirect("/login");
   }
   const user = session.user;
+  const deletionPlan = await getAccountDeletionPlan(user.id);
+  const csrfToken = profileEditToken(session.session.id).toString("hex");
   const selected = profileAvatar(user.image);
   // Leave a previously stored image in place until the member chooses a replacement.
   const hasOtherImage = Boolean(user.image && selected === "initials");
@@ -53,11 +57,7 @@ export default async function ProfilePage() {
           successMessage="profile_saved"
           className={styles.editor}
         >
-          <input
-            type="hidden"
-            name="csrfToken"
-            value={profileEditToken(session.session.id).toString("hex")}
-          />
+          <input type="hidden" name="csrfToken" value={csrfToken} />
           <label>
             {t("Display name", "Nome visualizzato")}
             <input
@@ -114,6 +114,7 @@ export default async function ProfilePage() {
           )}
         </div>
       </section>
+      <ProfilePrivacy csrfToken={csrfToken} organizations={deletionPlan} />
     </PersonalWorkspace>
   );
 }

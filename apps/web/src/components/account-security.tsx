@@ -183,7 +183,20 @@ export function AccountSecurity({ enabled }: { enabled: boolean }) {
           </>
         )}
         {!protectedAccount && (
-          <form className={styles.enrollment} onSubmit={submit}>
+          <form
+            method="post"
+            action="/api/auth/two-factor/enable"
+            className={styles.enrollment}
+            onSubmit={submit}
+          >
+            <noscript>
+              <p>
+                {t(
+                  "Enable JavaScript to set up your authenticator.",
+                  "Attiva JavaScript per configurare l’app di autenticazione.",
+                )}
+              </p>
+            </noscript>
             {!enrollment && (
               <>
                 <h3>

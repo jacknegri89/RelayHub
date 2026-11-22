@@ -1,16 +1,18 @@
 import { getLocale } from "../../server/locale";
 import Link from "next/link";
 import { PolicyPage } from "../../components/policy-page";
+import { publicPageMetadata } from "../../server/public-metadata";
 
 export async function generateMetadata() {
   const { t } = await getLocale();
-  return {
-    title: t("Cookie Policy", "Informativa sui cookie"),
-    description: t(
+  return publicPageMetadata(
+    "/cookies",
+    t("Cookie Policy", "Informativa sui cookie"),
+    t(
       "How RelayHub uses cookies for sessions, account security and your language preference.",
       "I cookie di RelayHub per l’accesso, la sicurezza e la scelta della lingua.",
     ),
-  };
+  );
 }
 
 export default async function CookiePage() {
@@ -27,12 +29,13 @@ export default async function CookiePage() {
         ["two-factor", t("Two-factor challenge", "Verifica a due fattori")],
         ["persistence", t("Session persistence", "Durata della sessione")],
         ["language", t("Language preference", "Preferenza di lingua")],
+        ["test", t("Public test in this tab", "Prova pubblica nella scheda")],
       ]}
     >
       <p>
         {t(
-          "RelayHub uses essential first-party cookies for sign-in and account security.",
-          "RelayHub usa cookie propri essenziali per l’accesso e la sicurezza dell’account.",
+          "Updated 22 November 2026. The hosted demo uses first-party technical cookies for sign-in, account security and the language you select. The public test also uses temporary storage in your tab.",
+          "Aggiornata il 22 novembre 2026. La demo ospitata usa cookie tecnici propri per accesso, sicurezza e lingua scelta. La prova pubblica usa anche la memoria temporanea della scheda.",
         )}
       </p>
       <dl className="cookie-list">
@@ -78,6 +81,17 @@ export default async function CookiePage() {
             {t(
               "When you choose a language, relayhub_lang remembers English or Italian for one year on this browser.",
               "Quando scegli una lingua, relayhub_lang memorizza la scelta tra italiano e inglese per un anno su questo browser.",
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt id="test">
+            {t("Lost-response test", "Prova di risposta persa")}
+          </dt>
+          <dd>
+            {t(
+              "Starting the test stores its identifier and private read key under relayhub.lost-response.v1 in sessionStorage. This lets you reload or open the result dashboard from the same tab without creating an account. Starting another test replaces the entry. Closing the tab normally ends this storage session. Clearing the site’s data also removes it.",
+              "Avviando la prova, il browser salva l’identificativo e la chiave privata di lettura nella voce relayhub.lost-response.v1 di sessionStorage. Così puoi ricaricare o aprire il risultato nella dashboard dalla stessa scheda senza registrarti. Una nuova prova sostituisce la voce. La chiusura della scheda normalmente termina questa sessione. Anche la cancellazione dei dati del sito la rimuove.",
             )}
           </dd>
         </div>

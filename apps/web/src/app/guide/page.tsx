@@ -5,16 +5,18 @@ import { getLocale } from "../../server/locale";
 import { PublicFooter, PublicHeader } from "../../components/public-navigation";
 import { JourneyStory } from "../../components/journey-story";
 import styles from "../landing.module.css";
+import { publicPageMetadata } from "../../server/public-metadata";
 
 export async function generateMetadata() {
   const { t } = await getLocale();
-  return {
-    title: t("Delivery guide", "Guida alle consegne"),
-    description: t(
+  return publicPageMetadata(
+    "/guide",
+    t("Delivery guide", "Guida alle consegne"),
+    t(
       "Follow a webhook through verification, routing, delivery and retries.",
       "Segui un webhook dalla verifica della firma alla consegna e ai nuovi tentativi.",
     ),
-  };
+  );
 }
 
 export default async function DeliveryGuide() {

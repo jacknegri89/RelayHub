@@ -1,16 +1,18 @@
 import { LostResponseTest } from "../../components/lost-response-test";
 import { getLocale } from "../../server/locale";
 import { issueFormProof, MIN_FORM_TIME_MS } from "../../server/form-proof";
+import { publicPageMetadata } from "../../server/public-metadata";
 
 export async function generateMetadata() {
   const { t } = await getLocale();
-  return {
-    title: t("Try a lost response", "Prova una risposta persa"),
-    description: t(
+  return publicPageMetadata(
+    "/lost-response",
+    t("Try a lost response", "Prova una risposta persa"),
+    t(
       "Compare the delivery attempts for one webhook with the orders actually saved by its receiver.",
       "Confronta i tentativi di consegna di un webhook con gli ordini effettivamente salvati dal destinatario.",
     ),
-  };
+  );
 }
 
 export default function LostResponsePage() {

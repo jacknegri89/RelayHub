@@ -126,12 +126,24 @@ export async function sendVerificationLink(user: Mailbox, headers?: Headers) {
     Date.now() + settings().RELAYHUB_ACCOUNT_LINK_MINUTES * 60_000,
   );
   // Only the latest link can be used, and it is bound to the account's current address.
-  await database().verification.upsert({
-    where: { id },
-    create: { id, identifier: id, value, expiresAt },
-    update: { value, expiresAt },
+  const saved = await database().$transaction(async (tx) => {
+    // A scheduled mail job may still hold the former address when its account is closed.
+    const current = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "User" WHERE id = ${user.id} AND email = ${user.email}
+      AND NOT "emailVerified" FOR SHARE`;
+    if (!current.length) {
+      return false;
+    }
+    await tx.verification.upsert({
+      where: { id },
+      create: { id, identifier: id, value, expiresAt },
+      update: { value, expiresAt },
+    });
+    return true;
   });
-  await deliverLink(user, "confirm-email", token, headers);
+  if (saved) {
+    await deliverLink(user, "confirm-email", token, headers);
+  }
 }
 
 export async function confirmMailbox(user: Mailbox, token: string) {
@@ -159,7 +171,15 @@ export async function sendResetLink(
   token: string,
   headers?: Headers,
 ) {
-  if (user.emailVerified) {
+  if (!user.emailVerified) {
+    return;
+  }
+  // A scheduled request may have outlived its original account or verified mailbox.
+  const active = await database().user.findFirst({
+    where: { id: user.id, email: user.email, emailVerified: true },
+    select: { id: true },
+  });
+  if (active) {
     await deliverLink(user, "reset-password", token, headers);
   }
 }
