@@ -13,6 +13,7 @@ test.use({ hasTouch: true, trace: "off", screenshot: "off" });
 
 test("a real retry reuses its delivery ID and saves one order", async ({
   page,
+  browser,
   context,
   baseURL,
 }) => {
@@ -25,8 +26,17 @@ test("a real retry reuses its delivery ID and saves one order", async ({
   const endpoint = "/api/lost-response";
   const browserErrors: string[] = [];
   const starts: string[] = [];
+  let readingDashboard = false;
+  const dashboardWrites: string[] = [];
   page.on("pageerror", (error) => browserErrors.push(error.name));
   page.on("request", (request) => {
+    if (
+      readingDashboard &&
+      request.method() === "POST" &&
+      new URL(request.url()).origin === origin
+    ) {
+      dashboardWrites.push(new URL(request.url()).pathname);
+    }
     if (
       request.method() === "POST" &&
       new URL(request.url()).pathname === endpoint
@@ -58,6 +68,18 @@ test("a real retry reuses its delivery ID and saves one order", async ({
   const db = database();
   const cleanupIds = [run.deliveryId];
   try {
+    // Open the public view before the worker has finished. Only the tab holding the ticket can follow it.
+    const dashboard = "/lost-response/dashboard/" + run.runId;
+    const view = page.getByRole("link", {
+      name: "Apri questa prova nella dashboard",
+    });
+    await expect(view).toHaveAttribute("href", dashboard);
+    readingDashboard = true;
+    await view.tap();
+    await expect(page).toHaveURL(origin + dashboard);
+    await expect(
+      page.getByRole("heading", { name: "Dettaglio evento", level: 1 }),
+    ).toBeVisible();
     const headers = await accepted.request().allHeaders();
     const sameRun = await page.request.post(endpoint, {
       headers: { origin, authorization: headers.authorization },
@@ -94,11 +116,19 @@ test("a real retry reuses its delivery ID and saves one order", async ({
     }
     for (const width of [320, 375, 1440]) {
       await page.setViewportSize({ width, height: 820 });
+      const firstId = rows
+        .first()
+        .locator("code")
+        .filter({ hasText: run.deliveryId });
+      await firstId.evaluate((element) => {
+        element.scrollIntoView({ block: "start", behavior: "instant" });
+        window.scrollBy(0, -80);
+      });
       for (const row of await rows.all()) {
         const deliveryId = row
           .locator("code")
           .filter({ hasText: run.deliveryId });
-        await expect(deliveryId).toBeVisible();
+        await expect(deliveryId).toBeInViewport({ ratio: 1 });
         await expect(deliveryId).toHaveText(run.deliveryId);
       }
       expect(
@@ -144,6 +174,14 @@ test("a real retry reuses its delivery ID and saves one order", async ({
       select: { eventId: true, attemptCount: true },
     });
     expect(delivery.attemptCount).toBe(2);
+    expect(result.event.id).toBe(delivery.eventId);
+    expect(result.event.type).toBe("order.created");
+    await expect(
+      page.getByText(delivery.eventId, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(result.event.type, { exact: true }).first(),
+    ).toBeVisible();
     expect(
       await db.delivery.count({ where: { eventId: delivery.eventId } }),
     ).toBe(1);
@@ -155,6 +193,42 @@ test("a real retry reuses its delivery ID and saves one order", async ({
     expect((await resumed).status()).toBe(200);
     await expect(rows).toHaveCount(2);
     expect(starts).toHaveLength(1);
+    await expect(
+      page.getByText(delivery.eventId, { exact: true }),
+    ).toBeVisible();
+    const stranger = await browser.newContext({ baseURL: origin });
+    try {
+      await stranger.addCookies([
+        { name: "relayhub_lang", value: "it", url: origin },
+      ]);
+      const naked = await stranger.newPage();
+      naked.on("request", (request) => {
+        if (request.method() === "POST") {
+          dashboardWrites.push(new URL(request.url()).pathname);
+        }
+      });
+      await naked.goto(dashboard);
+      await expect(
+        naked.getByText(
+          "Apri la dashboard dalla scheda in cui hai avviato questa prova.",
+        ),
+      ).toBeVisible();
+      const unauthenticatedView = naked.locator("main");
+      await expect(unauthenticatedView).not.toContainText(delivery.eventId);
+      await expect(unauthenticatedView).not.toContainText(run.deliveryId);
+      await expect(unauthenticatedView.locator("details, output")).toHaveCount(
+        0,
+      );
+    } finally {
+      await stranger.close();
+    }
+    expect(dashboardWrites).toEqual([]);
+    readingDashboard = false;
+    await page.getByRole("link", { name: "Torna alla prova" }).tap();
+    await expect(page).toHaveURL(origin + "/lost-response");
+    await expect(
+      page.getByRole("button", { name: "Avvia una nuova prova" }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Switch to English" }).click();
     await expect(
       page.getByRole("heading", { name: "Try a lost response" }),

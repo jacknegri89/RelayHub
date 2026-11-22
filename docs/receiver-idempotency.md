@@ -6,6 +6,8 @@ RelayHub delivers at least once. A shop can send one order to its warehouse and 
 
 From the homepage, open **Try a lost response** and start a test. This uses the running worker and a dedicated receiver. Open both attempts to compare their delivery IDs. The receiver commits an order before delaying its first reply beyond the worker's deadline. When the retry arrives, it increments the receipt count on that order and acknowledges the request. The page reads the request count and saved order count from PostgreSQL. Reloading the page in the same tab reopens the current test.
 
+After the event is accepted, choose **Open this test in the dashboard**. The read-only view shows the event ID, source, destination, both attempts and the receiver’s saved order count. It follows the same test after a reload in the originating tab. The URL alone does not grant access.
+
 The browser test uses a separate workspace with no members and a fixed receiver. Its order expires with its delivery under the normal retention policy. The worker must be running and `MAX_ATTEMPTS` must be at least two. The following steps exercise the SQLite example in the local demo.
 
 1. Start the local demo and seed its routes using the [testing guide](testing.md#seed-and-replay-fixtures).

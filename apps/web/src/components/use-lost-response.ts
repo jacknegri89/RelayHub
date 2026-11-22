@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { LostResponseReport } from "../lost-response-report";
+import {
+  hasDashboardEvent,
+  type LostResponseReport,
+} from "../lost-response-report";
 
 const STORAGE_KEY = "relayhub.lost-response.v1";
 const POLL_MS = 2_000;
@@ -17,6 +20,7 @@ type Watch = { ticket: Ticket; form?: { formProof: string; website: string } };
 type Phase = "idle" | "watching" | "paused" | "finished";
 type Issue =
   | "none"
+  | "access"
   | "connection"
   | "unavailable"
   | "limit"
@@ -25,15 +29,23 @@ type Issue =
   | "proof"
   | "other";
 
+// Keep client-side navigation usable in tabs that block session storage.
+let memoryTicket: Ticket | null = null;
+
 function saveTicket(ticket: Ticket) {
+  memoryTicket = ticket;
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(ticket));
+    memoryTicket = null;
   } catch {
     // The current tab can still run the test in memory when browser storage is unavailable.
   }
 }
 
 function loadTicket(): Ticket | null {
+  if (memoryTicket) {
+    return memoryTicket;
+  }
   try {
     const stored = sessionStorage.getItem(STORAGE_KEY);
     if (!stored) {
@@ -75,7 +87,17 @@ function retryAfterMs(response: Response) {
   return 0;
 }
 
-export function useLostResponse(formProof: string, minFormTimeMs: number) {
+type Mode =
+  | { kind: "test"; formProof: string; minFormTimeMs: number; runId?: never }
+  | {
+      kind: "dashboard";
+      runId: string;
+      formProof?: never;
+      minFormTimeMs?: never;
+    };
+
+function useRunMonitor(mode: Mode) {
+  const { formProof, minFormTimeMs, runId } = mode;
   const [readyProof, setReadyProof] = useState<string | null>(null);
   const ready = readyProof === formProof;
   const [watch, setWatch] = useState<Watch | null>(null);
@@ -88,6 +110,11 @@ export function useLostResponse(formProof: string, minFormTimeMs: number) {
 
   useEffect(() => {
     const stored = loadTicket();
+    if (runId && (!stored?.confirmed || stored.runId !== runId)) {
+      setIssue("access");
+      setPhase("paused");
+      return;
+    }
     if (stored) {
       ticket.current = stored;
       locked.current = true;
@@ -95,10 +122,13 @@ export function useLostResponse(formProof: string, minFormTimeMs: number) {
       // Reloads only read the previous run. Starting another order always takes a click.
       setWatch({ ticket: stored });
     }
-  }, []);
+  }, [runId]);
 
   // An RSC refresh can issue a new proof while this tab still has the previous run open.
   useEffect(() => {
+    if (!formProof) {
+      return;
+    }
     const timer = window.setTimeout(
       () => setReadyProof(formProof),
       minFormTimeMs,
@@ -182,11 +212,14 @@ export function useLostResponse(formProof: string, minFormTimeMs: number) {
         }
         if (!response.ok) {
           let problem: Issue = "other";
-          if (response.status === 404) {
+          if (response.status === 404 || response.status === 401) {
             problem = "missing";
             if (!confirmed) {
               problem = "unconfirmed";
             }
+          }
+          if (problem === "missing") {
+            setReport(null);
           }
           if (response.status === 422 && form) {
             problem = "proof";
@@ -199,7 +232,12 @@ export function useLostResponse(formProof: string, minFormTimeMs: number) {
         if (controller.signal.aborted) {
           return;
         }
-        if (result.runId !== current.runId || !Array.isArray(result.attempts)) {
+        if (
+          !result ||
+          result.runId !== current.runId ||
+          !Array.isArray(result.attempts) ||
+          (runId && !hasDashboardEvent(result))
+        ) {
           setIssue("other");
           stop("paused");
           return;
@@ -232,10 +270,15 @@ export function useLostResponse(formProof: string, minFormTimeMs: number) {
       window.clearTimeout(next);
       window.clearTimeout(deadline);
     };
-  }, [watch]);
+  }, [watch, runId]);
 
   function begin(newRun: boolean, website: string) {
-    if (!ready || locked.current || allowedAfter > Date.now()) {
+    if (
+      mode.kind !== "test" ||
+      !ready ||
+      locked.current ||
+      allowedAfter > Date.now()
+    ) {
       return;
     }
     let current = ticket.current;
@@ -256,8 +299,44 @@ export function useLostResponse(formProof: string, minFormTimeMs: number) {
       setWatch({ ticket: current });
       return;
     }
-    setWatch({ ticket: current, form: { formProof, website } });
+    setWatch({ ticket: current, form: { formProof: mode.formProof, website } });
   }
 
-  return { ready: ready && !allowedAfter, phase, issue, report, begin };
+  function refresh() {
+    const current = ticket.current;
+    if (
+      !current?.confirmed ||
+      current.runId !== runId ||
+      locked.current ||
+      allowedAfter > Date.now()
+    ) {
+      return;
+    }
+    locked.current = true;
+    setIssue("none");
+    setPhase("watching");
+    setWatch({ ticket: current });
+  }
+
+  return {
+    ready: ready && !allowedAfter,
+    rateLimited: Boolean(allowedAfter),
+    phase,
+    issue,
+    report,
+    begin,
+    refresh,
+  };
+}
+
+export function useLostResponse(formProof: string, minFormTimeMs: number) {
+  return useRunMonitor({ kind: "test", formProof, minFormTimeMs });
+}
+
+export function useLostResponseDashboard(runId: string) {
+  const { phase, issue, report, rateLimited, refresh } = useRunMonitor({
+    kind: "dashboard",
+    runId,
+  });
+  return { phase, issue, report, rateLimited, refresh };
 }
