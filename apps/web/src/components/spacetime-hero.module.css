@@ -34,8 +34,8 @@
   font-size: 0.8rem;
 }
 .views button[aria-pressed="true"] {
-  background: var(--void-3);
-  color: var(--bone);
+  background: var(--photon-surface);
+  color: var(--photon-text);
 }
 .views button:hover {
   color: var(--bone);
@@ -105,7 +105,7 @@
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--rule-strong);
   border-left: 2px solid var(--photon);
-  background: rgb(11 13 16 / 0.92);
+  background: rgb(var(--void-rgb) / 0.92);
   color: var(--bone);
   font: 500 0.74rem/1.45 var(--font-mono);
   pointer-events: none;

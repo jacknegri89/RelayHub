@@ -74,8 +74,8 @@
 .relay {
   top: 50%;
   transform: translateY(-50%);
-  border-color: var(--photon);
-  background: var(--void-2);
+  border-color: var(--photon-border);
+  background: var(--photon-surface);
 }
 .relay strong {
   display: block;

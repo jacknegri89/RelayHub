@@ -41,6 +41,8 @@ In GitHub Actions, the Compose job builds and starts the entire demo from empty 
 
 The public simulator test takes billing offline, switches from Route to Timeline, restores billing and advances its retry in reduced-motion mode. It checks that the same order reaches all three services and that a new order with a bad signature creates no deliveries.
 
+When changing the palette, check text, focus, controls and status contrast on both the public pages and the signed-in workspace. The delivery canvas reads the shared CSS color channels, so verify both Route and Timeline views.
+
 ## Run the development processes
 
 After installing the workspace dependencies with pnpm 11.25.0 and running `pnpm run setup`, start PostgreSQL and Redis:

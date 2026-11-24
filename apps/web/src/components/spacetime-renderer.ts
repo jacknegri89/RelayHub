@@ -39,13 +39,6 @@ type Annotation = {
   tone: string;
 };
 
-// Colors are RGB channels so alpha can be applied per stroke.
-const BONE = "230 232 235";
-const PHOTON = "88 166 255";
-const DELIVERED = "63 185 80";
-const RETRY = "210 153 34";
-const FAILED = "248 81 73";
-
 const HISTORY_SECONDS = 8;
 const COMPACT_PLOT_WIDTH = 430;
 const PICK_RADIUS_PX = 22;
@@ -53,7 +46,6 @@ const SIGNAL_TRAIL_PX = 28;
 const ANNOTATION_SECONDS = 4.2;
 const FLASH_SECONDS = 0.9;
 const CONE_FADE_SECONDS = 8;
-const MONO_FONT = '"Geist Mono Variable", ui-monospace, monospace';
 
 function color(channels: string, alpha: number) {
   return "rgb(" + channels + " / " + alpha.toFixed(3) + ")";
@@ -91,6 +83,9 @@ export class SpacetimeRenderer {
   holdAnnotations = false;
 
   private context: CanvasRenderingContext2D;
+  private readonly palette;
+  private readonly monoFont: string;
+  private readonly sansFont: string;
   private layout: Layout;
   private segments: Segment[] = [];
 
@@ -104,6 +99,17 @@ export class SpacetimeRenderer {
       throw new Error("Canvas 2D is unavailable");
     }
     this.context = context;
+    const styles = getComputedStyle(canvas);
+    this.palette = {
+      canvas: styles.getPropertyValue("--void-rgb").trim(),
+      foreground: styles.getPropertyValue("--bone-rgb").trim(),
+      signal: styles.getPropertyValue("--photon-rgb").trim(),
+      delivered: styles.getPropertyValue("--delivered-rgb").trim(),
+      retry: styles.getPropertyValue("--retry-rgb").trim(),
+      failed: styles.getPropertyValue("--failed-rgb").trim(),
+    };
+    this.monoFont = styles.getPropertyValue("--font-mono").trim();
+    this.sansFont = styles.getPropertyValue("--font-sans").trim();
     this.layout = this.computeLayout(canvas.clientWidth, canvas.clientHeight);
   }
 
@@ -257,9 +263,9 @@ export class SpacetimeRenderer {
     const layout = this.layout;
     const context = this.context;
     const relayY = this.point(LANE_POSITION.relay, this.plotTime).y;
-    context.fillStyle = color(PHOTON, 0.055);
+    context.fillStyle = color(this.palette.signal, 0.055);
     context.fillRect(0, relayY - 15, layout.width, 30);
-    context.fillStyle = color(BONE, 0.1);
+    context.fillStyle = color(this.palette.foreground, 0.1);
     for (let second = 1; second <= HISTORY_SECONDS; second++) {
       const x = layout.nowAt - second * layout.speed;
       context.fillRect(Math.round(x), 12, 1, layout.height - 44);
@@ -269,7 +275,7 @@ export class SpacetimeRenderer {
       this.pointer.x >= layout.plotStart &&
       this.pointer.x <= layout.nowAt
     ) {
-      context.fillStyle = color(PHOTON, 0.45);
+      context.fillStyle = color(this.palette.signal, 0.45);
       context.fillRect(Math.round(this.pointer.x), 12, 1, layout.height - 44);
     }
   }
@@ -304,7 +310,7 @@ export class SpacetimeRenderer {
     context.lineTo(near.x, near.y);
     context.lineTo(far.x, far.y);
     context.closePath();
-    context.fillStyle = color(PHOTON, 0.05 * fade);
+    context.fillStyle = color(this.palette.signal, 0.05 * fade);
     context.fill();
     context.restore();
   }
@@ -320,7 +326,7 @@ export class SpacetimeRenderer {
     }[] = [
       {
         position: LANE_POSITION.sender,
-        channels: BONE,
+        channels: this.palette.foreground,
         alpha: 0.22,
         dashed: false,
       },
@@ -330,14 +336,14 @@ export class SpacetimeRenderer {
       if (online) {
         lanes.push({
           position: LANE_POSITION[endpoint],
-          channels: BONE,
+          channels: this.palette.foreground,
           alpha: 0.22,
           dashed: false,
         });
       } else {
         lanes.push({
           position: LANE_POSITION[endpoint],
-          channels: FAILED,
+          channels: this.palette.failed,
           alpha: 0.55,
           dashed: true,
         });
@@ -355,12 +361,12 @@ export class SpacetimeRenderer {
     const horizonOffset = 2.5 / layout.spaceLength;
     this.strokeLane(
       LANE_POSITION.relay - horizonOffset,
-      color(PHOTON, 0.55),
+      color(this.palette.signal, 0.55),
       1,
     );
     this.strokeLane(
       LANE_POSITION.relay + horizonOffset,
-      color(PHOTON, 0.55),
+      color(this.palette.signal, 0.55),
       1,
     );
   }
@@ -384,7 +390,7 @@ export class SpacetimeRenderer {
       to: LANE_POSITION.relay,
       start: journey.emittedAt,
       end: journey.arrivesAt,
-      channels: BONE,
+      channels: this.palette.foreground,
       alpha: 0.7 * emphasis,
       lineWidth: 1.2,
     });
@@ -397,7 +403,7 @@ export class SpacetimeRenderer {
         to: LANE_POSITION.sender,
         start: journey.arrivesAt,
         end: journey.rejectionReturnsAt,
-        channels: FAILED,
+        channels: this.palette.failed,
         alpha: 0.85 * emphasis,
         lineWidth: 1.2,
         dashed: true,
@@ -405,14 +411,19 @@ export class SpacetimeRenderer {
       this.mark(
         LANE_POSITION.relay,
         journey.arrivesAt,
-        FAILED,
+        this.palette.failed,
         "cross",
         emphasis,
       );
       return;
     }
     if (journey.accepted) {
-      this.flash(LANE_POSITION.relay, journey.arrivesAt, PHOTON, emphasis);
+      this.flash(
+        LANE_POSITION.relay,
+        journey.arrivesAt,
+        this.palette.signal,
+        emphasis,
+      );
     }
     for (const delivery of journey.deliveries) {
       const endpointPosition = LANE_POSITION[delivery.endpoint];
@@ -422,7 +433,7 @@ export class SpacetimeRenderer {
           to: endpointPosition,
           start: attempt.sentAt,
           end: attempt.arrivesAt,
-          channels: PHOTON,
+          channels: this.palette.signal,
           alpha: 0.8 * emphasis,
           lineWidth: 1.4,
         });
@@ -430,11 +441,16 @@ export class SpacetimeRenderer {
           continue;
         }
         if (attempt.returnsAt === null) {
-          this.flash(endpointPosition, attempt.arrivesAt, DELIVERED, emphasis);
+          this.flash(
+            endpointPosition,
+            attempt.arrivesAt,
+            this.palette.delivered,
+            emphasis,
+          );
           this.mark(
             endpointPosition,
             attempt.arrivesAt,
-            DELIVERED,
+            this.palette.delivered,
             "dot",
             emphasis,
           );
@@ -443,7 +459,7 @@ export class SpacetimeRenderer {
         this.mark(
           endpointPosition,
           attempt.arrivesAt,
-          FAILED,
+          this.palette.failed,
           "tick",
           emphasis,
         );
@@ -452,7 +468,7 @@ export class SpacetimeRenderer {
           to: LANE_POSITION.relay,
           start: attempt.arrivesAt,
           end: attempt.returnsAt,
-          channels: FAILED,
+          channels: this.palette.failed,
           alpha: 0.85 * emphasis,
           lineWidth: 1.2,
           dashed: true,
@@ -464,7 +480,7 @@ export class SpacetimeRenderer {
           this.mark(
             LANE_POSITION.relay,
             attempt.returnsAt,
-            FAILED,
+            this.palette.failed,
             "cross",
             emphasis,
           );
@@ -643,7 +659,10 @@ export class SpacetimeRenderer {
     const to = this.point(LANE_POSITION.relay + offset, visibleEnd);
     const context = this.context;
     context.setLineDash([2, 3]);
-    context.strokeStyle = color(RETRY, Math.min(0.95 * emphasis, 1));
+    context.strokeStyle = color(
+      this.palette.retry,
+      Math.min(0.95 * emphasis, 1),
+    );
     context.lineWidth = 2;
     context.beginPath();
     context.moveTo(from.x, from.y);
@@ -652,7 +671,7 @@ export class SpacetimeRenderer {
     context.setLineDash([]);
     this.segments.push({ journeyId, from, to });
     if (now < end) {
-      this.drawSignalHead(from, to, RETRY, emphasis);
+      this.drawSignalHead(from, to, this.palette.retry, emphasis);
     }
   }
 
@@ -664,7 +683,7 @@ export class SpacetimeRenderer {
         position: LANE_POSITION.relay,
         time: journey.arrivesAt,
         text: "HMAC v1 ✓ " + labels.verified,
-        tone: PHOTON,
+        tone: this.palette.signal,
       });
     }
     if (journey.accepted === false) {
@@ -672,7 +691,7 @@ export class SpacetimeRenderer {
         position: LANE_POSITION.relay,
         time: journey.arrivesAt,
         text: "401 · " + labels.rejected,
-        tone: FAILED,
+        tone: this.palette.failed,
       });
     }
     for (const delivery of journey.deliveries) {
@@ -681,15 +700,15 @@ export class SpacetimeRenderer {
           continue;
         }
         let text = attempt.status + " · " + labels.delivered;
-        let tone = DELIVERED;
+        let tone = this.palette.delivered;
         if (attempt.returnsAt !== null && attempt.retryAt !== null) {
           text =
             attempt.status + " · " + labels.retry + " " + (attempt.number + 1);
-          tone = RETRY;
+          tone = this.palette.retry;
         }
         if (attempt.returnsAt !== null && attempt.retryAt === null) {
           text = attempt.status + " · " + labels.failed;
-          tone = FAILED;
+          tone = this.palette.failed;
         }
         notes.push({
           position: LANE_POSITION[delivery.endpoint],
@@ -704,7 +723,7 @@ export class SpacetimeRenderer {
 
   private drawAnnotations(journey: Journey) {
     const context = this.context;
-    context.font = "500 11px " + MONO_FONT;
+    context.font = "500 11px " + this.monoFont;
     context.textBaseline = "middle";
     context.textAlign = "left";
     // Each lane labels its latest visible result. Earlier attempts retain their marks.
@@ -744,7 +763,7 @@ export class SpacetimeRenderer {
       this.layout.plotStart + 2,
       this.layout.nowAt - width,
     );
-    context.fillStyle = color("11 13 16", 0.82 * alpha);
+    context.fillStyle = color(this.palette.canvas, 0.82 * alpha);
     context.fillRect(x, y - 9, width, 18);
     context.strokeStyle = color(note.tone, 0.6 * alpha);
     context.lineWidth = 1;
@@ -758,19 +777,19 @@ export class SpacetimeRenderer {
     const context = this.context;
     const alpha = this.revealEase();
     const axisY = layout.height - 31;
-    context.fillStyle = color(PHOTON, 0.62 * alpha);
+    context.fillStyle = color(this.palette.signal, 0.62 * alpha);
     context.fillRect(layout.nowAt, 12, 1, axisY - 12);
-    context.fillStyle = color(BONE, 0.3);
+    context.fillStyle = color(this.palette.foreground, 0.3);
     context.fillRect(
       layout.plotStart,
       axisY,
       layout.nowAt - layout.plotStart,
       1,
     );
-    context.font = "500 11px " + MONO_FONT;
+    context.font = "500 11px " + this.monoFont;
     context.textBaseline = "middle";
     context.textAlign = "left";
-    context.fillStyle = color(BONE, 0.72);
+    context.fillStyle = color(this.palette.foreground, 0.72);
     context.fillText(this.labels.time, 10, axisY + 15);
     let tickInterval = 2;
     if (layout.width < COMPACT_PLOT_WIDTH) {
@@ -786,7 +805,7 @@ export class SpacetimeRenderer {
       context.fillRect(Math.round(x), axisY, 1, 4);
       context.fillText("−" + second + " s", x, axisY + 15);
     }
-    context.fillStyle = color(PHOTON, alpha);
+    context.fillStyle = color(this.palette.signal, alpha);
     let endLabel = this.labels.now;
     if (this.atEnd) {
       endLabel = this.labels.end;
@@ -798,16 +817,20 @@ export class SpacetimeRenderer {
     const layout = this.layout;
     const context = this.context;
     const alpha = this.revealEase();
-    context.font = '550 12px "Geist Variable", system-ui, sans-serif';
+    context.font = "550 12px " + this.sansFont;
     context.textAlign = "left";
     context.textBaseline = "middle";
     const labels: { position: number; text: string; channels: string }[] = [
       {
         position: LANE_POSITION.sender,
         text: this.labels.sender,
-        channels: BONE,
+        channels: this.palette.foreground,
       },
-      { position: LANE_POSITION.relay, text: "RelayHub", channels: PHOTON },
+      {
+        position: LANE_POSITION.relay,
+        text: "RelayHub",
+        channels: this.palette.signal,
+      },
     ];
     for (const endpoint of ENDPOINTS) {
       labels.push(this.endpointLabel(endpoint));
@@ -825,9 +848,17 @@ export class SpacetimeRenderer {
   private endpointLabel(endpoint: Endpoint) {
     let text = this.labels.destinations[endpoint];
     if (this.model.online[endpoint]) {
-      return { position: LANE_POSITION[endpoint], text, channels: BONE };
+      return {
+        position: LANE_POSITION[endpoint],
+        text,
+        channels: this.palette.foreground,
+      };
     }
     text += " ×";
-    return { position: LANE_POSITION[endpoint], text, channels: FAILED };
+    return {
+      position: LANE_POSITION[endpoint],
+      text,
+      channels: this.palette.failed,
+    };
   }
 }

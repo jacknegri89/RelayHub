@@ -39,7 +39,7 @@
 }
 .nav a[aria-current="page"] {
   color: var(--bone);
-  background: #18293a;
+  background: var(--photon-surface);
 }
 .nav a[aria-current="page"] svg {
   color: var(--photon);
@@ -104,7 +104,7 @@
 }
 .organizations a:hover,
 .organizations a:focus-visible {
-  background: #16212c;
+  background: var(--void-2);
 }
 .organizations li:last-child a {
   border-radius: 0 0 0.75rem 0.75rem;
@@ -114,10 +114,10 @@
   place-items: center;
   width: 2.85rem;
   aspect-ratio: 1;
-  border: 1px solid #384c60;
+  border: 1px solid var(--photon-border);
   border-radius: 0.65rem;
-  background: #202d3c;
-  color: #cce5ff;
+  background: var(--photon-surface);
+  color: var(--photon-text);
   font: 600 1rem var(--font-mono);
 }
 .orgName {
@@ -163,9 +163,9 @@
   border-radius: 50%;
   place-items: center;
   overflow: hidden;
-  background: #25415a;
-  color: #e2f1ff;
-  border: 1px solid #54718b;
+  background: var(--photon-surface);
+  color: var(--photon-text);
+  border: 1px solid var(--photon-border);
   font: 600 1.35rem var(--font-mono);
 }
 .avatar[data-small="true"] {
@@ -226,7 +226,7 @@
 .appearances label:has(input:checked) {
   border-color: var(--photon);
   color: var(--bone);
-  background: #18293a;
+  background: var(--photon-surface);
 }
 .appearances label:has(input:focus-visible) {
   outline: 2px solid var(--photon);
@@ -241,7 +241,7 @@
   overflow-wrap: anywhere;
 }
 .emailRow strong {
-  color: #8fd4a0;
+  color: var(--delivered);
   font-size: 0.82rem;
 }
 .panelBody p {

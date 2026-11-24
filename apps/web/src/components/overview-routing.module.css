@@ -89,7 +89,7 @@
   padding: 0.7rem clamp(0.55rem, 2vw, 1.6rem) 0.85rem;
   background-image: radial-gradient(
     circle,
-    rgb(113 151 190 / 16%) 0.7px,
+    rgb(var(--photon-rgb) / 16%) 0.7px,
     transparent 1px
   );
   background-size: 12px 12px;
@@ -155,8 +155,8 @@
   height: 1.55rem;
 }
 .hub .icon {
-  background: #172c42;
-  border-color: #426382;
+  background: var(--photon-surface);
+  border-color: var(--photon-border);
   border-radius: 0.85rem;
 }
 .hub,
@@ -203,10 +203,10 @@
   gap: 0.55rem;
   min-height: 2.5rem;
   padding: 0.45rem 0.83rem;
-  border: 1px solid #416182;
+  border: 1px solid var(--photon-border);
   border-radius: 0.4rem;
-  background: #192b3f;
-  color: #d2e8ff;
+  background: var(--photon-surface);
+  color: var(--photon-text);
   text-decoration: none;
   font-size: 0.82rem;
   font-weight: 600;

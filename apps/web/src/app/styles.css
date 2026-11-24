@@ -1,32 +1,41 @@
-/* RelayHub design system: a spacetime diagram for webhooks.
-   A quiet technical tool: neutral greys, one signal blue for things in
-   flight and the usual status colours for delivered, retrying and failed. */
+/* Warm graphite, ivory actions and a green-blue signal for webhooks in transit. */
 :root {
   color-scheme: dark;
-  --void: #0b0d10;
-  --void-1: #111418;
-  --void-2: #171b21;
-  --void-3: #1e232a;
-  --rule: #242a32;
-  --rule-strong: #363d47;
-  --bone: #e6e8eb;
-  --dust: #9aa3ad;
-  --photon: #58a6ff;
-  --photon-ink: #0b0d10;
-  --action: #e6e8eb;
-  --action-hover: #ffffff;
-  --action-ink: #0b0d10;
-  --delivered: #3fb950;
-  --retry: #d29922;
-  --failed: #f85149;
+  --void: rgb(var(--void-rgb));
+  --void-1: #191b18;
+  --void-2: #20231f;
+  --void-3: #2a2d28;
+  --rule: #30342e;
+  --rule-strong: #454b42;
+  --bone: rgb(var(--bone-rgb));
+  --dust: #aeb1a6;
+  --photon: rgb(var(--photon-rgb));
+  --photon-ink: var(--void);
+  --action: #eee8d8;
+  --action-hover: #fff7e6;
+  --action-ink: var(--void);
+  --delivered: rgb(var(--delivered-rgb));
+  --retry: rgb(var(--retry-rgb));
+  --failed: rgb(var(--failed-rgb));
+  --photon-surface: #233936;
+  --photon-border: #648e85;
+  --photon-text: #d3eee7;
+  --control-border: #72786b;
+  /* Canvas reads these same channels for translucent traces. */
+  --void-rgb: 17 18 17;
+  --bone-rgb: 237 236 225;
+  --photon-rgb: 130 201 194;
+  --delivered-rgb: 158 204 128;
+  --retry-rgb: 224 181 109;
+  --failed-rgb: 247 139 130;
   --font-sans: "IBM Plex Sans Variable", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --lattice:
-    radial-gradient(circle, rgb(230 232 235 / 0.07) 1px, transparent 1.4px) 0
-      0 / 28px 28px,
-    radial-gradient(circle, rgb(230 232 235 / 0.07) 1px, transparent 1.4px) 14px
-      14px / 28px 28px;
+    radial-gradient(circle, rgb(var(--bone-rgb) / 0.07) 1px, transparent 1.4px)
+      0 0 / 28px 28px,
+    radial-gradient(circle, rgb(var(--bone-rgb) / 0.07) 1px, transparent 1.4px)
+      14px 14px / 28px 28px;
   font: 16px/1.55 var(--font-sans);
 }
 
@@ -42,7 +51,7 @@ body {
   background: var(--void);
 }
 ::selection {
-  background: rgb(88 166 255 / 0.35);
+  background: rgb(var(--photon-rgb) / 0.35);
   color: var(--bone);
 }
 a {
@@ -92,7 +101,7 @@ select {
   min-width: 0;
   min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--rule-strong);
+  border: 1px solid var(--control-border);
   border-radius: 0.4rem;
   background: var(--void-1);
   color: var(--bone);
@@ -103,7 +112,7 @@ select {
 }
 input:hover,
 select:hover {
-  border-color: #59606c;
+  border-color: var(--dust);
 }
 input:focus,
 select:focus {
@@ -219,7 +228,7 @@ dd {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: #f0f2f5;
+  color: var(--bone);
 }
 .brand-mark {
   flex: none;
@@ -331,10 +340,10 @@ button.language-switch:hover {
   overflow: visible;
 }
 .auth-trace .lane {
-  stroke: rgb(230 232 235 / 0.2);
+  stroke: rgb(var(--bone-rgb) / 0.2);
 }
 .auth-trace .horizon {
-  stroke: rgb(88 166 255 / 0.6);
+  stroke: rgb(var(--photon-rgb) / 0.6);
 }
 .auth-trace text {
   fill: var(--dust);
@@ -356,7 +365,7 @@ button.language-switch:hover {
   stroke-width: 1.4;
 }
 .auth-trace .seal-pending {
-  fill: rgb(210 153 34 / 0.15);
+  fill: rgb(var(--retry-rgb) / 0.15);
   stroke: var(--retry);
   stroke-width: 1.4;
 }
@@ -569,9 +578,9 @@ button.language-switch:hover {
   position: relative;
   align-self: start;
   padding: 1.1rem 1rem;
-  border: 1px solid #2b394a;
+  border: 1px solid var(--rule-strong);
   border-radius: 0.65rem;
-  background: #131b25;
+  background: var(--void-2);
 }
 .section-guide > .interface-icon {
   margin-bottom: 0.75rem;
@@ -609,8 +618,8 @@ button.language-switch:hover {
   width: 2rem;
   height: 2rem;
   border-radius: 0.45rem;
-  background: #243247;
-  color: #a9d1ff;
+  background: var(--photon-surface);
+  color: var(--photon);
 }
 .org-switch strong,
 .org-switch small {
@@ -655,7 +664,7 @@ button.language-switch:hover {
   min-height: 2.75rem;
   padding: 0.55rem 0.8rem;
   border-radius: 0.4rem;
-  color: #b5bfca;
+  color: var(--dust);
   font-size: 0.93rem;
   text-decoration: none;
   transition:
@@ -667,16 +676,16 @@ button.language-switch:hover {
   overflow-wrap: anywhere;
 }
 .navigation .interface-icon {
-  color: #8595a8;
+  color: var(--dust);
 }
 .navigation a:hover {
   color: var(--bone);
   background: var(--void-2);
 }
 .navigation a[aria-current] {
-  color: #dcecff;
+  color: var(--photon-text);
   font-weight: 620;
-  background: #1a2a3d;
+  background: var(--photon-surface);
 }
 .navigation a[aria-current] .interface-icon {
   color: var(--photon);
@@ -988,7 +997,7 @@ tbody tr:focus-within {
   align-items: center;
   gap: 0.45rem;
   padding: 0.18rem 0.6rem 0.18rem 0.5rem;
-  border: 1px solid rgb(166 164 156 / 0.35);
+  border: 1px solid rgb(var(--bone-rgb) / 0.35);
   border-radius: 2rem;
   color: var(--dust);
   font: 500 0.76rem/1.3 var(--font-mono);
@@ -1005,8 +1014,8 @@ tbody tr:focus-within {
 .status[data-status="enabled"],
 .status[data-status="delivered"],
 .status[data-status="success"] {
-  border-color: rgb(63 185 80 / 0.4);
-  background: rgb(63 185 80 / 0.08);
+  border-color: rgb(var(--delivered-rgb) / 0.4);
+  background: rgb(var(--delivered-rgb) / 0.08);
   color: var(--delivered);
 }
 .status[data-status="failed"],
@@ -1014,8 +1023,8 @@ tbody tr:focus-within {
 .status[data-status="http_error"],
 .status[data-status="policy_blocked"],
 .status[data-status="decryption_error"] {
-  border-color: rgb(248 81 73 / 0.45);
-  background: rgb(248 81 73 / 0.08);
+  border-color: rgb(var(--failed-rgb) / 0.45);
+  background: rgb(var(--failed-rgb) / 0.08);
   color: var(--failed);
 }
 .status[data-status="failed"]::before,
@@ -1040,8 +1049,8 @@ tbody tr:focus-within {
 .status[data-status="retry"],
 .status[data-status="partial"],
 .status[data-status="lease_expired"] {
-  border-color: rgb(210 153 34 / 0.45);
-  background: rgb(210 153 34 / 0.08);
+  border-color: rgb(var(--retry-rgb) / 0.45);
+  background: rgb(var(--retry-rgb) / 0.08);
   color: var(--retry);
 }
 .status[data-status="retry_scheduled"]::before,
@@ -1055,8 +1064,8 @@ tbody tr:focus-within {
 .status[data-status="delivering"],
 .status[data-status="queued"],
 .status[data-status="pending"] {
-  border-color: rgb(88 166 255 / 0.4);
-  background: rgb(88 166 255 / 0.07);
+  border-color: rgb(var(--photon-rgb) / 0.4);
+  background: rgb(var(--photon-rgb) / 0.07);
   color: var(--photon);
 }
 .status[data-status="in_progress"]::before,
@@ -1086,13 +1095,13 @@ tbody tr:focus-within {
   font-size: 0.88rem;
 }
 .error-text {
-  border: 1px solid rgb(248 81 73 / 0.45);
-  background: rgb(248 81 73 / 0.08);
-  color: #ff7b72;
+  border: 1px solid rgb(var(--failed-rgb) / 0.45);
+  background: rgb(var(--failed-rgb) / 0.08);
+  color: var(--failed);
 }
 .form-success {
-  border: 1px solid rgb(63 185 80 / 0.4);
-  background: rgb(63 185 80 / 0.07);
+  border: 1px solid rgb(var(--delivered-rgb) / 0.4);
+  background: rgb(var(--delivered-rgb) / 0.07);
   color: var(--delivered);
 }
 .secret {
@@ -1101,7 +1110,7 @@ tbody tr:focus-within {
   padding: 0.95rem;
   border: 1px dashed var(--photon);
   border-radius: 0.5rem;
-  background: rgb(88 166 255 / 0.04);
+  background: rgb(var(--photon-rgb) / 0.04);
 }
 .secret button,
 .routes button,
@@ -1116,7 +1125,7 @@ tbody tr:focus-within {
 }
 .routes button:hover {
   border-color: var(--failed);
-  background: rgb(248 81 73 / 0.08);
+  background: rgb(var(--failed-rgb) / 0.08);
   color: var(--failed);
 }
 .edit-grid {
@@ -1346,10 +1355,10 @@ details form {
   background: var(--dust);
 }
 .trace-svg .lane {
-  stroke: rgb(230 232 235 / 0.18);
+  stroke: rgb(var(--bone-rgb) / 0.18);
 }
 .trace-svg .horizon {
-  stroke: rgb(88 166 255 / 0.55);
+  stroke: rgb(var(--photon-rgb) / 0.55);
 }
 .trace-svg .lane-label {
   fill: var(--dust);
@@ -1394,7 +1403,7 @@ details form {
   fill: var(--photon);
 }
 .trace-svg .mark-delivered {
-  fill: rgb(63 185 80 / 0.18);
+  fill: rgb(var(--delivered-rgb) / 0.18);
   stroke: var(--delivered);
   stroke-width: 1.5;
 }
@@ -1466,10 +1475,10 @@ details form {
 }
 .retry-form button {
   background: var(--retry);
-  color: #1c1405;
+  color: var(--action-ink);
 }
 .retry-form button:hover {
-  background: #e3b341;
+  background: color-mix(in srgb, var(--retry) 80%, var(--action));
 }
 .retry-form button::before {
   content: "↻";
@@ -1610,7 +1619,7 @@ details form {
   justify-content: space-between;
   gap: 0.6rem;
   min-height: 2.75rem;
-  border-top: 1px solid #2b394a;
+  border-top: 1px solid var(--rule-strong);
   color: var(--bone);
   font-size: 0.87rem;
   text-decoration: none;
@@ -1731,7 +1740,7 @@ details form {
   margin-bottom: 2rem;
 }
 .void-figure .lane {
-  stroke: rgb(230 232 235 / 0.2);
+  stroke: rgb(var(--bone-rgb) / 0.2);
 }
 .void-figure .lost {
   fill: none;

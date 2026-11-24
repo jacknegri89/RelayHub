@@ -317,11 +317,11 @@
 }
 .column[data-selected="true"],
 .dates label[data-selected="true"] {
-  background: rgb(88 166 255 / 9%);
+  background: rgb(var(--photon-rgb) / 9%);
 }
 .column:hover,
 .dates label:hover {
-  background: rgb(88 166 255 / 15%);
+  background: rgb(var(--photon-rgb) / 15%);
 }
 .plot svg {
   pointer-events: none;

@@ -114,10 +114,10 @@
   border-left: 1px solid var(--rule);
 }
 .column[data-selected="true"] {
-  background: rgb(88 166 255 / 11%);
+  background: rgb(var(--photon-rgb) / 11%);
 }
 .column:hover {
-  background-color: rgb(88 166 255 / 9%);
+  background-color: rgb(var(--photon-rgb) / 9%);
 }
 .successBar,
 .failureBar {
@@ -196,7 +196,7 @@
 }
 .day[data-selected="true"] {
   border-color: var(--photon);
-  background: rgb(88 166 255 / 11%);
+  background: rgb(var(--photon-rgb) / 11%);
 }
 .day:focus-within {
   outline: 2px solid var(--photon);

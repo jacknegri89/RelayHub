@@ -68,7 +68,7 @@
 }
 .body p[role="alert"],
 .challenge p[role="alert"] {
-  color: #ff7b72;
+  color: var(--failed);
 }
 .enrollment,
 .recovery,
