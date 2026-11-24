@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#111211",
+  themeColor: "#121117",
   colorScheme: "dark",
 };
 
@@ -30,6 +30,12 @@ export default async function RootLayout({
   const { locale, t } = await getLocale();
   return (
     <html lang={locale}>
+      <head>
+        <meta
+          name="google-site-verification"
+          content="ibT3EAjqxYgr5q7LIRyvW1twlqwuN5mXAtrGTPpS_WQ"
+        />
+      </head>
       <body>
         <LocaleProvider locale={locale}>
           <a className="skip" href="#main">

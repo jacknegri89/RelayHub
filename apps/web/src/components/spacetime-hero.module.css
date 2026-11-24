@@ -203,16 +203,19 @@
   display: grid;
   gap: 0.2rem;
   margin: 0;
-  padding: 0;
+  padding: 0.65rem var(--history-inset) 0.8rem;
   list-style: none;
-  max-width: 34rem;
+  overflow-wrap: anywhere;
   font: 500 0.74rem/1.45 var(--font-mono);
   color: var(--dust);
   text-align: left;
 }
-.history summary {
-  cursor: pointer;
-  width: fit-content;
+.history {
+  --history-inset: 0.85rem;
+  min-width: 0;
+}
+.history > summary {
+  padding-inline: var(--history-inset);
   font-size: 0.86rem;
   color: var(--bone);
 }
@@ -220,9 +223,6 @@
   margin-left: 0.4rem;
   color: var(--dust);
   font-size: 0.76rem;
-}
-.history[open] .log {
-  margin-top: 0.65rem;
 }
 .log:empty {
   display: none;

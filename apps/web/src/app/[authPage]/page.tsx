@@ -1,16 +1,12 @@
 import { getLocale } from "../../server/locale";
-import { LanguageSwitch } from "../../components/locale";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Brand } from "../../components/brand";
 import { ActionForm } from "../../components/forms";
 import { VerifySignIn } from "../../components/verify-sign-in";
-import { AuthTrace } from "../../components/auth-trace";
-import { PageHeading } from "../../components/page-heading";
 import { issueFormProof } from "../../server/form-proof";
+import { AuthShell } from "../../components/auth-shell";
 import { PolicyLinks } from "../../components/policy-links";
-import { SectionGuide } from "../../components/section-guide";
 import {
   AccountMailPage,
   accountMailTitle,
@@ -83,151 +79,117 @@ export default async function AuthPage({ params }: AuthParams) {
       nextPath = "/login";
     }
   }
-  let step: "login" | "register" | "verify" = "login";
+  let description = t(
+    "Open your organizations to manage webhooks and review deliveries.",
+    "Accedi alle tue organizzazioni per gestire i webhook e consultare le consegne.",
+  );
   if (registering) {
-    step = "register";
+    description = t(
+      "Create an organization for your webhooks or join an existing one.",
+      "Crea un’organizzazione per i tuoi webhook o unisciti a una esistente.",
+    );
   }
   if (verifying) {
     title = t("Verify your sign-in", "Verifica il tuo accesso");
-    step = "verify";
-  }
-  return (
-    <main id="main" className="auth-shell">
-      <aside className="auth-aside">
-        <Link
-          href="/"
-          aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}
-        >
-          <Brand />
-        </Link>
-        <LanguageSwitch />
-
-        <div className="auth-context">
-          {step !== "login" && <AuthGuide step={step} />}
-          <AuthTrace step={step} />
-        </div>
-      </aside>
-      <section className="auth-content">
-        <div className="auth-panel">
-          <PageHeading title={title} />
-          {verifying && <VerifySignIn />}
-          {!verifying && (
-            <ActionForm endpoint={endpoint} label={title} nextPath={nextPath}>
-              <input
-                type="hidden"
-                name="formProof"
-                value={issueFormProof(endpoint)}
-              />
-              <div hidden>
-                <label>
-                  {t("Company website", "Sito aziendale")}{" "}
-                  <input name="website" autoComplete="off" tabIndex={-1} />
-                </label>
-              </div>
-              {registering && (
-                <label>
-                  {t("Name", "Nome")}{" "}
-                  <input
-                    name="name"
-                    autoComplete="name"
-                    placeholder={t("e.g. Alex Rossi", "Es. Andrea Rossi")}
-                    maxLength={80}
-                    required
-                  />
-                </label>
-              )}
-              <label>
-                Email{" "}
-                <input
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder={t("you@example.com", "nome@example.com")}
-                  maxLength={254}
-                  required
-                />
-              </label>
-              <label>
-                Password{" "}
-                <input
-                  name="password"
-                  type="password"
-                  minLength={12}
-                  maxLength={128}
-                  autoComplete={passwordAutocomplete}
-                  placeholder={passwordHint}
-                  required
-                />
-              </label>
-              {registering && (
-                <div>
-                  <p className="muted">
-                    {t(
-                      "Use your own email for the account. Send only fictional data in demo webhooks.",
-                      "Usa il tuo indirizzo email per l’account. Nei webhook della demo invia solo dati di fantasia.",
-                    )}
-                  </p>
-                  <PolicyLinks />
-                </div>
-              )}
-            </ActionForm>
-          )}
-          {registering && mailEnabled && (
-            <p>
-              {t(
-                "After registration, sign in and confirm your address using the link in your inbox.",
-                "Dopo la registrazione, accedi e conferma l’indirizzo tramite il link ricevuto via email.",
-              )}
-            </p>
-          )}
-          {!registering && !verifying && mailEnabled && (
-            <p>
-              <Link href="/forgot-password">
-                {t("Forgot your password?", "Password dimenticata?")}
-              </Link>
-            </p>
-          )}
-          {registering && (
-            <p>
-              {t("Already registered?", "Hai già un account?")}{" "}
-              <Link href="/login">{t("Sign in", "Accedi")}</Link>
-            </p>
-          )}
-          {!registering && !verifying && (
-            <p>
-              {t("New to RelayHub?", "È la prima volta su RelayHub?")}{" "}
-              <Link href="/register">
-                {t("Create an account", "Crea un account")}
-              </Link>
-            </p>
-          )}
-          {!registering && <PolicyLinks />}
-        </div>
-      </section>
-    </main>
-  );
-}
-
-async function AuthGuide({ step }: { step: "register" | "verify" }) {
-  const { t } = await getLocale();
-  if (step === "verify") {
-    return (
-      <SectionGuide
-        title={t("Where to find your code", "Dove trovare il codice")}
-      >
-        {t(
-          "Open the RelayHub entry in your authenticator app. If you have lost access to the app, use one of the recovery codes you saved during setup.",
-          "Apri la voce RelayHub nell’app di autenticazione. Se hai perso l’accesso all’app, usa uno dei codici di recupero salvati durante la configurazione.",
-        )}
-      </SectionGuide>
+    description = t(
+      "Use the code from your authenticator app or one of your saved recovery codes.",
+      "Usa il codice dell’app di autenticazione o uno dei codici di recupero salvati.",
     );
   }
   return (
-    <SectionGuide title={t("After registration", "Dopo la registrazione")}>
-      {t(
-        "Create an organization for your webhooks, or share your account ID with the owner of an existing organization so they can add you.",
-        "Crea un’organizzazione per i tuoi webhook oppure condividi l’ID del tuo account con il titolare di un’organizzazione esistente, così potrà aggiungerti.",
+    <AuthShell title={title} description={description}>
+      {verifying && <VerifySignIn />}
+      {!verifying && (
+        <ActionForm endpoint={endpoint} label={title} nextPath={nextPath}>
+          <input
+            type="hidden"
+            name="formProof"
+            value={issueFormProof(endpoint)}
+          />
+          <div hidden>
+            <label>
+              {t("Company website", "Sito aziendale")}{" "}
+              <input name="website" autoComplete="off" tabIndex={-1} />
+            </label>
+          </div>
+          {registering && (
+            <label>
+              {t("Name", "Nome")}{" "}
+              <input
+                name="name"
+                autoComplete="name"
+                placeholder={t("e.g. Alex Rossi", "Es. Andrea Rossi")}
+                maxLength={80}
+                required
+              />
+            </label>
+          )}
+          <label>
+            Email{" "}
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder={t("you@example.com", "nome@example.com")}
+              maxLength={254}
+              required
+            />
+          </label>
+          <label>
+            Password{" "}
+            <input
+              name="password"
+              type="password"
+              minLength={12}
+              maxLength={128}
+              autoComplete={passwordAutocomplete}
+              placeholder={passwordHint}
+              required
+            />
+          </label>
+          {registering && (
+            <div>
+              <p className="muted">
+                {t(
+                  "Use your own email for the account. Send only fictional data in demo webhooks.",
+                  "Usa il tuo indirizzo email per l’account. Nei webhook della demo invia solo dati di fantasia.",
+                )}
+              </p>
+              <PolicyLinks />
+            </div>
+          )}
+        </ActionForm>
       )}
-    </SectionGuide>
+      {registering && mailEnabled && (
+        <p>
+          {t(
+            "After registration, sign in and confirm your address using the link in your inbox.",
+            "Dopo la registrazione, accedi e conferma l’indirizzo tramite il link ricevuto via email.",
+          )}
+        </p>
+      )}
+      {!registering && !verifying && mailEnabled && (
+        <p>
+          <Link href="/forgot-password">
+            {t("Forgot your password?", "Password dimenticata?")}
+          </Link>
+        </p>
+      )}
+      {registering && (
+        <p>
+          {t("Already registered?", "Hai già un account?")}{" "}
+          <Link href="/login">{t("Sign in", "Accedi")}</Link>
+        </p>
+      )}
+      {!registering && !verifying && (
+        <p>
+          {t("New to RelayHub?", "È la prima volta su RelayHub?")}{" "}
+          <Link href="/register">
+            {t("Create an account", "Crea un account")}
+          </Link>
+        </p>
+      )}
+      {!registering && <PolicyLinks />}
+    </AuthShell>
   );
 }

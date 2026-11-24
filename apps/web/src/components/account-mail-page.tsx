@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { getLocale } from "../server/locale";
 import { issueFormProof } from "../server/form-proof";
+import { AuthShell } from "./auth-shell";
 import { ActionForm } from "./forms";
 import { AccountLinkForm } from "./account-link-form";
-import { Brand } from "./brand";
-import { LanguageSwitch } from "./locale";
-import { PageHeading } from "./page-heading";
-import { SectionGuide } from "./section-guide";
 
 export function accountMailTitle(
   page: string,
@@ -37,62 +34,41 @@ export async function AccountMailPage({ page }: { page: string }) {
   }
   const endpoint = "/api/account-email/request-reset";
   return (
-    <main id="main" className="auth-shell">
-      <aside className="auth-aside">
-        <Link
-          href="/"
-          aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}
+    <AuthShell title={accountMailTitle(page, t)} description={guide}>
+      {forgot && (
+        <ActionForm
+          endpoint={endpoint}
+          label={t("Request reset link", "Richiedi link di recupero")}
+          successMessage="reset_requested"
         >
-          <Brand />
-        </Link>
-        <LanguageSwitch />
-        <div className="auth-context">
-          <SectionGuide title={t("Account access", "Accesso all’account")}>
-            {guide}
-          </SectionGuide>
-        </div>
-      </aside>
-      <section className="auth-content">
-        <div className="auth-panel">
-          <PageHeading title={accountMailTitle(page, t)} />
-          {forgot && (
-            <ActionForm
-              endpoint={endpoint}
-              label={t("Request reset link", "Richiedi link di recupero")}
-              successMessage="reset_requested"
-            >
-              <input
-                type="hidden"
-                name="formProof"
-                value={issueFormProof(endpoint)}
-              />
-              <div hidden>
-                <label>
-                  {t("Company website", "Sito aziendale")}{" "}
-                  <input name="website" tabIndex={-1} autoComplete="off" />
-                </label>
-              </div>
-              <label>
-                Email{" "}
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  maxLength={254}
-                  autoComplete="email"
-                  placeholder={t("you@example.com", "nome@example.com")}
-                />
-              </label>
-            </ActionForm>
-          )}
-          {!forgot && <AccountLinkForm resetting={!verifying} />}
-          <p>
-            <Link href="/login">
-              {t("Back to sign in", "Torna all’accesso")}
-            </Link>
-          </p>
-        </div>
-      </section>
-    </main>
+          <input
+            type="hidden"
+            name="formProof"
+            value={issueFormProof(endpoint)}
+          />
+          <div hidden>
+            <label>
+              {t("Company website", "Sito aziendale")}{" "}
+              <input name="website" tabIndex={-1} autoComplete="off" />
+            </label>
+          </div>
+          <label>
+            Email{" "}
+            <input
+              name="email"
+              type="email"
+              required
+              maxLength={254}
+              autoComplete="email"
+              placeholder={t("you@example.com", "nome@example.com")}
+            />
+          </label>
+        </ActionForm>
+      )}
+      {!forgot && <AccountLinkForm resetting={!verifying} />}
+      <p>
+        <Link href="/login">{t("Back to sign in", "Torna all’accesso")}</Link>
+      </p>
+    </AuthShell>
   );
 }

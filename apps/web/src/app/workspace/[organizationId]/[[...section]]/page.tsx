@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { can } from "@relayhub/shared/access";
 import { requireOrganization } from "../../../../server/authorization";
 import { HttpError } from "../../../../server/http";
+import { sessionActionToken } from "../../../../server/form-proof";
 import { FailedAttemptsPage } from "../../../../components/failed-attempts";
 import { RecoveryDeliveries } from "../../../../components/recovery-deliveries";
 import {
@@ -163,16 +164,26 @@ export default async function OrganizationPage({
           />
         </LoadingSection>
       );
-    case "settings":
+    case "settings": {
+      let deletionToken: string | undefined;
+      if (owner) {
+        const action = "organization-delete:" + organizationId;
+        deletionToken = sessionActionToken(
+          access.session.session.id,
+          action,
+        ).toString("hex");
+      }
       return (
         <LoadingSection>
           <Settings
             organizationId={organizationId}
             owner={owner}
             name={access.membership.organization.name}
+            deletionToken={deletionToken}
           />
         </LoadingSection>
       );
+    }
     default:
       notFound();
   }

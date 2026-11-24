@@ -704,10 +704,12 @@ export async function Settings({
   organizationId,
   owner,
   name,
+  deletionToken,
 }: {
   organizationId: string;
   owner: boolean;
   name: string;
+  deletionToken?: string;
 }) {
   const { t } = await getLocale();
   const members = await database().organizationMember.findMany({
@@ -725,8 +727,8 @@ export async function Settings({
       <PageHeading
         title={t("Settings", "Impostazioni")}
         description={t(
-          "Manage organization membership and roles.",
-          "Gestisci i membri e i ruoli dell’organizzazione.",
+          "Manage organization details, members and access.",
+          "Gestisci i dati, i membri e gli accessi dell’organizzazione.",
         )}
       />
       <nav
@@ -736,6 +738,11 @@ export async function Settings({
         <a href="#organization">{t("Organization", "Organizzazione")}</a>
         <a href="#members">{t("Members", "Membri")}</a>
         {owner && <a href="#api-keys">{t("API keys", "Chiavi API")}</a>}
+        {deletionToken && (
+          <a href="#delete-organization">
+            {t("Delete organization", "Elimina organizzazione")}
+          </a>
+        )}
       </nav>
       <section className="panel" id="organization">
         <h2>{name}</h2>
@@ -854,6 +861,70 @@ export async function Settings({
           <ApiKeySettings organizationId={organizationId} />
         </div>
       )}
+      {deletionToken && (
+        <OrganizationDeletion
+          endpoint={endpoint}
+          name={name}
+          token={deletionToken}
+        />
+      )}
     </>
+  );
+}
+
+async function OrganizationDeletion({
+  endpoint,
+  name,
+  token,
+}: {
+  endpoint: string;
+  name: string;
+  token: string;
+}) {
+  const { t } = await getLocale();
+  return (
+    <section
+      className="panel"
+      id="delete-organization"
+      aria-labelledby="delete-organization-title"
+    >
+      <h2 id="delete-organization-title">
+        {t("Delete organization", "Elimina organizzazione")}
+      </h2>
+      <p className="muted">
+        {t(
+          "Permanently remove this organization, its sources, destinations, routes, delivery history and API keys. Members lose access to this workspace.",
+          "Elimina definitivamente l’organizzazione, le sorgenti, le destinazioni, le regole, lo storico delle consegne e le chiavi API. I membri perdono l’accesso a quest’area di lavoro.",
+        )}
+      </p>
+      <details className={styles.task}>
+        <summary>{t("Review deletion", "Rivedi l’eliminazione")}</summary>
+        <ActionForm
+          className={"action-form " + styles.organizationDeletion}
+          endpoint={endpoint}
+          fields={{ action: "organization_delete", csrfToken: token }}
+          label={t("Delete permanently", "Elimina definitivamente")}
+          nextPath="/workspace"
+        >
+          <label>
+            {t("Organization name", "Nome dell’organizzazione")}
+            <input
+              name="confirmation"
+              required
+              maxLength={80}
+              autoComplete="off"
+              aria-describedby="organization-deletion-hint"
+            />
+          </label>
+          <p id="organization-deletion-hint" className="muted">
+            {t(
+              "Enter the name exactly as shown:",
+              "Inserisci il nome esattamente come mostrato:",
+            )}{" "}
+            <strong>{name}</strong>
+          </p>
+        </ActionForm>
+      </details>
+    </section>
   );
 }

@@ -109,6 +109,22 @@ const messages: Record<string, [string, string]> = {
     "This resource is unavailable.",
     "Questa risorsa non è disponibile.",
   ],
+  organization_not_found: [
+    "This organization is unavailable.",
+    "Questa organizzazione non è disponibile.",
+  ],
+  organization_name_mismatch: [
+    "Enter the organization name exactly as shown.",
+    "Inserisci il nome dell’organizzazione esattamente come mostrato.",
+  ],
+  organization_form_expired: [
+    "Reload the settings page and try again.",
+    "Ricarica la pagina delle impostazioni e riprova.",
+  ],
+  organization_delete_conflict: [
+    "The organization changed during deletion. Reload the settings page and try again.",
+    "L’organizzazione è cambiata durante l’eliminazione. Ricarica le impostazioni e riprova.",
+  ],
   invalid_configuration: [
     "Check the form fields and try again.",
     "Controlla i campi del modulo e riprova.",

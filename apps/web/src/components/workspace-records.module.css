@@ -290,3 +290,16 @@
     width: 2.1rem;
   }
 }
+
+.organizationDeletion button[type="submit"] {
+  border-color: var(--failed);
+  background: transparent;
+  color: var(--failed);
+}
+.organizationDeletion button[type="submit"]:hover {
+  background: rgb(var(--failed-rgb) / 0.1);
+}
+.organizationDeletion strong {
+  color: var(--bone);
+  overflow-wrap: anywhere;
+}

@@ -1,30 +1,30 @@
-/* Warm graphite, ivory actions and a green-blue signal for webhooks in transit. */
+/* Ink-toned graphite, ivory actions and a lavender signal for webhooks in transit. */
 :root {
   color-scheme: dark;
   --void: rgb(var(--void-rgb));
-  --void-1: #191b18;
-  --void-2: #20231f;
-  --void-3: #2a2d28;
-  --rule: #30342e;
-  --rule-strong: #454b42;
+  --void-1: #1c1a23;
+  --void-2: #24212d;
+  --void-3: #2f2c3a;
+  --rule: #35313f;
+  --rule-strong: #494358;
   --bone: rgb(var(--bone-rgb));
-  --dust: #aeb1a6;
+  --dust: #bab4c6;
   --photon: rgb(var(--photon-rgb));
   --photon-ink: var(--void);
-  --action: #eee8d8;
-  --action-hover: #fff7e6;
+  --action: #f2ebdf;
+  --action-hover: #fff7ec;
   --action-ink: var(--void);
   --delivered: rgb(var(--delivered-rgb));
   --retry: rgb(var(--retry-rgb));
   --failed: rgb(var(--failed-rgb));
-  --photon-surface: #233936;
-  --photon-border: #648e85;
-  --photon-text: #d3eee7;
-  --control-border: #72786b;
+  --photon-surface: #372d4b;
+  --photon-border: #8a72af;
+  --photon-text: #eee2ff;
+  --control-border: #827a8e;
   /* Canvas reads these same channels for translucent traces. */
-  --void-rgb: 17 18 17;
-  --bone-rgb: 237 236 225;
-  --photon-rgb: 130 201 194;
+  --void-rgb: 18 17 23;
+  --bone-rgb: 239 235 244;
+  --photon-rgb: 202 180 250;
   --delivered-rgb: 158 204 128;
   --retry-rgb: 224 181 109;
   --failed-rgb: 247 139 130;
@@ -293,97 +293,33 @@ button.language-switch:hover {
 .auth-shell {
   display: grid;
   min-height: 100svh;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
 }
-.auth-aside {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  display: grid;
-  grid-template: auto 1fr / 1fr auto;
-  align-items: start;
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 1rem;
-  padding: clamp(1.25rem, 4vw, 3.5rem);
-  border-right: 1px solid var(--rule);
+  padding: 0.9rem clamp(1rem, 4vw, 3.5rem);
+  border-bottom: 1px solid var(--rule);
   background: var(--void-1);
 }
-.auth-aside > a {
+.auth-header > a {
   color: inherit;
   text-decoration: none;
-}
-.auth-context {
-  grid-column: 1 / -1;
-  align-self: center;
-  width: min(100%, 32rem);
-  padding-block: 2rem;
-}
-.auth-context .section-guide h2 {
-  font-size: clamp(1.3rem, 2.2vw, 1.85rem);
-}
-.auth-context .section-guide {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.auth-context .section-guide > .interface-icon {
-  display: none;
-}
-.auth-context .section-guide p {
-  font-size: 1rem;
-  max-width: 42ch;
-}
-.auth-trace {
-  display: block;
-  width: min(100%, 26rem);
-  height: auto;
-  margin-block: 1.7rem 0;
-  overflow: visible;
-}
-.auth-trace .lane {
-  stroke: rgb(var(--bone-rgb) / 0.2);
-}
-.auth-trace .horizon {
-  stroke: rgb(var(--photon-rgb) / 0.6);
-}
-.auth-trace text {
-  fill: var(--dust);
-  font: 600 10px var(--font-mono);
-  letter-spacing: 0.06em;
-}
-.auth-trace [data-path] {
-  fill: none;
-  stroke: var(--photon);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-.auth-trace [data-path="incoming"] {
-  stroke: var(--bone);
-}
-.auth-trace .seal {
-  fill: var(--void);
-  stroke: var(--photon);
-  stroke-width: 1.4;
-}
-.auth-trace .seal-pending {
-  fill: rgb(var(--retry-rgb) / 0.15);
-  stroke: var(--retry);
-  stroke-width: 1.4;
-}
-.auth-trace .seal-label {
-  fill: var(--bone);
-  font-size: 9px;
-}
-.auth-trace .seal-label-pending {
-  fill: var(--retry);
 }
 .auth-content {
   display: grid;
   place-items: center;
-  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 4rem);
-  background: var(--void);
+  padding: clamp(1.25rem, 5vw, 4rem) 1rem;
 }
 .auth-panel {
-  width: min(100%, 26rem);
+  width: min(100%, 29rem);
+  min-width: 0;
+  padding: clamp(1.15rem, 4vw, 2.25rem);
+  border: 1px solid var(--rule-strong);
+  border-radius: 0.85rem;
+  background: var(--void-1);
 }
 .auth-panel .page-heading {
   margin-bottom: 1.8rem;
@@ -394,12 +330,14 @@ button.language-switch:hover {
 }
 .auth-panel .intro {
   margin: 0;
+  text-wrap: pretty;
 }
 .auth-panel .action-form {
   gap: 1rem;
 }
 .auth-panel input {
   min-height: 3rem;
+  background: var(--void);
 }
 .auth-panel input[name="code"] {
   font: 500 1.35rem/1 var(--font-mono);
@@ -1843,37 +1781,6 @@ details form {
   .navigation a {
     padding-inline: 0.7rem;
     font-size: 0.88rem;
-  }
-  .auth-shell {
-    grid-template-columns: minmax(0, 1fr);
-    min-height: auto;
-  }
-  .auth-aside {
-    align-items: center;
-    grid-template-rows: auto;
-    padding: 0.9rem 1rem;
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-  }
-  .auth-context {
-    padding-block: 0.15rem 0.25rem;
-  }
-  .auth-context:has(> .auth-trace:only-child) {
-    display: none;
-  }
-  .auth-context .section-guide h2 {
-    max-width: none;
-    font-size: 1.05rem;
-  }
-  .auth-context .section-guide p {
-    max-width: none;
-    font-size: 0.9rem;
-  }
-  .auth-content {
-    padding: 1.25rem 1rem 2rem;
-  }
-  .auth-context .auth-trace {
-    display: none;
   }
   .auth-content {
     align-content: start;

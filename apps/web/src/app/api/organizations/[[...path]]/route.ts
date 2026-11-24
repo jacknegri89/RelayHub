@@ -14,6 +14,7 @@ import {
 } from "../../../../server/http";
 import { manage, permissionFor } from "../../../../server/manage";
 import { throttle } from "../../../../server/rate";
+import { validSessionActionToken } from "../../../../server/form-proof";
 
 export function POST(
   request: Request,
@@ -60,6 +61,19 @@ export function POST(
       organizationId,
       permissionFor(input.data),
     );
+    if (input.data.action === "organization_delete") {
+      const action = "organization-delete:" + organizationId;
+      if (
+        !validSessionActionToken(
+          session.session.id,
+          action,
+          input.data.csrfToken,
+        )
+      ) {
+        throw new HttpError(403, "organization_form_expired");
+      }
+      await throttle("organization-delete:" + session.user.id, 5);
+    }
     const result = await manage(
       { organizationId, actorId: session.user.id },
       input.data,

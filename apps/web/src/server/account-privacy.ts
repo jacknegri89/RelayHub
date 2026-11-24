@@ -1,6 +1,7 @@
 import { verifyPassword } from "better-auth/crypto";
 import { database, Prisma } from "@relayhub/db";
 import { HttpError } from "./http";
+import { eraseOrganization } from "./organization-data";
 
 type Transaction = Prisma.TransactionClient;
 type Identity = { userId: string; sessionId: string };
@@ -180,7 +181,7 @@ async function applyOwnershipChoices(
   }
   for (const organization of plan) {
     if (!organization.members.length && deletions.has(organization.id)) {
-      await eraseSoloOrganization(tx, organization.id);
+      await eraseOrganization(tx, organization.id);
       continue;
     }
     const successor = transfers.get(organization.id);
@@ -208,15 +209,6 @@ async function applyOwnershipChoices(
       },
     });
   }
-}
-
-async function eraseSoloOrganization(tx: Transaction, organizationId: string) {
-  // Fence incoming events before deleting their deliveries, attempts, outbox rows and receiver records.
-  await tx.$queryRaw`SELECT id FROM "WebhookSource" WHERE "organizationId" = ${organizationId} ORDER BY id FOR UPDATE`;
-  await tx.webhookEvent.deleteMany({ where: { organizationId } });
-  await tx.webhookSource.deleteMany({ where: { organizationId } });
-  await tx.webhookDestination.deleteMany({ where: { organizationId } });
-  await tx.organization.delete({ where: { id: organizationId } });
 }
 
 async function eraseAccount(tx: Transaction, userId: string, choices: Choices) {

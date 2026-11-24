@@ -39,6 +39,8 @@ Organization owners grant membership using the account UUID shown on the member'
 
 Manage members in **Workspace → Settings**. Roles apply to one organization at a time.
 
+Only owners can delete an organization in **Settings → Delete organization**. The server requires an exact name confirmation, a same-origin request and a token tied to the current session and organization. The database removes organization-scoped records in one transaction. A request already transmitted to an external receiver may still finish.
+
 ## Browser policy
 
 The content security policy permits inline hydration scripts and styles. A nonce-based policy requires framework integration.

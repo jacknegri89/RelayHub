@@ -10,15 +10,18 @@ import { encrypt, newSecret } from "@relayhub/shared/encryption";
 import { type Permission, type Role, can } from "@relayhub/shared/access";
 import type { Command } from "./commands";
 import { HttpError } from "./http";
+import { eraseOrganization } from "./organization-data";
 import { retryDelivery, retryRecoveryBatch } from "./recovery-deliveries";
 
 type Scope = { organizationId: string; actorId: string };
 type Transaction = Prisma.TransactionClient;
+const ORGANIZATION_DELETE_TIMEOUT_MS = 30_000;
 
 export function permissionFor(command: Command): Permission {
   if (
     command.action.startsWith("member_") ||
-    command.action === "organization_rename"
+    command.action === "organization_rename" ||
+    command.action === "organization_delete"
   ) {
     return "manage_members";
   }
@@ -34,6 +37,12 @@ export async function manage(
     return testDelivery(scope, command, correlationId);
   }
   try {
+    if (command.action === "organization_delete") {
+      return await database().$transaction(
+        (tx) => deleteOwnedOrganization(tx, scope, command.confirmation),
+        { timeout: ORGANIZATION_DELETE_TIMEOUT_MS },
+      );
+    }
     return await database().$transaction(async (tx) => {
       const members = await tx.$queryRaw<{ role: Role }[]>`
         SELECT "role" FROM "OrganizationMember"
@@ -56,6 +65,13 @@ export async function manage(
       return result;
     });
   } catch (error) {
+    if (
+      command.action === "organization_delete" &&
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2034"
+    ) {
+      throw new HttpError(409, "organization_delete_conflict");
+    }
     if (error instanceof DestinationBlocked) {
       throw new HttpError(422, "destination_not_allowed");
     }
@@ -69,10 +85,39 @@ export async function manage(
   }
 }
 
+async function deleteOwnedOrganization(
+  tx: Transaction,
+  { organizationId, actorId }: Scope,
+  confirmation: string,
+) {
+  // Lock the organization before its membership, as the account-erasure flow does.
+  const [organization] = await tx.$queryRaw<{ name: string }[]>`
+    SELECT name FROM "Organization" WHERE id = ${organizationId} FOR UPDATE
+  `;
+  if (!organization) {
+    throw new HttpError(404, "organization_not_found");
+  }
+  const [member] = await tx.$queryRaw<{ role: Role }[]>`
+    SELECT "role" FROM "OrganizationMember"
+    WHERE "organizationId" = ${organizationId} AND "userId" = ${actorId} FOR UPDATE
+  `;
+  if (member?.role !== "owner") {
+    throw new HttpError(403, "permission_denied");
+  }
+  if (confirmation !== organization.name) {
+    throw new HttpError(422, "organization_name_mismatch");
+  }
+  await eraseOrganization(tx, organizationId);
+  return { id: organizationId };
+}
+
 async function applyCommand(
   tx: Transaction,
   scope: Scope,
-  command: Exclude<Command, { action: "test_delivery" }>,
+  command: Exclude<
+    Command,
+    { action: "test_delivery" | "organization_delete" }
+  >,
 ) {
   const { organizationId } = scope;
   switch (command.action) {

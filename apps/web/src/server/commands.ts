@@ -66,6 +66,11 @@ export const commandSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("member_remove"), id }),
   z.object({ action: z.literal("organization_rename"), name }),
+  z.strictObject({
+    action: z.literal("organization_delete"),
+    confirmation: z.string().min(1).max(80),
+    csrfToken: z.string().length(64),
+  }),
 ]);
 
 export type Command = z.infer<typeof commandSchema>;

@@ -43,6 +43,8 @@ The public simulator test takes billing offline, switches from Route to Timeline
 
 When changing the palette, check text, focus, controls and status contrast on both the public pages and the signed-in workspace. The delivery canvas reads the shared CSS color channels, so verify both Route and Timeline views.
 
+The organization deletion test uses isolated data to check exact name confirmation, organization token scoping, role enforcement, and removal of delivery records without affecting user accounts or another organization.
+
 ## Run the development processes
 
 After installing the workspace dependencies with pnpm 11.25.0 and running `pnpm run setup`, start PostgreSQL and Redis:
