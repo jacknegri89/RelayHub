@@ -104,7 +104,5 @@ The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`,
 ## Contributors
 
 - [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
-- [Claude](https://claude.com/claude-code) — UI design, interaction implementation, and browser verification.
-- Codex — Assisted with implementation, design, testing, and documentation.
 
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.
