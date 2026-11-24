@@ -4,15 +4,25 @@
 
 RelayHub accepts signed JSON events, routes them to configured destinations, and delivers them in the background. Each organization has its own sources, destinations, roles, and delivery history.
 
-[Open RelayHub](https://relayhub-webhooks.vercel.app) · [Delivery guide](https://relayhub-webhooks.vercel.app/guide) · [Start locally](#run-locally) · [API reference](docs/api.yaml) · [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml)
+[Open RelayHub](https://relayhub-webhooks.vercel.app) · [Sign in](https://relayhub-webhooks.vercel.app/login) · [Delivery guide](https://relayhub-webhooks.vercel.app/guide) · [Run locally](#run-locally) · [API reference](docs/api.yaml)
 
 ![RelayHub's public simulator showing an order delivered to the warehouse and email service while billing waits for a retry](docs/images/relayhub-home.png)
 
-The [homepage simulator](https://relayhub-webhooks.vercel.app/#simulator) follows a shop order to the warehouse, billing and email services. Switch billing offline, send an order, then bring it back online to watch just that delivery retry. **Route** shows the signature check, response code and attempt count for each service. **Timeline** follows the same order over time, and **Order history** lists the verification and delivery results. When paused or using reduced motion, **Next step** advances to its next delivery or retry. In the workspace, every delivery shows the trace for its real attempts.
+## Explore the public demo
 
-Choose [**Try a lost response**](https://relayhub-webhooks.vercel.app/lost-response) to send one test order through the actual worker. Open both attempts and compare their delivery IDs with the receiver's count of requests and saved orders. [How the receiver handles the retry](docs/receiver-idempotency.md#try-a-lost-acknowledgement)
+The [Delivery simulator](https://relayhub-webhooks.vercel.app/#simulator) runs in your browser. Switch **Billing** offline and select **Send a test order** to see a 503. Bring Billing back online before the next attempt to see that delivery succeed. **Route** shows each service's status, HTTP code and attempt count. **Timeline** follows the same order over time, and **Order history** lists its signature check and delivery results. When paused or using reduced motion, use **Next step** to advance the simulation.
 
-Before signing in, explore how Stripe, GitHub and Shopify use webhooks. GitHub repositories can send events directly to RelayHub. For Stripe and Shopify, verify the provider event in your own app and forward it using a RelayHub source.
+- [Try a lost response](https://relayhub-webhooks.vercel.app/lost-response) sends a fictional order through the hosted worker. Compare the stable delivery ID across attempts and check how many orders the receiver saved. [How the receiver handles the retry](docs/receiver-idempotency.md#try-a-lost-acknowledgement)
+- [Webhook examples](https://relayhub-webhooks.vercel.app/#webhooks) show how Stripe, GitHub and Shopify use webhooks. GitHub repositories can send events directly to RelayHub. For Stripe and Shopify, verify the provider event in your app and forward it through a RelayHub source.
+- [API Explorer](https://relayhub-webhooks.vercel.app/#api-explorer) prepares a terminal request for events and deliveries. Run it against your own organization with a read-only key created by its owner in **Settings**.
+
+## Try the hosted app
+
+Use the **EN / IT** switch to change the interface language. RelayHub remembers your choice in this browser and keeps partially filled forms in place.
+
+1. [Create an account](https://relayhub-webhooks.vercel.app/register) with your name, email and a password of at least 12 characters.
+2. Create an organization, then add a source and a destination. The **Destinations** page shows the built-in HTTPS verification receiver.
+3. Link the source to the destination and send a signed event. Open **Events** or **Deliveries** to inspect the attempts and confirm that the receiver returned HTTP 204.
 
 ### Connect a GitHub repository
 
@@ -27,13 +37,7 @@ In **Destinations**, select a day on the seven-day chart to see which attempts f
 
 Workspace members can subscribe to outage and recovery emails for individual destinations using their own account address. See [Destination email setup](docs/destination-email.md) to connect the mail service.
 
-## Try the hosted app
-
-Use the **EN / IT** switch to change the interface language. RelayHub remembers your choice in this browser and keeps partially filled forms in place.
-
-1. Open the [registration page](https://relayhub-webhooks.vercel.app/register). Enter your name and email address, then choose a password of at least 12 characters.
-2. Create an organization, then add a source and a destination. The **Destinations** page shows the built-in HTTPS verification receiver.
-3. Link the source to the destination and send a signed event. Open **Events** or **Deliveries** to follow the recorded attempt through to HTTP 204.
+### Account security and organization settings
 
 Email is the sign-in identifier. Enable two-factor authentication under **Workspace → Security** and save the one-use recovery codes. On installations with account email enabled, verify your address in **Profile** to use **Forgot your password?**. A password reset signs out existing sessions. **Profile → Your personal data** also lets you export your account data or request account deletion. [Privacy](https://relayhub-webhooks.vercel.app/privacy) · [Cookies](https://relayhub-webhooks.vercel.app/cookies) · [Demo terms](https://relayhub-webhooks.vercel.app/terms) · [Account mail rollout](docs/operations.md#rolling-out-account-mail)
 
@@ -49,8 +53,6 @@ pnpm gmail:authorize --client-json "/path/to/google-desktop-client.json" --sende
 
 Set `RELAYHUB_MAIL_PROVIDER=gmail` and `RELAYHUB_ACCOUNT_EMAIL=1`, then restart the application. For a hosted installation, configure the same mail settings and OAuth credentials in the server's secret manager and set `RELAYHUB_BASE_URL` to the public HTTPS origin before sending links. To test, sign in, verify your address in **Profile**, then use **Forgot your password?** in a private browser window. [Gmail setup and token lifetime](docs/destination-email.md#send-from-an-existing-gmail-account)
 
-The hosted portfolio uses Vercel, Neon and Upstash. Usage limits can interrupt background delivery or database access. The local Compose stack runs the full webhook demo with local PostgreSQL and Redis. [Free-tier limits and recovery](docs/operations.md#keeping-the-portfolio-demo-within-free-tiers)
-
 ## How a delivery works
 
 | Stage   | What RelayHub records or verifies                                                                                   |
@@ -62,7 +64,7 @@ The hosted portfolio uses Vercel, Neon and Upstash. Usage limits can interrupt b
 
 Delivery is **at least once**. Each destination receives a stable `X-RelayHub-Delivery-Id`. Its v2 signature authenticates that ID and the event. The [receiver example](docs/receiver-idempotency.md) commits the receipt and the order together, including when the first HTTP acknowledgement is lost.
 
-An organization owner can create and revoke read-only API keys in **Settings**. External tools can list events and deliveries, inspect their metadata and follow pagination. The [API Explorer](https://relayhub-webhooks.vercel.app/#api-explorer) shows how to configure the key and copy a request for your terminal. See the [OpenAPI reference](docs/api.yaml) for request and response schemas. For an Italian walkthrough of the e-commerce example, see [Dal negozio al gestionale](docs/esempio-ordine.md).
+The [OpenAPI reference](docs/api.yaml) covers signed ingress, the paginated read API and outbound signatures. For an Italian walkthrough of the e-commerce example, see [Dal negozio al gestionale](docs/esempio-ordine.md).
 
 ## Run locally
 
@@ -78,6 +80,12 @@ Open [the local registration page](http://localhost:3000/register), choose a pas
 Use `docker compose -p relayhub-demo stop` to stop the services and keep local data. The [Testing guide](docs/testing.md) covers seeded scenarios, retries, queue recovery, and running the application processes directly on your host.
 
 To run tests from your host, install dependencies with `pnpm install --frozen-lockfile` and generate the Prisma Client with `pnpm generate`. Run `pnpm test` for unit tests. With the isolated services running, use `pnpm test:integration` for integration checks. Install Chromium with `pnpm exec playwright install chromium` before running `pnpm test:e2e`. Email tests use fictional recipients and a local mailbox. To rehearse recovery, follow the [encrypted backup and restore drill](docs/backup-restore.md).
+
+## Deployment
+
+The [hosted portfolio demo](https://relayhub-webhooks.vercel.app) deploys from [`main` on GitHub](https://github.com/jacknegri89/RelayHub/tree/main). Vercel runs the Next.js web service and the separate BullMQ worker defined in [`vercel.json`](vercel.json). The demo uses Neon PostgreSQL and Upstash Redis. Usage limits can interrupt background delivery or database access. [Free-tier limits and recovery](docs/operations.md#keeping-the-portfolio-demo-within-free-tiers)
+
+To verify a release, match the GitHub `main` commit to the Vercel production deployment serving the public domain. Inspect the worker and check [web readiness](https://relayhub-webhooks.vercel.app/api/health/ready), which checks the web service's connection to PostgreSQL. [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml) · [Hosted verification checklist](docs/testing.md#verify-a-hosted-deployment) · [Vercel setup](docs/operations.md#vercel-deployment)
 
 ## Documentation
 
@@ -97,6 +105,6 @@ The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`,
 
 - [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
 - [Claude](https://claude.com/claude-code) — UI design, interaction implementation, and browser verification.
-- codex — Assisted with implementation, design, testing, and documentation.
+- Codex — Assisted with implementation, design, testing, and documentation.
 
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.

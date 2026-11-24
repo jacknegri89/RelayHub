@@ -17,7 +17,7 @@ flowchart LR
 
 The web process authorizes configuration changes and verifies the literal bytes of an incoming webhook. An event, its distinct destinations and a scheduling row per delivery commit together. A successful ingress response confirms durable acceptance. It can precede dispatch and delivery.
 
-Account email uses the web process. Destination incident notices use a PostgreSQL outbox consumed by the worker. Both use the same server-side sender with Resend or a local Mailpit inbox in demo mode. Reset and verification tokens stay out of BullMQ. Incident delivery retries preserve the original provider idempotency key. [Account security](security.md#account-enrollment) · [Notification delivery](destination-email.md)
+Account email uses the web process. Destination incident notices use a PostgreSQL outbox consumed by the worker. Both use the same server-side mail configuration with Gmail or Resend, or a local Mailpit inbox in demo mode. Reset and verification tokens stay out of BullMQ. Incident delivery retries preserve the original provider idempotency key. [Account security](security.md#account-enrollment) · [Notification delivery](destination-email.md)
 
 The **Overview** compares the success rate of deliveries completed in the latest 24 hours with the preceding 24 hours. It divides delivered by delivered plus failed. Its P50, P95 and P99 describe the durations of individual attempts with a measured HTTP response. Transport timeouts count in the weekly attempt history and have no measured HTTP response. The in-progress count includes active deliveries of any age.
 
