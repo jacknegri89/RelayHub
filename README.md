@@ -6,7 +6,7 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 [Open RelayHub](https://relayhub-webhooks.vercel.app) · [Start locally](#run-locally) · [API reference](docs/api.yaml) · [GitHub Actions](https://github.com/jacknegri89/RelayHub/actions/workflows/ci.yml)
 
-![RelayHub's public simulator showing an order delivered to the warehouse and email service while billing waits for a retry](docs/images/relayhub-home.webp)
+![RelayHub's public simulator showing an order delivered to the warehouse and email service while billing waits for a retry](docs/images/relayhub-home.png)
 
 The homepage simulator follows a shop order to the warehouse, billing and email services. Switch billing offline, send an order, then bring it back online to watch just that delivery retry. **Route** shows the signature check, response code and attempt count for each service. **Timeline** follows the same order over time. When paused or using reduced motion, **Next step** advances to its next delivery or retry. In the workspace, every delivery shows the trace for its real attempts.
 
@@ -94,7 +94,7 @@ The Next.js application lives in `apps/web`, the BullMQ worker in `apps/worker`,
 ## Contributors
 
 - [Giacomo Negri](https://github.com/jacknegri89) — Project owner and maintainer.
-- [Claude](https://claude.com/claude-code) — Designed and built the spacetime redesign, its GSAP motion, and the browser checks.
+- [Claude](https://claude.com/claude-code) — UI design, interaction implementation, and browser verification.
 - codex — Assisted with implementation, design, testing, and documentation.
 
 The original code is published for portfolio review with rights reserved. Third-party packages retain their own licenses.
