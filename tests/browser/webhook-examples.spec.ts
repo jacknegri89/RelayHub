@@ -1,5 +1,36 @@
 import { expect, test } from "@playwright/test";
 
+test("the homepage introduction and examples link work without JavaScript", async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    baseURL,
+    javaScriptEnabled: false,
+    viewport: { width: 375, height: 812 },
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Send one webhook to multiple services",
+      }),
+    ).toBeInViewport();
+    await expect(
+      page.getByRole("link", { name: "Create an account" }),
+    ).toBeInViewport();
+    await page.getByRole("link", { name: "View examples" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("region", { name: "What is a webhook?" }),
+    ).toBeFocused();
+  } finally {
+    await context.close();
+  }
+});
+
 test("a visitor follows a webhook, changes example and replays the exchange", async ({
   page,
 }) => {

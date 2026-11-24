@@ -6,7 +6,6 @@ import { VoidPage } from "../../components/void-page";
 export default function AuthError({ reset }: { reset: () => void }) {
   return (
     <VoidPage
-      coordinates={<T en="Signal interrupted" it="Segnale interrotto" />}
       title={<T en="Form unavailable" it="Modulo non disponibile" />}
       actions={
         <>

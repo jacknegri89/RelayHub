@@ -6,7 +6,8 @@ import { SpacetimeHero } from "../components/spacetime-hero";
 import { WebhookExamples } from "../components/webhook-examples";
 import { ApiExplorer } from "../components/api-explorer";
 import { PublicFooter, PublicHeader } from "../components/public-navigation";
-import { LandingMotion } from "../components/landing-motion";
+import { GuideBookmarks } from "../components/guide-bookmarks";
+import { InterfaceIcon } from "../components/interface-icon";
 import styles from "./landing.module.css";
 import { publicPageMetadata } from "../server/public-metadata";
 
@@ -34,34 +35,31 @@ export default async function Home() {
   }
 
   return (
-    <LandingMotion className={styles.landing}>
+    <div className={styles.landing}>
+      <GuideBookmarks />
       <PublicHeader signedIn={Boolean(session)} />
-      <main id="main">
+      <main id="main" tabIndex={-1}>
         <section className={styles.hero} aria-labelledby="hero-title">
           <h1 id="hero-title">
-            <span className={styles.line}>
-              <span data-intro="line">{t("One webhook.", "Un webhook.")}</span>
-            </span>
-            <span className={styles.line}>
-              <span data-intro="line">
-                <em>{t("Many destinations.", "Più destinazioni.")}</em>
-              </span>
-            </span>
+            {t(
+              "Send one webhook to multiple services",
+              "Invia un webhook a più servizi",
+            )}
           </h1>
           <div className={styles.copy}>
-            <p className={styles.lede} data-intro="lede">
+            <p className={styles.lede}>
               {t(
-                "RelayHub verifies webhooks, forwards them to your services and retries when a receiver is offline. Track each delivery in your dashboard.",
-                "RelayHub verifica i webhook, li inoltra ai tuoi servizi e riprova se un destinatario è offline. Nel pannello segui ogni consegna.",
+                "RelayHub checks the signature and tracks delivery to each destination. If a service goes offline, RelayHub retries that delivery.",
+                "RelayHub verifica la firma e registra l’esito di ogni consegna. Se un servizio va offline, riprova la consegna a quel destinatario.",
               )}
             </p>
-            <div className={styles.actions} data-intro="actions">
+            <div className={styles.actions}>
               <Link className={styles.primary} href={accountHref}>
-                {accountLabel} <span aria-hidden="true">→</span>
+                {accountLabel} <InterfaceIcon name="arrow" />
               </Link>
               <a className={styles.secondary} href="#webhooks">
-                {t("View examples", "Vedi esempi")}{" "}
-                <span aria-hidden="true">↓</span>
+                {t("View examples", "Vedi esempi")}
+                <InterfaceIcon name="arrowDown" />
               </a>
             </div>
           </div>
@@ -72,22 +70,22 @@ export default async function Home() {
           <aside className={styles.notes} aria-labelledby="order-test-title">
             <section>
               <h2 id="order-test-title">
-                {t("One order, three outcomes", "Un ordine, tre esiti")}
+                {t("Read the HTTP responses", "Leggi le risposte HTTP")}
               </h2>
               <p>
                 {t(
-                  "RelayHub’s 202 means it accepted the order. A 204 next to Warehouse, Billing or Email means that service received its copy. If Billing fails, the other copies stay delivered.",
-                  "Il 202 di RelayHub indica che l’ordine è stato accettato. Il 204 accanto a Magazzino, Fatturazione o Email conferma che quel servizio ha ricevuto la sua copia. Un guasto alla fatturazione lascia valide le altre consegne.",
+                  "RelayHub returns 202 when it accepts the order. Each service returns its own response. A service that returns 204 has received its copy.",
+                  "RelayHub risponde con 202 quando accetta l’ordine. Ogni servizio risponde per conto proprio. Il 204 conferma che il servizio ha ricevuto la sua copia.",
                 )}
               </p>
               <Link className={styles.noteLink} href="/guide#journey">
                 {t("Follow one event", "Segui un evento")}{" "}
-                <span aria-hidden="true">→</span>
+                <InterfaceIcon name="arrow" />
               </Link>
               <div>
                 <Link className={styles.noteLink} href="/lost-response">
                   {t("Try a lost response", "Prova una risposta persa")}{" "}
-                  <span aria-hidden="true">→</span>
+                  <InterfaceIcon name="arrow" />
                 </Link>
               </div>
             </section>
@@ -120,7 +118,7 @@ export default async function Home() {
                   "Query events from your terminal",
                   "Consulta gli eventi dal terminale",
                 )}{" "}
-                <span aria-hidden="true">↓</span>
+                <InterfaceIcon name="arrowDown" />
               </a>
             </section>
           </aside>
@@ -129,6 +127,6 @@ export default async function Home() {
         <ApiExplorer />
       </main>
       <PublicFooter />
-    </LandingMotion>
+    </div>
   );
 }

@@ -14,6 +14,7 @@ const paths = {
   menu: "M3 6h18M3 12h18M3 18h18",
   switcher: "m9 9 3-3 3 3m-6 6 3 3 3-3",
   arrow: "M4 12h15m-6-6 6 6-6 6",
+  arrowDown: "M12 4v15m-6-6 6 6 6-6",
 } as const;
 
 export type IconName = keyof typeof paths;

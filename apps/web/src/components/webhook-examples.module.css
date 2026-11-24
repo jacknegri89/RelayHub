@@ -12,7 +12,7 @@
   margin-bottom: 1.2rem;
   font-size: clamp(2rem, 3.3vw, 3.5rem);
   line-height: 1.06;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 .guide p,
@@ -21,6 +21,7 @@
   margin: 0.85rem 0 0;
   color: var(--dust);
   line-height: 1.65;
+  text-wrap: pretty;
 }
 .guide .instruction {
   margin-top: 1.8rem;
@@ -99,9 +100,7 @@
 }
 .endpoints span {
   color: var(--dust);
-  font: 500 0.72rem var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 0.85rem;
 }
 .endpoints strong {
   font: 550 clamp(1rem, 1.5vw, 1.35rem) var(--font-sans);

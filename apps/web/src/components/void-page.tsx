@@ -16,12 +16,12 @@ export function LostSignal() {
 }
 
 export function VoidPage({
-  coordinates,
+  errorCode,
   title,
   children,
   actions,
 }: {
-  coordinates: ReactNode;
+  errorCode?: number;
   title: ReactNode;
   children?: ReactNode;
   actions?: ReactNode;
@@ -36,8 +36,8 @@ export function VoidPage({
       </header>
       <main id="main" className="void-body">
         <LostSignal />
-        <p className="coordinates">{coordinates}</p>
         <h1>{title}</h1>
+        {errorCode && <p className="error-code">HTTP {errorCode}</p>}
         {children}
         {actions && <div className="void-actions">{actions}</div>}
       </main>

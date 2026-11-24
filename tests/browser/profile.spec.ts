@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { database } from "@relayhub/db";
 import { settings } from "@relayhub/shared/config";
@@ -36,6 +37,10 @@ test("a member edits their profile and sees the saved identity after reload", as
       .locator(".account-menu")
       .getByRole("link", { name: "Profile", exact: true })
       .click();
+    const accountMenuAudit = await new AxeBuilder({ page })
+      .withRules(["label-content-name-mismatch"])
+      .analyze();
+    expect(accountMenuAudit.violations).toEqual([]);
     const unconfirmedEdit = await page.request.post("/api/profile", {
       headers: { origin },
       data: { name: "Other name" },

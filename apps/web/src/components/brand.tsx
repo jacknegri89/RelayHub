@@ -9,6 +9,7 @@ export function BrandMark({ size = 26 }: { size?: number }) {
       alt=""
       width={size}
       height={size}
+      loading="eager"
       unoptimized
     />
   );

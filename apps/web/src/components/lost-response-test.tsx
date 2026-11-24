@@ -256,7 +256,7 @@ export function monitorMessage(
       "In attesa della prima lettura…",
     );
   }
-  return t("Ready to send a test order.", "Puoi inviare un ordine di prova.");
+  return "";
 }
 
 export function LostResponseTest({

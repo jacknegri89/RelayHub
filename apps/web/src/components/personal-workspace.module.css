@@ -28,7 +28,6 @@
   align-items: center;
   gap: 0.7rem;
   padding: 0.7rem 0.85rem;
-  border-inline-start: 3px solid transparent;
   border-radius: 0.4rem;
   color: var(--dust);
   font-weight: 550;
@@ -39,9 +38,11 @@
   color: var(--bone);
 }
 .nav a[aria-current="page"] {
-  border-color: var(--photon);
   color: var(--bone);
   background: #18293a;
+}
+.nav a[aria-current="page"] svg {
+  color: var(--photon);
 }
 .content {
   min-width: 0;
@@ -49,7 +50,7 @@
 .heading {
   margin-bottom: 1.5rem;
   font-size: clamp(2rem, 3.7vw, 3.3rem);
-  letter-spacing: -0.055em;
+  letter-spacing: -0.03em;
 }
 .panel,
 .task {
@@ -148,7 +149,7 @@
   user-select: all;
 }
 .identity {
-  background: var(--lattice), #131d28;
+  background: var(--void-2);
   border-radius: 0.75rem 0.75rem 0 0;
 }
 .identity h2 {

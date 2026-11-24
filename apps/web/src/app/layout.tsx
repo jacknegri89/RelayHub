@@ -1,15 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/geist/wght.css";
-import "@fontsource-variable/geist-mono/wght.css";
+import "@fontsource-variable/ibm-plex-sans/wght.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+import "@fontsource/ibm-plex-mono/latin-600.css";
 import "./styles.css";
 import { getLocale } from "../server/locale";
 import { LocaleProvider } from "../components/locale";
-
-// Hides the homepage entrance actors until GSAP takes over; the timeout is a
-// safety net so content always appears even if scripts fail.
-const INTRO_GUARD =
-  "document.documentElement.classList.add('intro-pending');" +
-  "setTimeout(function(){document.documentElement.classList.remove('intro-pending')},2500);";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getLocale();
@@ -33,10 +29,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const { locale, t } = await getLocale();
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: INTRO_GUARD }} />
-      </head>
+    <html lang={locale}>
       <body>
         <LocaleProvider locale={locale}>
           <a className="skip" href="#main">

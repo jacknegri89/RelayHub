@@ -18,6 +18,7 @@ export function AccountMenu({
   image?: string | null;
 }) {
   const { t } = useLocale();
+  const avatar = profileAvatar(image);
   const menu = useRef<HTMLDetailsElement>(null);
   const trigger = useRef<HTMLElement>(null);
 
@@ -61,7 +62,10 @@ export function AccountMenu({
       }}
     >
       <summary ref={trigger} aria-label={t("Account menu", "Menu account")}>
-        <ProfileAvatar name={name} avatar={profileAvatar(image)} small />{" "}
+        {avatar === "initials" && <InterfaceIcon name="account" />}
+        {avatar !== "initials" && (
+          <ProfileAvatar name={name} avatar={avatar} small />
+        )}
         <span className="account-trigger-label">Account</span>
       </summary>
       <div className="account-options">

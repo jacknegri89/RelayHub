@@ -12,7 +12,7 @@ test("the spacetime diagram reacts to visitors and respects reduced motion", asy
   await page.goto("/");
   await expect(
     page.getByRole("heading", {
-      name: /one webhook\.\s*many destinations/i,
+      name: "Send one webhook to multiple services",
     }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Timeline", exact: true }).click();

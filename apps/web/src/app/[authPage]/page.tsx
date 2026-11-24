@@ -103,7 +103,7 @@ export default async function AuthPage({ params }: AuthParams) {
         <LanguageSwitch />
 
         <div className="auth-context">
-          <AuthGuide step={step} />
+          {step !== "login" && <AuthGuide step={step} />}
           <AuthTrace step={step} />
         </div>
       </aside>
@@ -208,15 +208,12 @@ export default async function AuthPage({ params }: AuthParams) {
   );
 }
 
-async function AuthGuide({ step }: { step: "login" | "register" | "verify" }) {
+async function AuthGuide({ step }: { step: "register" | "verify" }) {
   const { t } = await getLocale();
   if (step === "verify") {
     return (
       <SectionGuide
-        title={t(
-          "Have your phone ready",
-          "Tieni a portata di mano il telefono",
-        )}
+        title={t("Where to find your code", "Dove trovare il codice")}
       >
         {t(
           "Open the RelayHub entry in your authenticator app. If you have lost access to the app, use one of the recovery codes you saved during setup.",
@@ -225,28 +222,11 @@ async function AuthGuide({ step }: { step: "login" | "register" | "verify" }) {
       </SectionGuide>
     );
   }
-  if (step === "register") {
-    return (
-      <SectionGuide
-        title={t(
-          "Open your first workspace",
-          "Apri la tua prima area di lavoro",
-        )}
-      >
-        {t(
-          "Enter your name, email and a password of at least 12 characters. After registration, create an organization or share your account ID with the owner of an existing one.",
-          "Inserisci nome, email e una password di almeno 12 caratteri. Dopo la registrazione puoi creare un’organizzazione o condividere l’ID del tuo account con il proprietario di una già esistente.",
-        )}
-      </SectionGuide>
-    );
-  }
   return (
-    <SectionGuide
-      title={t("Return to your workspace", "Rientra nella tua area di lavoro")}
-    >
+    <SectionGuide title={t("After registration", "Dopo la registrazione")}>
       {t(
-        "Use the email and password you registered with. After signing in, choose the organization whose events you want to follow.",
-        "Usa l’email e la password scelte durante la registrazione. Dopo l’accesso, scegli l’organizzazione di cui vuoi seguire gli eventi.",
+        "Create an organization for your webhooks, or share your account ID with the owner of an existing organization so they can add you.",
+        "Crea un’organizzazione per i tuoi webhook oppure condividi l’ID del tuo account con il titolare di un’organizzazione esistente, così potrà aggiungerti.",
       )}
     </SectionGuide>
   );

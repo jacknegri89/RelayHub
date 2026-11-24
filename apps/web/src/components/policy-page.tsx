@@ -39,7 +39,7 @@ export async function PolicyPage({
             {sections.map(([id, label]) => (
               <a href={"#" + id} key={id}>
                 {label}
-                <span aria-hidden="true">↓</span>
+                <InterfaceIcon name="arrowDown" />
               </a>
             ))}
           </nav>

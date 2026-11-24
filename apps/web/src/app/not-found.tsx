@@ -11,20 +11,15 @@ export async function generateMetadata() {
 export default function NotFound() {
   return (
     <VoidPage
-      coordinates={
-        <T
-          en="404 · no lane at these coordinates"
-          it="404 · nessuna corsia a queste coordinate"
-        />
-      }
+      errorCode={404}
       title={<T en="Page unavailable" it="Pagina non disponibile" />}
       actions={
         <>
-          <Link href="/workspace">
-            <T en="Open organizations" it="Apri le organizzazioni" />
-          </Link>
           <Link href="/">
             <T en="Back to the homepage" it="Torna alla pagina iniziale" />
+          </Link>
+          <Link href="/workspace">
+            <T en="Open organizations" it="Apri le organizzazioni" />
           </Link>
         </>
       }

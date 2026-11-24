@@ -24,18 +24,12 @@ export async function PublicHeader({
       navigationLabel = t("Workspace", "Area di lavoro");
     }
   }
-  let introActor: string | undefined = "header";
   let currentGuide: "page" | undefined;
   if (guide) {
-    introActor = undefined;
     currentGuide = "page";
   }
   return (
-    <header
-      className={styles.header}
-      data-intro={introActor}
-      data-signed-in={signedIn}
-    >
+    <header className={styles.header} data-signed-in={signedIn}>
       <Link
         href="/"
         aria-label={t("RelayHub home", "Pagina iniziale di RelayHub")}

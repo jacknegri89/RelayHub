@@ -27,7 +27,9 @@ The [GitHub Actions workflow](../.github/workflows/ci.yml) provisions isolated s
 
 The language regression changes English to Italian with a partially filled registration form, follows a policy link, and reloads the page. The authenticator test also switches languages with a password already entered.
 
-The public examples test follows a notification with the keyboard, replays the exchange, changes language on a phone-sized viewport and checks reduced motion. It also selects the retry stage with the arrow keys and verifies that billing recovers with an HTTP 204. The operator test checks that the guide follows navigation from an event to its delivery history.
+The mobile profile test checks that the account menu’s accessible name includes the visible label.
+
+The public examples tests check that the homepage introduction and examples link work with JavaScript disabled. They also follow a notification with the keyboard, replay the exchange, change language on a phone-sized viewport and check reduced motion. They select the retry stage with the arrow keys and verify that billing recovers with an HTTP 204. The operator test checks that the guide follows navigation from an event to its delivery history.
 
 The delivery chart unit tests cover empty activity, attempts in progress, locally blocked requests, events without matching routes, and long delivery histories.
 

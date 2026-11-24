@@ -49,7 +49,7 @@
 }
 .dashboardHead h1 {
   font-size: clamp(2rem, 4vw, 3.5rem);
-  letter-spacing: -0.05em;
+  letter-spacing: -0.03em;
 }
 .route {
   overflow-wrap: anywhere;
@@ -99,7 +99,7 @@
 .intro h1 {
   margin: 0;
   font: 570 clamp(2.6rem, 5.4vw, 5rem)/1.02 var(--font-sans);
-  letter-spacing: -0.055em;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 .intro p,
@@ -109,6 +109,7 @@
   max-width: 62ch;
   color: var(--dust);
   line-height: 1.6;
+  text-wrap: pretty;
 }
 .controls {
   display: flex;
@@ -123,12 +124,13 @@
 }
 .indicator {
   min-width: 0;
-  border-inline-start: 3px solid var(--rule-strong);
-  padding-inline-start: 0.75rem;
   font-weight: 550;
 }
 .indicator[data-phase="watching"] {
-  border-color: var(--photon);
+  color: var(--photon);
+}
+.indicator:empty {
+  position: absolute;
 }
 .indicator small {
   display: block;
@@ -145,6 +147,12 @@
 }
 .buttons button {
   min-height: 2.75rem;
+}
+.buttons button:disabled {
+  cursor: default;
+}
+.buttons button:disabled::after {
+  content: none;
 }
 .buttons .repeat {
   border-color: var(--rule-strong);

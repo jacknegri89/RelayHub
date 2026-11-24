@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InterfaceIcon } from "./interface-icon";
 import styles from "./workspace-records.module.css";
 
 type SignalKind = "source" | "destination" | "events" | "alerts" | "filter";
@@ -33,7 +34,7 @@ export function WorkspaceEmpty({
         {link && (
           <Link href={link.href}>
             {link.label}
-            <span aria-hidden="true"> →</span>
+            <InterfaceIcon name="arrow" />
           </Link>
         )}
       </div>
