@@ -1,33 +1,33 @@
-/* Warm charcoal, ivory actions and a garnet signal for webhooks in transit. */
+/* Near-black surfaces, neutral borders and white actions. */
 :root {
   color-scheme: dark;
   --void: rgb(var(--void-rgb));
-  --void-1: #1d191b;
-  --void-2: #272124;
-  --void-3: #332a2f;
-  --rule: #3a3035;
-  --rule-strong: #50424a;
+  --void-1: #141414;
+  --void-2: #1e1e1e;
+  --void-3: #292929;
+  --rule: #323232;
+  --rule-strong: #505050;
   --bone: rgb(var(--bone-rgb));
-  --dust: #bcb0b6;
+  --dust: #b8b8b8;
   --photon: rgb(var(--photon-rgb));
   --photon-ink: var(--void);
-  --action: #f2ebdf;
-  --action-hover: #fff7ec;
+  --action: #f0f0f0;
+  --action-hover: #ffffff;
   --action-ink: var(--void);
   --delivered: rgb(var(--delivered-rgb));
   --retry: rgb(var(--retry-rgb));
   --failed: rgb(var(--failed-rgb));
-  --photon-surface: #46242d;
-  --photon-border: #af6677;
-  --photon-text: #ffe1e7;
-  --control-border: #887984;
+  --photon-surface: var(--void-3);
+  --photon-border: #777777;
+  --photon-text: var(--bone);
+  --control-border: #858585;
   /* Canvas reads these same channels for translucent traces. */
-  --void-rgb: 19 16 18;
-  --bone-rgb: 243 235 237;
-  --photon-rgb: 242 128 153;
-  --delivered-rgb: 158 204 128;
-  --retry-rgb: 224 181 109;
-  --failed-rgb: 255 153 117;
+  --void-rgb: 8 8 8;
+  --bone-rgb: 245 245 245;
+  --photon-rgb: 224 224 224;
+  --delivered-rgb: 210 210 210;
+  --retry-rgb: 174 174 174;
+  --failed-rgb: 245 245 245;
   --font-sans: "IBM Plex Sans Variable", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

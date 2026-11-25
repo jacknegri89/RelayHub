@@ -168,6 +168,14 @@
   background: var(--outcome-color);
   transform: translateY(-50%);
 }
+.routes li[data-tone="retrying"]::after {
+  border: 1px solid var(--outcome-color);
+  background: var(--void);
+}
+.routes li[data-tone="failed"]::after {
+  border-radius: 0;
+  transform: translateY(-50%) rotate(45deg);
+}
 .row {
   min-width: 0;
   padding: 0.55rem 0.7rem 0.55rem 0.9rem;

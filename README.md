@@ -6,7 +6,7 @@ RelayHub accepts signed JSON events, routes them to configured destinations, and
 
 [Open RelayHub](https://relayhub-webhooks.vercel.app) · [Sign in](https://relayhub-webhooks.vercel.app/login) · [Delivery guide](https://relayhub-webhooks.vercel.app/guide) · [Run locally](#run-locally) · [API reference](docs/api.yaml)
 
-![RelayHub's public simulator showing an order delivered to the warehouse and email service while billing waits for a retry](docs/images/relayhub-home.png)
+![RelayHub in its black theme. The delivery simulator shows successful deliveries to Warehouse and Email and a scheduled retry for Billing.](docs/images/relayhub-home.png)
 
 ## Explore the public demo
 

@@ -283,12 +283,12 @@
   background: var(--void);
 }
 .privacyForm button[data-destructive="true"] {
-  border-color: #bd6762;
-  background: #341d20;
-  color: #ffcdca;
+  border-color: var(--control-border);
+  background: var(--void-2);
+  color: var(--failed);
 }
 .privacyForm button[data-destructive="true"]:hover {
-  background: #50272b;
+  background: var(--void-3);
 }
 .privacyForm input[type="checkbox"] {
   flex: none;
